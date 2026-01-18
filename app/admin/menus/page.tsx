@@ -485,7 +485,14 @@ export default function AdminMenusPage() {
                             >
                               <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
                                 {dish ? (
-                                  <div className="relative group">
+                                  <div
+                                    className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
+                                    draggable
+                                    onDragStart={(e) => {
+                                      handleDragStart(e, dish.id);
+                                      clearSlot(weekIndex, dayIndex, 'soup');
+                                    }}
+                                  >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
                                       onClick={() => clearSlot(weekIndex, dayIndex, 'soup')}
@@ -520,7 +527,14 @@ export default function AdminMenusPage() {
                             >
                               <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
                                 {dish ? (
-                                  <div className="relative group">
+                                  <div
+                                    className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
+                                    draggable
+                                    onDragStart={(e) => {
+                                      handleDragStart(e, dish.id);
+                                      clearSlot(weekIndex, dayIndex, 'hot_meat');
+                                    }}
+                                  >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
                                       onClick={() => clearSlot(weekIndex, dayIndex, 'hot_meat')}
@@ -555,7 +569,14 @@ export default function AdminMenusPage() {
                             >
                               <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
                                 {dish ? (
-                                  <div className="relative group">
+                                  <div
+                                    className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
+                                    draggable
+                                    onDragStart={(e) => {
+                                      handleDragStart(e, dish.id);
+                                      clearSlot(weekIndex, dayIndex, 'hot_veg');
+                                    }}
+                                  >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
                                       onClick={() => clearSlot(weekIndex, dayIndex, 'hot_veg')}
