@@ -1,5 +1,5 @@
 // Database types
-export type DishCategory = 'soup' | 'salad_bar' | 'hot_dish_meat' | 'hot_dish_vegetarian' | 'off_menu';
+export type DishCategory = 'soup' | 'salad_bar' | 'hot_dish_beef' | 'hot_dish_chicken' | 'hot_dish_pork' | 'hot_dish_fish' | 'hot_dish_vega' | 'off_menu';
 export type UserRole = 'admin' | 'kitchen' | 'manager';
 
 export interface Location {
@@ -25,6 +25,14 @@ export interface Dish {
   description?: string;
   photo_url?: string;
   base_price?: number;
+  allergen_gluten?: boolean;
+  allergen_soy?: boolean;
+  allergen_lactose?: boolean;
+  allergen_sesame?: boolean;
+  allergen_sulphites?: boolean;
+  allergen_egg?: boolean;
+  allergen_mustard?: boolean;
+  allergen_celery?: boolean;
   created_at: string;
   updated_at: string;
 }

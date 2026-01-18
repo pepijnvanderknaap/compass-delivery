@@ -16,6 +16,14 @@ export default function AdminDishesPage() {
     category: undefined,
     base_price: 0,
     is_active: true,
+    allergen_gluten: false,
+    allergen_soy: false,
+    allergen_lactose: false,
+    allergen_sesame: false,
+    allergen_sulphites: false,
+    allergen_egg: false,
+    allergen_mustard: false,
+    allergen_celery: false,
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -99,6 +107,14 @@ export default function AdminDishesPage() {
         category: undefined,
         base_price: 0,
         is_active: true,
+        allergen_gluten: false,
+        allergen_soy: false,
+        allergen_lactose: false,
+        allergen_sesame: false,
+        allergen_sulphites: false,
+        allergen_egg: false,
+        allergen_mustard: false,
+        allergen_celery: false,
       });
       fetchDishes();
     } catch (err: any) {
@@ -173,6 +189,14 @@ export default function AdminDishesPage() {
                 category: undefined,
                 base_price: 0,
                 is_active: true,
+                allergen_gluten: false,
+                allergen_soy: false,
+                allergen_lactose: false,
+                allergen_sesame: false,
+                allergen_sulphites: false,
+                allergen_egg: false,
+                allergen_mustard: false,
+                allergen_celery: false,
               });
             }}
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
@@ -212,9 +236,12 @@ export default function AdminDishesPage() {
                   >
                     <option value="">Select a category</option>
                     <option value="soup">Soup</option>
+                    <option value="hot_dish_beef">Hot Dish Beef</option>
+                    <option value="hot_dish_chicken">Hot Dish Chicken</option>
+                    <option value="hot_dish_pork">Hot Dish Pork</option>
+                    <option value="hot_dish_fish">Hot Dish Fish</option>
+                    <option value="hot_dish_vega">Hot Dish Vega</option>
                     <option value="salad_bar">Salad Bar</option>
-                    <option value="hot_dish_meat">Hot Dish Meat/Fish</option>
-                    <option value="hot_dish_vegetarian">Hot Dish Vegetarian</option>
                     <option value="off_menu">Off Menu / Bespoke</option>
                   </select>
                 </div>
@@ -228,6 +255,109 @@ export default function AdminDishesPage() {
                     rows={3}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Allergens
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allergen_gluten"
+                        checked={formData.allergen_gluten || false}
+                        onChange={(e) => setFormData({ ...formData, allergen_gluten: e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="allergen_gluten" className="ml-2 block text-sm text-gray-700">
+                        Gluten
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allergen_soy"
+                        checked={formData.allergen_soy || false}
+                        onChange={(e) => setFormData({ ...formData, allergen_soy: e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="allergen_soy" className="ml-2 block text-sm text-gray-700">
+                        Soy
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allergen_lactose"
+                        checked={formData.allergen_lactose || false}
+                        onChange={(e) => setFormData({ ...formData, allergen_lactose: e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="allergen_lactose" className="ml-2 block text-sm text-gray-700">
+                        Lactose
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allergen_sesame"
+                        checked={formData.allergen_sesame || false}
+                        onChange={(e) => setFormData({ ...formData, allergen_sesame: e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="allergen_sesame" className="ml-2 block text-sm text-gray-700">
+                        Sesame
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allergen_sulphites"
+                        checked={formData.allergen_sulphites || false}
+                        onChange={(e) => setFormData({ ...formData, allergen_sulphites: e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="allergen_sulphites" className="ml-2 block text-sm text-gray-700">
+                        Sulphites
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allergen_egg"
+                        checked={formData.allergen_egg || false}
+                        onChange={(e) => setFormData({ ...formData, allergen_egg: e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="allergen_egg" className="ml-2 block text-sm text-gray-700">
+                        Egg
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allergen_mustard"
+                        checked={formData.allergen_mustard || false}
+                        onChange={(e) => setFormData({ ...formData, allergen_mustard: e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="allergen_mustard" className="ml-2 block text-sm text-gray-700">
+                        Mustard
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allergen_celery"
+                        checked={formData.allergen_celery || false}
+                        onChange={(e) => setFormData({ ...formData, allergen_celery: e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="allergen_celery" className="ml-2 block text-sm text-gray-700">
+                        Celery
+                      </label>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

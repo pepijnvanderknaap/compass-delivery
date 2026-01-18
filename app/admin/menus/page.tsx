@@ -62,6 +62,7 @@ export default function AdminMenusPage() {
       .from('dishes')
       .select('*')
       .eq('is_active', true)
+      .neq('category', 'salad_bar')
       .order('name');
 
     if (error) {
@@ -411,8 +412,11 @@ export default function AdminMenusPage() {
             >
               <option value="all">All Categories</option>
               <option value="soup">Soup</option>
-              <option value="hot_dish_meat">Hot Dish Meat/Fish</option>
-              <option value="hot_dish_vegetarian">Hot Dish Vegetarian</option>
+              <option value="hot_dish_beef">Hot Dish Beef</option>
+              <option value="hot_dish_chicken">Hot Dish Chicken</option>
+              <option value="hot_dish_pork">Hot Dish Pork</option>
+              <option value="hot_dish_fish">Hot Dish Fish</option>
+              <option value="hot_dish_vega">Hot Dish Vega</option>
             </select>
 
             {/* Dish list */}
