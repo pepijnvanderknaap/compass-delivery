@@ -10,6 +10,7 @@ export default function AdminDishesPage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<Partial<Dish>>({
     name: '',
     description: '',
@@ -30,11 +31,22 @@ export default function AdminDishesPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const categories = [
+    { key: 'soup', label: 'Soups', icon: '🍲' },
+    { key: 'hot_dish_beef', label: 'Hot Dish - Beef', icon: '🥩' },
+    { key: 'hot_dish_chicken', label: 'Hot Dish - Chicken', icon: '🍗' },
+    { key: 'hot_dish_pork', label: 'Hot Dish - Pork', icon: '🥓' },
+    { key: 'hot_dish_fish', label: 'Hot Dish - Fish', icon: '🐟' },
+    { key: 'hot_dish_vega', label: 'Hot Dish - Vega', icon: '🥗' },
+    { key: 'salad_bar', label: 'Salad Bar', icon: '🥬' },
+    { key: 'off_menu', label: 'Off Menu / Bespoke', icon: '✨' },
+  ];
+
   useEffect(() => {
     const initializePage = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (!user) {
           router.push('/login');
           return;
@@ -127,6 +139,7 @@ export default function AdminDishesPage() {
     setFormData(dish);
     setEditingId(dish.id);
     setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
@@ -147,6 +160,26 @@ export default function AdminDishesPage() {
     }
   };
 
+  const getDishesByCategory = (categoryKey: string) => {
+    return dishes.filter(dish =>
+      dish.category === categoryKey &&
+      (searchTerm === '' || dish.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  };
+
+  const getAllergensList = (dish: Dish) => {
+    const allergens = [];
+    if (dish.allergen_gluten) allergens.push('Gluten');
+    if (dish.allergen_soy) allergens.push('Soy');
+    if (dish.allergen_lactose) allergens.push('Lactose');
+    if (dish.allergen_sesame) allergens.push('Sesame');
+    if (dish.allergen_sulphites) allergens.push('Sulphites');
+    if (dish.allergen_egg) allergens.push('Egg');
+    if (dish.allergen_mustard) allergens.push('Mustard');
+    if (dish.allergen_celery) allergens.push('Celery');
+    return allergens;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -157,7 +190,7 @@ export default function AdminDishesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
+      <nav className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-bold text-gray-900">Manage Dishes</h1>
@@ -178,7 +211,17 @@ export default function AdminDishesPage() {
           </div>
         )}
 
-        <div className="mb-6">
+        {/* Top Bar with Search and Add Button */}
+        <div className="mb-8 flex gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search dishes by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
           <button
             onClick={() => {
               setShowForm(!showForm);
@@ -199,14 +242,15 @@ export default function AdminDishesPage() {
                 allergen_celery: false,
               });
             }}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium whitespace-nowrap"
           >
-            {showForm ? 'Cancel' : '+ Add New Dish'}
+            {showForm ? 'Cancel' : '+ Add Dish'}
           </button>
         </div>
 
+        {/* Form */}
         {showForm && (
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-md p-6 mb-8">
             <h2 className="text-xl font-bold mb-4">
               {editingId ? 'Edit Dish' : 'New Dish'}
             </h2>
@@ -235,14 +279,9 @@ export default function AdminDishesPage() {
                     required
                   >
                     <option value="">Select a category</option>
-                    <option value="soup">Soup</option>
-                    <option value="hot_dish_beef">Hot Dish Beef</option>
-                    <option value="hot_dish_chicken">Hot Dish Chicken</option>
-                    <option value="hot_dish_pork">Hot Dish Pork</option>
-                    <option value="hot_dish_fish">Hot Dish Fish</option>
-                    <option value="hot_dish_vega">Hot Dish Vega</option>
-                    <option value="salad_bar">Salad Bar</option>
-                    <option value="off_menu">Off Menu / Bespoke</option>
+                    {categories.map(cat => (
+                      <option key={cat.key} value={cat.key}>{cat.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="md:col-span-2">
@@ -261,102 +300,29 @@ export default function AdminDishesPage() {
                     Allergens
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allergen_gluten"
-                        checked={formData.allergen_gluten || false}
-                        onChange={(e) => setFormData({ ...formData, allergen_gluten: e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="allergen_gluten" className="ml-2 block text-sm text-gray-700">
-                        Gluten
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allergen_soy"
-                        checked={formData.allergen_soy || false}
-                        onChange={(e) => setFormData({ ...formData, allergen_soy: e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="allergen_soy" className="ml-2 block text-sm text-gray-700">
-                        Soy
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allergen_lactose"
-                        checked={formData.allergen_lactose || false}
-                        onChange={(e) => setFormData({ ...formData, allergen_lactose: e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="allergen_lactose" className="ml-2 block text-sm text-gray-700">
-                        Lactose
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allergen_sesame"
-                        checked={formData.allergen_sesame || false}
-                        onChange={(e) => setFormData({ ...formData, allergen_sesame: e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="allergen_sesame" className="ml-2 block text-sm text-gray-700">
-                        Sesame
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allergen_sulphites"
-                        checked={formData.allergen_sulphites || false}
-                        onChange={(e) => setFormData({ ...formData, allergen_sulphites: e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="allergen_sulphites" className="ml-2 block text-sm text-gray-700">
-                        Sulphites
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allergen_egg"
-                        checked={formData.allergen_egg || false}
-                        onChange={(e) => setFormData({ ...formData, allergen_egg: e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="allergen_egg" className="ml-2 block text-sm text-gray-700">
-                        Egg
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allergen_mustard"
-                        checked={formData.allergen_mustard || false}
-                        onChange={(e) => setFormData({ ...formData, allergen_mustard: e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="allergen_mustard" className="ml-2 block text-sm text-gray-700">
-                        Mustard
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="allergen_celery"
-                        checked={formData.allergen_celery || false}
-                        onChange={(e) => setFormData({ ...formData, allergen_celery: e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="allergen_celery" className="ml-2 block text-sm text-gray-700">
-                        Celery
-                      </label>
-                    </div>
+                    {[
+                      { key: 'allergen_gluten', label: 'Gluten' },
+                      { key: 'allergen_soy', label: 'Soy' },
+                      { key: 'allergen_lactose', label: 'Lactose' },
+                      { key: 'allergen_sesame', label: 'Sesame' },
+                      { key: 'allergen_sulphites', label: 'Sulphites' },
+                      { key: 'allergen_egg', label: 'Egg' },
+                      { key: 'allergen_mustard', label: 'Mustard' },
+                      { key: 'allergen_celery', label: 'Celery' },
+                    ].map(allergen => (
+                      <div key={allergen.key} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={allergen.key}
+                          checked={(formData as any)[allergen.key] || false}
+                          onChange={(e) => setFormData({ ...formData, [allergen.key]: e.target.checked })}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor={allergen.key} className="ml-2 block text-sm text-gray-700">
+                          {allergen.label}
+                        </label>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -368,11 +334,11 @@ export default function AdminDishesPage() {
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
                   <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
-                    Active
+                    Active (visible in menu planner)
                   </label>
                 </div>
               </div>
-              <div className="flex justify-end gap-4">
+              <div className="flex justify-end gap-4 pt-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -394,62 +360,83 @@ export default function AdminDishesPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {dishes.map((dish) => (
-                <tr key={dish.id}>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                    {dish.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {dish.category || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                    {dish.description || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${dish.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {dish.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleEdit(dish)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(dish.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Dishes organized by category */}
+        <div className="space-y-8">
+          {categories.map(category => {
+            const categoryDishes = getDishesByCategory(category.key);
+            if (categoryDishes.length === 0 && searchTerm === '') return null;
+
+            return (
+              <div key={category.key} className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <span>{category.icon}</span>
+                    <span>{category.label}</span>
+                    <span className="ml-2 text-sm font-normal opacity-90">({categoryDishes.length})</span>
+                  </h2>
+                </div>
+
+                {categoryDishes.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500">
+                    No dishes found matching "{searchTerm}"
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                    {categoryDishes.map(dish => {
+                      const allergens = getAllergensList(dish);
+                      return (
+                        <div
+                          key={dish.id}
+                          className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-bold text-gray-900">{dish.name}</h3>
+                            {dish.is_active && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                In Menu
+                              </span>
+                            )}
+                          </div>
+
+                          {dish.description && (
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{dish.description}</p>
+                          )}
+
+                          {allergens.length > 0 && (
+                            <div className="mb-3">
+                              <div className="text-xs font-medium text-gray-700 mb-1">Allergens:</div>
+                              <div className="flex flex-wrap gap-1">
+                                {allergens.map(allergen => (
+                                  <span key={allergen} className="px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">
+                                    {allergen}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 mt-4">
+                            <button
+                              onClick={() => handleEdit(dish)}
+                              className="flex-1 px-3 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(dish.id)}
+                              className="px-3 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </main>
     </div>
