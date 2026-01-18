@@ -320,22 +320,45 @@ export default function AdminMenusPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleDragStart = (e: React.DragEvent, dishId: string) => {
+  const handleDragStart = (e: React.DragEvent, dishId: string, sourceInfo?: { weekIndex: number; dayIndex: number; slot: string }) => {
     e.dataTransfer.setData('dishId', dishId);
+    if (sourceInfo) {
+      e.dataTransfer.setData('sourceInfo', JSON.stringify(sourceInfo));
+    }
   };
 
   const handleDrop = async (e: React.DragEvent, weekIndex: number, dayIndex: number, slot: string) => {
     e.preventDefault();
     const dishId = e.dataTransfer.getData('dishId');
+    const sourceInfoStr = e.dataTransfer.getData('sourceInfo');
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
 
-    setMenuData(prev => ({
-      ...prev,
-      [dateKey]: {
-        ...prev[dateKey],
-        [slot]: dishId
-      }
-    }));
+    // If dragging from another slot, clear the source
+    if (sourceInfoStr) {
+      const sourceInfo = JSON.parse(sourceInfoStr);
+      const sourceDateKey = format(addDays(weeks[sourceInfo.weekIndex], sourceInfo.dayIndex), 'yyyy-MM-dd');
+
+      setMenuData(prev => ({
+        ...prev,
+        [sourceDateKey]: {
+          ...prev[sourceDateKey],
+          [sourceInfo.slot]: null
+        },
+        [dateKey]: {
+          ...prev[dateKey],
+          [slot]: dishId
+        }
+      }));
+    } else {
+      // Dragging from sidebar
+      setMenuData(prev => ({
+        ...prev,
+        [dateKey]: {
+          ...prev[dateKey],
+          [slot]: dishId
+        }
+      }));
+    }
 
     // Auto-save after a short delay
     setTimeout(() => saveMenuData(), 500);
@@ -488,10 +511,7 @@ export default function AdminMenusPage() {
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
                                     draggable
-                                    onDragStart={(e) => {
-                                      handleDragStart(e, dish.id);
-                                      clearSlot(weekIndex, dayIndex, 'soup');
-                                    }}
+                                    onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'soup' })}
                                   >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
@@ -530,10 +550,7 @@ export default function AdminMenusPage() {
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
                                     draggable
-                                    onDragStart={(e) => {
-                                      handleDragStart(e, dish.id);
-                                      clearSlot(weekIndex, dayIndex, 'hot_meat');
-                                    }}
+                                    onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_meat' })}
                                   >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
@@ -572,10 +589,7 @@ export default function AdminMenusPage() {
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
                                     draggable
-                                    onDragStart={(e) => {
-                                      handleDragStart(e, dish.id);
-                                      clearSlot(weekIndex, dayIndex, 'hot_veg');
-                                    }}
+                                    onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_veg' })}
                                   >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
