@@ -13,7 +13,7 @@ export default function AdminDishesPage() {
   const [formData, setFormData] = useState<Partial<Dish>>({
     name: '',
     description: '',
-    category: '',
+    category: undefined,
     base_price: 0,
     is_active: true,
   });
