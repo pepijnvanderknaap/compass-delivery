@@ -4,32 +4,29 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format, startOfWeek, addDays, addWeeks } from 'date-fns';
-import type { Dish, WeeklyMenu, MenuItem, UserProfile } from '@/lib/types';
-
-interface MenuItemForm {
-  dish_id: string;
-  day_of_week: number;
-}
+import type { Dish, UserProfile } from '@/lib/types';
 
 export default function AdminMenusPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);
-  const [menus, setMenus] = useState<WeeklyMenu[]>([]);
-  const [selectedWeek, setSelectedWeek] = useState<Date>(addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1));
-  const [menuItems, setMenuItems] = useState<MenuItemForm[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [menuData, setMenuData] = useState<Record<string, Record<string, string | null>>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  // Generate 4 weeks starting from next Monday
+  const startDate = addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1);
+  const weeks = Array.from({ length: 4 }, (_, i) => addWeeks(startDate, i));
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   useEffect(() => {
     const initializePage = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (!user) {
           router.push('/login');
           return;
@@ -47,15 +44,7 @@ export default function AdminMenusPage() {
         }
 
         setProfile(profileData);
-        
-        const { data: dishesData } = await supabase
-          .from('dishes')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
-
-        setDishes(dishesData || []);
-        fetchMenus();
+        fetchDishes();
       } catch (err) {
         console.error('Error initializing page:', err);
       } finally {
@@ -66,128 +55,63 @@ export default function AdminMenusPage() {
     initializePage();
   }, [supabase, router]);
 
-  const fetchMenus = async () => {
+  const fetchDishes = async () => {
     const { data, error } = await supabase
-      .from('weekly_menus')
-      .select(`
-        *,
-        menu_items(*, dishes(name))
-      `)
-      .order('week_start_date', { ascending: false })
-      .limit(10);
+      .from('dishes')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
 
     if (error) {
-      console.error('Error fetching menus:', error);
+      console.error('Error fetching dishes:', error);
       return;
     }
 
-    setMenus(data || []);
+    setDishes(data || []);
   };
 
-  useEffect(() => {
-    const loadMenuForWeek = async () => {
-      const weekStart = format(selectedWeek, 'yyyy-MM-dd');
-      const { data } = await supabase
-        .from('weekly_menus')
-        .select('*, menu_items(*)')
-        .eq('week_start_date', weekStart)
-        .single();
+  const filteredDishes = dishes.filter(dish => {
+    const matchesSearch = dish.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || dish.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
-      if (data?.menu_items) {
-        setMenuItems(
-          (data.menu_items as MenuItem[]).map(item => ({
-            dish_id: item.dish_id,
-            day_of_week: item.day_of_week,
-          }))
-        );
-      } else {
-        setMenuItems([]);
+  const handleDragStart = (e: React.DragEvent, dishId: string) => {
+    e.dataTransfer.setData('dishId', dishId);
+  };
+
+  const handleDrop = (e: React.DragEvent, weekIndex: number, dayIndex: number, slot: string) => {
+    e.preventDefault();
+    const dishId = e.dataTransfer.getData('dishId');
+    const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
+
+    setMenuData(prev => ({
+      ...prev,
+      [dateKey]: {
+        ...prev[dateKey],
+        [slot]: dishId
       }
-    };
-
-    if (!loading) {
-      loadMenuForWeek();
-    }
-  }, [selectedWeek, loading, supabase]);
-
-  const handleAddMenuItem = () => {
-    setMenuItems([...menuItems, { dish_id: '', day_of_week: 0 }]);
+    }));
   };
 
-  const handleRemoveMenuItem = (index: number) => {
-    setMenuItems(menuItems.filter((_, i) => i !== index));
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
   };
 
-  const handleMenuItemChange = (index: number, field: keyof MenuItemForm, value: string | number) => {
-    const newItems = [...menuItems];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setMenuItems(newItems);
+  const getDishById = (dishId: string | null) => {
+    if (!dishId) return null;
+    return dishes.find(d => d.id === dishId);
   };
 
-  const handleSaveMenu = async () => {
-    setSaving(true);
-    setMessage(null);
-
-    try {
-      const weekStart = format(selectedWeek, 'yyyy-MM-dd');
-
-      // Check if menu exists
-      const { data: existingMenu } = await supabase
-        .from('weekly_menus')
-        .select('id')
-        .eq('week_start_date', weekStart)
-        .single();
-
-      let menuId: string;
-
-      if (existingMenu) {
-        menuId = existingMenu.id;
-        
-        // Delete existing menu items
-        await supabase
-          .from('menu_items')
-          .delete()
-          .eq('menu_id', menuId);
-      } else {
-        // Create new menu
-        const { data: newMenu, error: menuError } = await supabase
-          .from('weekly_menus')
-          .insert({
-            week_start_date: weekStart,
-            created_by: profile?.id,
-          })
-          .select()
-          .single();
-
-        if (menuError) throw menuError;
-        menuId = newMenu.id;
+  const clearSlot = (weekIndex: number, dayIndex: number, slot: string) => {
+    const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
+    setMenuData(prev => ({
+      ...prev,
+      [dateKey]: {
+        ...prev[dateKey],
+        [slot]: null
       }
-
-      // Insert menu items
-      const itemsToInsert = menuItems
-        .filter(item => item.dish_id && item.day_of_week >= 0)
-        .map(item => ({
-          menu_id: menuId,
-          dish_id: item.dish_id,
-          day_of_week: item.day_of_week,
-        }));
-
-      if (itemsToInsert.length > 0) {
-        const { error: itemsError } = await supabase
-          .from('menu_items')
-          .insert(itemsToInsert);
-
-        if (itemsError) throw itemsError;
-      }
-
-      setMessage({ type: 'success', text: 'Menu saved successfully!' });
-      fetchMenus();
-    } catch (err: any) {
-      console.error('Error saving menu:', err);
-      setMessage({ type: 'error', text: err.message || 'Failed to save menu' });
-    } finally {
-      setSaving(false);
-    }
+    }));
   };
 
   if (loading) {
@@ -201,9 +125,9 @@ export default function AdminMenusPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-bold text-gray-900">Weekly Menus</h1>
+            <h1 className="text-xl font-bold text-gray-900">4-Week Menu Planner</h1>
             <button
               onClick={() => router.push('/dashboard')}
               className="text-gray-600 hover:text-gray-900"
@@ -214,116 +138,204 @@ export default function AdminMenusPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {message && (
           <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {message.text}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">Create/Edit Menu</h2>
-              
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Week Starting
-                </label>
-                <input
-                  type="date"
-                  value={format(selectedWeek, 'yyyy-MM-dd')}
-                  onChange={(e) => setSelectedWeek(new Date(e.target.value))}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
+        <div className="grid grid-cols-12 gap-6">
+          {/* Sidebar with dishes */}
+          <div className="col-span-3 bg-white rounded-xl shadow-md p-6 h-fit sticky top-8">
+            <h2 className="text-lg font-bold mb-4">Available Dishes</h2>
 
-              <div className="space-y-4 mb-6">
-                {menuItems.map((item, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border border-gray-200 rounded-lg">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Day
-                      </label>
-                      <select
-                        value={item.day_of_week}
-                        onChange={(e) => handleMenuItemChange(index, 'day_of_week', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      >
-                        {daysOfWeek.map((day, i) => (
-                          <option key={i} value={i}>{day}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Dish
-                      </label>
-                      <select
-                        value={item.dish_id}
-                        onChange={(e) => handleMenuItemChange(index, 'dish_id', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      >
-                        <option value="">Select dish</option>
-                        {dishes.map((dish) => (
-                          <option key={dish.id} value={dish.id}>
-                            {dish.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex items-end">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMenuItem(index)}
-                        className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Search dishes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500"
+            />
 
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={handleAddMenuItem}
-                  className="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium"
+            {/* Category filter */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="all">All Categories</option>
+              <option value="soup">Soup</option>
+              <option value="hot_dish_meat">Hot Dish Meat/Fish</option>
+              <option value="hot_dish_vegetarian">Hot Dish Vegetarian</option>
+            </select>
+
+            {/* Dish list */}
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {filteredDishes.map(dish => (
+                <div
+                  key={dish.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, dish.id)}
+                  className="p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-move hover:bg-gray-100 hover:border-indigo-300 transition-colors"
                 >
-                  + Add Menu Item
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveMenu}
-                  disabled={saving}
-                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Menu'}
-                </button>
-              </div>
+                  <div className="font-medium text-sm text-gray-900">{dish.name}</div>
+                  <div className="text-xs text-gray-500 capitalize">{dish.category.replace('_', ' ')}</div>
+                </div>
+              ))}
+              {filteredDishes.length === 0 && (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  No dishes found
+                </div>
+              )}
             </div>
           </div>
 
-          <div>
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-bold mb-4">Recent Menus</h3>
-              <div className="space-y-3">
-                {menus.map((menu) => (
-                  <div
-                    key={menu.id}
-                    className="p-3 border border-gray-200 rounded-lg hover:border-indigo-300 cursor-pointer"
-                    onClick={() => setSelectedWeek(new Date(menu.week_start_date))}
-                  >
-                    <div className="font-medium text-gray-900">
-                      Week of {format(new Date(menu.week_start_date), 'MMM d, yyyy')}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {(menu.menu_items as MenuItem[])?.length || 0} items
-                    </div>
-                  </div>
-                ))}
+          {/* 4-week calendar grid */}
+          <div className="col-span-9 space-y-8">
+            {weeks.map((weekStart, weekIndex) => (
+              <div key={weekIndex} className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="bg-indigo-600 text-white p-4">
+                  <h3 className="text-lg font-bold">
+                    Week {weekIndex + 1}: {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
+                  </h3>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">Meal</th>
+                        {days.map((day, dayIndex) => (
+                          <th key={day} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                            {day}
+                            <div className="text-gray-400 font-normal normal-case">
+                              {format(addDays(weekStart, dayIndex), 'MMM d')}
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {/* Soup Row */}
+                      <tr>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-700">Soup</td>
+                        {days.map((_, dayIndex) => {
+                          const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
+                          const dishId = menuData[dateKey]?.soup;
+                          const dish = getDishById(dishId);
+
+                          return (
+                            <td
+                              key={dayIndex}
+                              onDrop={(e) => handleDrop(e, weekIndex, dayIndex, 'soup')}
+                              onDragOver={handleDragOver}
+                              className="px-2 py-2"
+                            >
+                              <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                                {dish ? (
+                                  <div className="relative group">
+                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
+                                    <button
+                                      onClick={() => clearSlot(weekIndex, dayIndex, 'soup')}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-400 text-center">Drop here</div>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+
+                      {/* Hot Dish Meat/Fish Row */}
+                      <tr>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-700">Hot Dish Meat/Fish</td>
+                        {days.map((_, dayIndex) => {
+                          const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
+                          const dishId = menuData[dateKey]?.hot_meat;
+                          const dish = getDishById(dishId);
+
+                          return (
+                            <td
+                              key={dayIndex}
+                              onDrop={(e) => handleDrop(e, weekIndex, dayIndex, 'hot_meat')}
+                              onDragOver={handleDragOver}
+                              className="px-2 py-2"
+                            >
+                              <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                                {dish ? (
+                                  <div className="relative group">
+                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
+                                    <button
+                                      onClick={() => clearSlot(weekIndex, dayIndex, 'hot_meat')}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-400 text-center">Drop here</div>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+
+                      {/* Hot Dish Vegetarian Row */}
+                      <tr>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-700">Hot Dish Vegetarian</td>
+                        {days.map((_, dayIndex) => {
+                          const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
+                          const dishId = menuData[dateKey]?.hot_veg;
+                          const dish = getDishById(dishId);
+
+                          return (
+                            <td
+                              key={dayIndex}
+                              onDrop={(e) => handleDrop(e, weekIndex, dayIndex, 'hot_veg')}
+                              onDragOver={handleDragOver}
+                              className="px-2 py-2"
+                            >
+                              <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                                {dish ? (
+                                  <div className="relative group">
+                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
+                                    <button
+                                      onClick={() => clearSlot(weekIndex, dayIndex, 'hot_veg')}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-400 text-center">Drop here</div>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
+            ))}
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setMessage({ type: 'success', text: 'Menu saved! (Save functionality coming next)' })}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-lg"
+              >
+                Save 4-Week Menu
+              </button>
             </div>
           </div>
         </div>
