@@ -511,12 +511,19 @@ export default function AdminMenusPage() {
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
                                     draggable="true"
-                                    onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'soup' })}
+                                    onDragStart={(e) => {
+                                      console.log('Drag start:', dish.name);
+                                      handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'soup' });
+                                    }}
                                   >
-                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
+                                    <div className="text-xs font-medium text-gray-900 pointer-events-none">{dish.name}</div>
                                     <button
-                                      onClick={() => clearSlot(weekIndex, dayIndex, 'soup')}
-                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearSlot(weekIndex, dayIndex, 'soup');
+                                      }}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
                                     >
                                       ×
                                     </button>
@@ -550,12 +557,19 @@ export default function AdminMenusPage() {
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
                                     draggable="true"
-                                    onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_meat' })}
+                                    onDragStart={(e) => {
+                                      console.log('Drag start:', dish.name);
+                                      handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_meat' });
+                                    }}
                                   >
-                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
+                                    <div className="text-xs font-medium text-gray-900 pointer-events-none">{dish.name}</div>
                                     <button
-                                      onClick={() => clearSlot(weekIndex, dayIndex, 'hot_meat')}
-                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearSlot(weekIndex, dayIndex, 'hot_meat');
+                                      }}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
                                     >
                                       ×
                                     </button>
@@ -589,12 +603,19 @@ export default function AdminMenusPage() {
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
                                     draggable="true"
-                                    onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_veg' })}
+                                    onDragStart={(e) => {
+                                      console.log('Drag start:', dish.name);
+                                      handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_veg' });
+                                    }}
                                   >
-                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
+                                    <div className="text-xs font-medium text-gray-900 pointer-events-none">{dish.name}</div>
                                     <button
-                                      onClick={() => clearSlot(weekIndex, dayIndex, 'hot_veg')}
-                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearSlot(weekIndex, dayIndex, 'hot_veg');
+                                      }}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
                                     >
                                       ×
                                     </button>
