@@ -119,8 +119,6 @@ export default function AdminMenusPage() {
           }
 
           if (menuItems && menuItems.length > 0) {
-            console.log(`Week ${weekIndex + 1} menu items:`, menuItems);
-
             // Organize items by date and meal type
             menuItems.forEach((item: any) => {
               const itemDate = format(addDays(weeks[weekIndex], item.day_of_week), 'yyyy-MM-dd');
@@ -142,7 +140,6 @@ export default function AdminMenusPage() {
         }
       }
 
-      console.log('Final menu data:', menuDataTemp);
       setMenuData(menuDataTemp);
     } catch (err) {
       console.error('Error loading menu data:', err);
@@ -207,8 +204,6 @@ export default function AdminMenusPage() {
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-
-      console.log('Saving menu data:', menuData);
 
       // Save each week's menu
       for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
@@ -289,7 +284,6 @@ export default function AdminMenusPage() {
         }
 
         if (itemsToInsert.length > 0) {
-          console.log(`Inserting ${itemsToInsert.length} items for week ${weekIndex + 1}`);
           const { error: insertError } = await supabase
             .from('menu_items')
             .insert(itemsToInsert);
@@ -320,45 +314,22 @@ export default function AdminMenusPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleDragStart = (e: React.DragEvent, dishId: string, sourceInfo?: { weekIndex: number; dayIndex: number; slot: string }) => {
+  const handleDragStart = (e: React.DragEvent, dishId: string) => {
     e.dataTransfer.setData('dishId', dishId);
-    if (sourceInfo) {
-      e.dataTransfer.setData('sourceInfo', JSON.stringify(sourceInfo));
-    }
   };
 
   const handleDrop = async (e: React.DragEvent, weekIndex: number, dayIndex: number, slot: string) => {
     e.preventDefault();
     const dishId = e.dataTransfer.getData('dishId');
-    const sourceInfoStr = e.dataTransfer.getData('sourceInfo');
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
 
-    // If dragging from another slot, clear the source
-    if (sourceInfoStr) {
-      const sourceInfo = JSON.parse(sourceInfoStr);
-      const sourceDateKey = format(addDays(weeks[sourceInfo.weekIndex], sourceInfo.dayIndex), 'yyyy-MM-dd');
-
-      setMenuData(prev => ({
-        ...prev,
-        [sourceDateKey]: {
-          ...prev[sourceDateKey],
-          [sourceInfo.slot]: null
-        },
-        [dateKey]: {
-          ...prev[dateKey],
-          [slot]: dishId
-        }
-      }));
-    } else {
-      // Dragging from sidebar
-      setMenuData(prev => ({
-        ...prev,
-        [dateKey]: {
-          ...prev[dateKey],
-          [slot]: dishId
-        }
-      }));
-    }
+    setMenuData(prev => ({
+      ...prev,
+      [dateKey]: {
+        ...prev[dateKey],
+        [slot]: dishId
+      }
+    }));
 
     // Auto-save after a short delay
     setTimeout(() => saveMenuData(), 500);
@@ -508,22 +479,11 @@ export default function AdminMenusPage() {
                             >
                               <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
                                 {dish ? (
-                                  <div
-                                    className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
-                                    draggable="true"
-                                    onDragStart={(e) => {
-                                      console.log('Drag start:', dish.name);
-                                      handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'soup' });
-                                    }}
-                                  >
-                                    <div className="text-xs font-medium text-gray-900 pointer-events-none">{dish.name}</div>
+                                  <div className="relative group bg-white border border-gray-200 rounded p-1">
+                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        clearSlot(weekIndex, dayIndex, 'soup');
-                                      }}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                                      onClick={() => clearSlot(weekIndex, dayIndex, 'soup')}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                       ×
                                     </button>
@@ -554,22 +514,11 @@ export default function AdminMenusPage() {
                             >
                               <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
                                 {dish ? (
-                                  <div
-                                    className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
-                                    draggable="true"
-                                    onDragStart={(e) => {
-                                      console.log('Drag start:', dish.name);
-                                      handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_meat' });
-                                    }}
-                                  >
-                                    <div className="text-xs font-medium text-gray-900 pointer-events-none">{dish.name}</div>
+                                  <div className="relative group bg-white border border-gray-200 rounded p-1">
+                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        clearSlot(weekIndex, dayIndex, 'hot_meat');
-                                      }}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                                      onClick={() => clearSlot(weekIndex, dayIndex, 'hot_meat')}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                       ×
                                     </button>
@@ -600,22 +549,11 @@ export default function AdminMenusPage() {
                             >
                               <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
                                 {dish ? (
-                                  <div
-                                    className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
-                                    draggable="true"
-                                    onDragStart={(e) => {
-                                      console.log('Drag start:', dish.name);
-                                      handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_veg' });
-                                    }}
-                                  >
-                                    <div className="text-xs font-medium text-gray-900 pointer-events-none">{dish.name}</div>
+                                  <div className="relative group bg-white border border-gray-200 rounded p-1">
+                                    <div className="text-xs font-medium text-gray-900">{dish.name}</div>
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        clearSlot(weekIndex, dayIndex, 'hot_veg');
-                                      }}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                                      onClick={() => clearSlot(weekIndex, dayIndex, 'hot_veg')}
+                                      className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                       ×
                                     </button>
