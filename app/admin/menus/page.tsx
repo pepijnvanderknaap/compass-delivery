@@ -85,7 +85,12 @@ export default function AdminMenusPage() {
           .from('weekly_menus')
           .select('*')
           .eq('week_start_date', weekStart)
-          .single();
+          .maybeSingle();
+
+        if (menuError) {
+          console.error('Error fetching weekly menu:', menuError);
+          continue;
+        }
 
         // If this is week 4 and it doesn't exist, try to copy from week 1 (4 weeks ago)
         if (!weeklyMenu && weekIndex === 3) {
@@ -96,7 +101,7 @@ export default function AdminMenusPage() {
             .from('weekly_menus')
             .select('*')
             .eq('week_start_date', weekStart)
-            .single();
+            .maybeSingle();
 
           weeklyMenu = newMenu;
         }
@@ -108,7 +113,14 @@ export default function AdminMenusPage() {
             .select('*, dishes(*)')
             .eq('menu_id', weeklyMenu.id);
 
-          if (!itemsError && menuItems) {
+          if (itemsError) {
+            console.error('Error fetching menu items:', itemsError);
+            continue;
+          }
+
+          if (menuItems && menuItems.length > 0) {
+            console.log(`Week ${weekIndex + 1} menu items:`, menuItems);
+
             // Organize items by date and meal type
             menuItems.forEach((item: any) => {
               const itemDate = format(addDays(weeks[weekIndex], item.day_of_week), 'yyyy-MM-dd');
@@ -130,6 +142,7 @@ export default function AdminMenusPage() {
         }
       }
 
+      console.log('Final menu data:', menuDataTemp);
       setMenuData(menuDataTemp);
     } catch (err) {
       console.error('Error loading menu data:', err);
@@ -195,6 +208,8 @@ export default function AdminMenusPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      console.log('Saving menu data:', menuData);
+
       // Save each week's menu
       for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
         const weekStart = format(weeks[weekIndex], 'yyyy-MM-dd');
@@ -204,7 +219,12 @@ export default function AdminMenusPage() {
           .from('weekly_menus')
           .select('*')
           .eq('week_start_date', weekStart)
-          .single();
+          .maybeSingle();
+
+        if (menuError) {
+          console.error('Error fetching weekly menu:', menuError);
+          continue;
+        }
 
         if (!weeklyMenu) {
           const { data: newMenu, error: createError } = await supabase
@@ -224,10 +244,14 @@ export default function AdminMenusPage() {
         }
 
         // Delete existing menu items for this week
-        await supabase
+        const { error: deleteError } = await supabase
           .from('menu_items')
           .delete()
           .eq('menu_id', weeklyMenu.id);
+
+        if (deleteError) {
+          console.error('Error deleting old menu items:', deleteError);
+        }
 
         // Insert new menu items
         const itemsToInsert = [];
@@ -265,12 +289,16 @@ export default function AdminMenusPage() {
         }
 
         if (itemsToInsert.length > 0) {
+          console.log(`Inserting ${itemsToInsert.length} items for week ${weekIndex + 1}`);
           const { error: insertError } = await supabase
             .from('menu_items')
             .insert(itemsToInsert);
 
           if (insertError) {
             console.error('Error inserting menu items:', insertError);
+            setMessage({ type: 'error', text: `Database error: ${insertError.message}` });
+            setTimeout(() => setMessage(null), 5000);
+            return;
           }
         }
       }
