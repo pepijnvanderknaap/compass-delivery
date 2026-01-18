@@ -228,7 +228,6 @@ export default function AdminDishesPage() {
                 name: '',
                 description: '',
                 category: undefined,
-                base_price: 0,
                 is_active: true,
                 allergen_gluten: false,
                 allergen_soy: false,
