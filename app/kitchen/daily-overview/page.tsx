@@ -59,11 +59,11 @@ export default function KitchenDailyOverviewPage() {
       
       const { data, error } = await supabase
         .from('order_items')
-        .select(\`
+        .select(`
           *,
           dishes(name, description),
           orders(locations(name))
-        \`)
+        `)
         .eq('delivery_date', dateStr)
         .order('dishes(name)');
 

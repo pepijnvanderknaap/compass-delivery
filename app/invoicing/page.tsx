@@ -58,11 +58,11 @@ export default function InvoicingPage() {
       
       const { data, error } = await supabase
         .from('orders')
-        .select(\`
+        .select(`
           *,
           locations(name),
           order_items(*, dishes(name, base_price))
-        \`)
+        `)
         .eq('week_start_date', weekStart)
         .order('locations(name)');
 

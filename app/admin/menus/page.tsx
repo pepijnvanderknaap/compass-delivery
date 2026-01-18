@@ -69,10 +69,10 @@ export default function AdminMenusPage() {
   const fetchMenus = async () => {
     const { data, error } = await supabase
       .from('weekly_menus')
-      .select(\`
+      .select(`
         *,
         menu_items(*, dishes(name))
-      \`)
+      `)
       .order('week_start_date', { ascending: false })
       .limit(10);
 
