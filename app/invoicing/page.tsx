@@ -117,7 +117,7 @@ export default function InvoicingPage() {
 
     ws['!cols'] = Object.keys(maxWidth).map(key => ({ wch: maxWidth[key] + 2 }));
 
-    XLSX.writeFile(wb, \`orders-\${format(selectedWeek, 'yyyy-MM-dd')}.xlsx\`);
+    XLSX.writeFile(wb, `orders-${format(selectedWeek, 'yyyy-MM-dd')}.xlsx`);
   };
 
   if (loading) {
