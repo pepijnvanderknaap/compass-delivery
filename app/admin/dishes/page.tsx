@@ -15,7 +15,6 @@ export default function AdminDishesPage() {
     name: '',
     description: '',
     category: undefined,
-    base_price: 0,
     is_active: true,
     allergen_gluten: false,
     allergen_soy: false,
@@ -117,7 +116,6 @@ export default function AdminDishesPage() {
         name: '',
         description: '',
         category: undefined,
-        base_price: 0,
         is_active: true,
         allergen_gluten: false,
         allergen_soy: false,
@@ -325,18 +323,6 @@ export default function AdminDishesPage() {
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="is_active"
-                    checked={formData.is_active}
-                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
-                    Active (visible in menu planner)
-                  </label>
-                </div>
               </div>
               <div className="flex justify-end gap-4 pt-4">
                 <button
@@ -389,13 +375,8 @@ export default function AdminDishesPage() {
                           key={dish.id}
                           className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                         >
-                          <div className="flex justify-between items-start mb-2">
+                          <div className="mb-2">
                             <h3 className="font-bold text-gray-900">{dish.name}</h3>
-                            {dish.is_active && (
-                              <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                                In Menu
-                              </span>
-                            )}
                           </div>
 
                           {dish.description && (
