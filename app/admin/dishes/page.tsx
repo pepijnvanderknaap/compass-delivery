@@ -37,7 +37,6 @@ export default function AdminDishesPage() {
     { key: 'hot_dish_pork', label: 'Hot Dish - Pork', icon: '🥓' },
     { key: 'hot_dish_fish', label: 'Hot Dish - Fish', icon: '🐟' },
     { key: 'hot_dish_vega', label: 'Hot Dish - Vega', icon: '🥗' },
-    { key: 'salad_bar', label: 'Salad Bar', icon: '🥬' },
     { key: 'off_menu', label: 'Off Menu / Bespoke', icon: '✨' },
   ];
 
