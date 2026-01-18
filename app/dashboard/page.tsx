@@ -85,10 +85,16 @@ function DashboardContent() {
 
   const roleCards = {
     admin: [
+      // Admin Management
       { title: 'Manage Locations', href: '/admin/locations', description: 'Add and manage location sites', icon: '🏢' },
       { title: 'Manage Dishes', href: '/admin/dishes', description: 'Create and edit dish options', icon: '🍽️' },
       { title: 'Weekly Menus', href: '/admin/menus', description: 'Set up weekly menu offerings', icon: '📋' },
       { title: 'Invoicing', href: '/invoicing', description: 'Generate invoices and export data', icon: '💰' },
+      // Kitchen View
+      { title: 'Daily Overview', href: '/kitchen/daily-overview', description: 'View daily kitchen prep overview', icon: '👨‍🍳' },
+      // Manager Functions
+      { title: 'New Order', href: '/orders/new', description: 'Place a new weekly order', icon: '📝' },
+      { title: 'View Orders', href: '/orders', description: 'View and edit orders', icon: '📊' },
     ],
     kitchen: [
       { title: 'Daily Overview', href: '/kitchen/daily-overview', description: 'View all portions for today', icon: '👨‍🍳' },
