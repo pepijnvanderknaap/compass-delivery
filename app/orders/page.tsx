@@ -7,7 +7,7 @@ import { format, addDays } from 'date-fns';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 
-interface Order {
+interface OrderWithItems {
   id: string;
   week_start_date: string;
   created_at: string;
@@ -24,7 +24,7 @@ interface Order {
 
 export default function OrdersPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [editingOrder, setEditingOrder] = useState<string | null>(null);
   const [editedPortions, setEditedPortions] = useState<Record<string, Record<string, Record<string, number>>>>({});
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,7 @@ export default function OrdersPage() {
       throw error;
     }
 
-    setOrders(ordersData || []);
+    setOrders(ordersData as any || []);
   };
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function OrdersPage() {
     fetchData();
   }, [supabase, router]);
 
-  const handleEdit = (orderId: string, order: Order) => {
+  const handleEdit = (orderId: string, order: OrderWithItems) => {
     setEditingOrder(orderId);
 
     // Initialize edited portions from current order

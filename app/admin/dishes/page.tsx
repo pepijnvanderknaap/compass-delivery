@@ -96,7 +96,7 @@ export default function AdminDishesPage() {
       setFormData({
         name: '',
         description: '',
-        category: '',
+        category: undefined,
         base_price: 0,
         is_active: true,
       });
@@ -170,7 +170,7 @@ export default function AdminDishesPage() {
               setFormData({
                 name: '',
                 description: '',
-                category: '',
+                category: undefined,
                 base_price: 0,
                 is_active: true,
               });
@@ -202,15 +202,21 @@ export default function AdminDishesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
+                    Category *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.category || ''}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    placeholder="e.g., Main Course, Soup, Salad"
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  />
+                    required
+                  >
+                    <option value="">Select a category</option>
+                    <option value="soup">Soup</option>
+                    <option value="salad_bar">Salad Bar</option>
+                    <option value="hot_dish_meat">Hot Dish Meat/Fish</option>
+                    <option value="hot_dish_vegetarian">Hot Dish Vegetarian</option>
+                    <option value="off_menu">Off Menu / Bespoke</option>
+                  </select>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -308,7 +314,7 @@ export default function AdminDishesPage() {
                     {dish.description || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${dish.base_price.toFixed(2)}
+                    ${dish.base_price?.toFixed(2) || '0.00'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${dish.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

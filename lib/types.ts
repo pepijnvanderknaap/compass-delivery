@@ -1,12 +1,15 @@
 // Database types
-export type DishCategory = 'soup' | 'salad_bar' | 'hot_dish_meat' | 'hot_dish_vegetarian';
+export type DishCategory = 'soup' | 'salad_bar' | 'hot_dish_meat' | 'hot_dish_vegetarian' | 'off_menu';
 export type UserRole = 'admin' | 'kitchen' | 'manager';
 
 export interface Location {
   id: string;
   name: string;
-  contact_email: string | null;
-  contact_name: string | null;
+  address?: string;
+  contact_person?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  contact_name?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -19,6 +22,9 @@ export interface Dish {
   default_portion_size_ml: number | null;
   default_portion_size_g: number | null;
   is_active: boolean;
+  description?: string;
+  photo_url?: string;
+  base_price?: number;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +36,15 @@ export interface LocationDishPricing {
   portion_size_ml: number | null;
   portion_size_g: number | null;
   price_per_portion: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MenuItem {
+  id: string;
+  weekly_menu_id: string;
+  dish_id: string;
+  day_of_week: number;
   created_at: string;
   updated_at: string;
 }
@@ -46,19 +61,26 @@ export interface WeeklyMenu {
   is_published: boolean;
   created_at: string;
   updated_at: string;
+  menu_items?: MenuItem[];
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  dish_id: string;
+  delivery_date: string;
+  portions: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Order {
   id: string;
   location_id: string;
-  weekly_menu_id: string;
-  delivery_date: string;
-  soup_portions: number;
-  salad_bar_portions: number;
-  hot_dish_meat_portions: number;
-  hot_dish_veg_portions: number;
+  week_start_date: string;
   notes: string | null;
   created_by: string | null;
+  order_items?: OrderItem[];
   created_at: string;
   updated_at: string;
 }
@@ -69,6 +91,7 @@ export interface UserProfile {
   role: UserRole;
   location_id: string | null;
   full_name: string | null;
+  locations?: { name: string };
   created_at: string;
   updated_at: string;
 }
