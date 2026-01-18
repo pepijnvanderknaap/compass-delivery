@@ -14,6 +14,7 @@ export default function AdminMenusPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [menuData, setMenuData] = useState<Record<string, Record<string, string | null>>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -44,7 +45,8 @@ export default function AdminMenusPage() {
         }
 
         setProfile(profileData);
-        fetchDishes();
+        await fetchDishes();
+        await loadMenuData();
       } catch (err) {
         console.error('Error initializing page:', err);
       } finally {
@@ -70,6 +72,220 @@ export default function AdminMenusPage() {
     setDishes(data || []);
   };
 
+  const loadMenuData = async () => {
+    try {
+      // Load menu data for all 4 weeks
+      const menuDataTemp: Record<string, Record<string, string | null>> = {};
+
+      for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
+        const weekStart = format(weeks[weekIndex], 'yyyy-MM-dd');
+
+        // Get or create weekly menu
+        let { data: weeklyMenu, error: menuError } = await supabase
+          .from('weekly_menus')
+          .select('*')
+          .eq('week_start_date', weekStart)
+          .single();
+
+        // If this is week 4 and it doesn't exist, try to copy from week 1 (4 weeks ago)
+        if (!weeklyMenu && weekIndex === 3) {
+          await copyPreviousWeek(weekStart);
+
+          // Try to fetch again after copying
+          const { data: newMenu } = await supabase
+            .from('weekly_menus')
+            .select('*')
+            .eq('week_start_date', weekStart)
+            .single();
+
+          weeklyMenu = newMenu;
+        }
+
+        if (weeklyMenu) {
+          // Load menu items for this week
+          const { data: menuItems, error: itemsError } = await supabase
+            .from('menu_items')
+            .select('*, dishes(*)')
+            .eq('menu_id', weeklyMenu.id);
+
+          if (!itemsError && menuItems) {
+            // Organize items by date and meal type
+            menuItems.forEach((item: any) => {
+              const itemDate = format(addDays(weeks[weekIndex], item.day_of_week), 'yyyy-MM-dd');
+
+              if (!menuDataTemp[itemDate]) {
+                menuDataTemp[itemDate] = { soup: null, hot_meat: null, hot_veg: null };
+              }
+
+              // Map meal_type to slot name
+              if (item.meal_type === 'soup') {
+                menuDataTemp[itemDate].soup = item.dish_id;
+              } else if (item.meal_type === 'hot_meat') {
+                menuDataTemp[itemDate].hot_meat = item.dish_id;
+              } else if (item.meal_type === 'hot_veg') {
+                menuDataTemp[itemDate].hot_veg = item.dish_id;
+              }
+            });
+          }
+        }
+      }
+
+      setMenuData(menuDataTemp);
+    } catch (err) {
+      console.error('Error loading menu data:', err);
+    }
+  };
+
+  const copyPreviousWeek = async () => {
+    try {
+      // Get the date 4 weeks ago from the new week we're creating
+      const fourWeeksAgo = format(addWeeks(weeks[0], -4), 'yyyy-MM-dd');
+
+      // Get the menu from 4 weeks ago
+      const { data: oldMenu } = await supabase
+        .from('weekly_menus')
+        .select('*, menu_items(*)')
+        .eq('week_start_date', fourWeeksAgo)
+        .single();
+
+      if (!oldMenu || !oldMenu.menu_items || oldMenu.menu_items.length === 0) {
+        return; // Nothing to copy
+      }
+
+      // Create new menu for week 4
+      const newWeekStart = format(weeks[3], 'yyyy-MM-dd');
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: newMenu, error: createError } = await supabase
+        .from('weekly_menus')
+        .insert({
+          week_start_date: newWeekStart,
+          created_by: user?.id
+        })
+        .select()
+        .single();
+
+      if (createError || !newMenu) {
+        console.error('Error creating new menu:', createError);
+        return;
+      }
+
+      // Copy menu items
+      const itemsToCopy = oldMenu.menu_items.map((item: any) => ({
+        menu_id: newMenu.id,
+        dish_id: item.dish_id,
+        day_of_week: item.day_of_week,
+        meal_type: item.meal_type
+      }));
+
+      const { error: copyError } = await supabase
+        .from('menu_items')
+        .insert(itemsToCopy);
+
+      if (copyError) {
+        console.error('Error copying menu items:', copyError);
+      }
+    } catch (err) {
+      console.error('Error copying previous week:', err);
+    }
+  };
+
+  const saveMenuData = async () => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Save each week's menu
+      for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
+        const weekStart = format(weeks[weekIndex], 'yyyy-MM-dd');
+
+        // Get or create weekly menu
+        let { data: weeklyMenu, error: menuError } = await supabase
+          .from('weekly_menus')
+          .select('*')
+          .eq('week_start_date', weekStart)
+          .single();
+
+        if (!weeklyMenu) {
+          const { data: newMenu, error: createError } = await supabase
+            .from('weekly_menus')
+            .insert({
+              week_start_date: weekStart,
+              created_by: user?.id
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating menu:', createError);
+            continue;
+          }
+          weeklyMenu = newMenu;
+        }
+
+        // Delete existing menu items for this week
+        await supabase
+          .from('menu_items')
+          .delete()
+          .eq('menu_id', weeklyMenu.id);
+
+        // Insert new menu items
+        const itemsToInsert = [];
+
+        for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+          const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
+          const dayData = menuData[dateKey];
+
+          if (dayData) {
+            if (dayData.soup) {
+              itemsToInsert.push({
+                menu_id: weeklyMenu.id,
+                dish_id: dayData.soup,
+                day_of_week: dayIndex,
+                meal_type: 'soup'
+              });
+            }
+            if (dayData.hot_meat) {
+              itemsToInsert.push({
+                menu_id: weeklyMenu.id,
+                dish_id: dayData.hot_meat,
+                day_of_week: dayIndex,
+                meal_type: 'hot_meat'
+              });
+            }
+            if (dayData.hot_veg) {
+              itemsToInsert.push({
+                menu_id: weeklyMenu.id,
+                dish_id: dayData.hot_veg,
+                day_of_week: dayIndex,
+                meal_type: 'hot_veg'
+              });
+            }
+          }
+        }
+
+        if (itemsToInsert.length > 0) {
+          const { error: insertError } = await supabase
+            .from('menu_items')
+            .insert(itemsToInsert);
+
+          if (insertError) {
+            console.error('Error inserting menu items:', insertError);
+          }
+        }
+      }
+
+      setMessage({ type: 'success', text: 'Menu saved successfully!' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Error saving menu:', err);
+      setMessage({ type: 'error', text: 'Failed to save menu. Please try again.' });
+      setTimeout(() => setMessage(null), 5000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const filteredDishes = dishes.filter(dish => {
     const matchesSearch = dish.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || dish.category === selectedCategory;
@@ -80,7 +296,7 @@ export default function AdminMenusPage() {
     e.dataTransfer.setData('dishId', dishId);
   };
 
-  const handleDrop = (e: React.DragEvent, weekIndex: number, dayIndex: number, slot: string) => {
+  const handleDrop = async (e: React.DragEvent, weekIndex: number, dayIndex: number, slot: string) => {
     e.preventDefault();
     const dishId = e.dataTransfer.getData('dishId');
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
@@ -92,6 +308,9 @@ export default function AdminMenusPage() {
         [slot]: dishId
       }
     }));
+
+    // Auto-save after a short delay
+    setTimeout(() => saveMenuData(), 500);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -103,7 +322,7 @@ export default function AdminMenusPage() {
     return dishes.find(d => d.id === dishId);
   };
 
-  const clearSlot = (weekIndex: number, dayIndex: number, slot: string) => {
+  const clearSlot = async (weekIndex: number, dayIndex: number, slot: string) => {
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
     setMenuData(prev => ({
       ...prev,
@@ -112,6 +331,9 @@ export default function AdminMenusPage() {
         [slot]: null
       }
     }));
+
+    // Auto-save after a short delay
+    setTimeout(() => saveMenuData(), 500);
   };
 
   if (loading) {
@@ -328,13 +550,20 @@ export default function AdminMenusPage() {
               </div>
             ))}
 
-            {/* Save Button */}
-            <div className="flex justify-end">
+            {/* Auto-save status */}
+            <div className="flex justify-end items-center gap-3">
+              {saving && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                  <span className="text-sm">Saving...</span>
+                </div>
+              )}
               <button
-                onClick={() => setMessage({ type: 'success', text: 'Menu saved! (Save functionality coming next)' })}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-lg"
+                onClick={saveMenuData}
+                disabled={saving}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-lg disabled:opacity-50"
               >
-                Save 4-Week Menu
+                {saving ? 'Saving...' : 'Save 4-Week Menu'}
               </button>
             </div>
           </div>
