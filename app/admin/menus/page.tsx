@@ -510,7 +510,7 @@ export default function AdminMenusPage() {
                                 {dish ? (
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
-                                    draggable
+                                    draggable="true"
                                     onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'soup' })}
                                   >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
@@ -549,7 +549,7 @@ export default function AdminMenusPage() {
                                 {dish ? (
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
-                                    draggable
+                                    draggable="true"
                                     onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_meat' })}
                                   >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
@@ -588,7 +588,7 @@ export default function AdminMenusPage() {
                                 {dish ? (
                                   <div
                                     className="relative group cursor-move bg-white border border-gray-200 rounded p-1"
-                                    draggable
+                                    draggable="true"
                                     onDragStart={(e) => handleDragStart(e, dish.id, { weekIndex, dayIndex, slot: 'hot_veg' })}
                                   >
                                     <div className="text-xs font-medium text-gray-900">{dish.name}</div>
