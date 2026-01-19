@@ -217,7 +217,7 @@ export default function AdminDishesPage() {
           </div>
         )}
 
-        {/* Search Bar */}
+        {/* Search Bar and Add Button */}
         <div className="mb-8 flex gap-4">
           <input
             type="text"
@@ -233,54 +233,44 @@ export default function AdminDishesPage() {
             }}
             className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
           >
-            + Add Main Dish
-          </button>
-          <button
-            onClick={() => {
-              setEditingDish(null);
-              setShowComponentForm(true);
-            }}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          >
-            + Add Component
+            + Add New
           </button>
         </div>
 
         {/* Main Categories Section */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Main Dishes</h2>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {mainCategories.map(category => {
               const dishes = getFilteredMainDishes(category.key);
-              if (dishes.length === 0 && searchTerm === '') return null;
 
               return (
                 <div key={category.key} className="bg-white rounded-lg shadow">
-                  <div className="px-6 py-4 border-b bg-indigo-600">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <div className="px-4 py-3 border-b bg-indigo-50">
+                    <h3 className="text-base font-semibold text-indigo-900 flex items-center gap-2">
                       <span>{category.icon}</span>
                       <span>{category.label}</span>
-                      <span className="text-sm opacity-75">({mainDishes.filter(d => d.category === category.key).length})</span>
+                      <span className="text-sm text-indigo-600">({mainDishes.filter(d => d.category === category.key).length})</span>
                     </h3>
                   </div>
-                  <div className="p-6">
+                  <div className="p-4">
                     {dishes.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">No dishes found</p>
+                      <p className="text-gray-400 text-sm py-2">No dishes found</p>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="space-y-1">
                         {dishes.map(dish => (
-                          <div key={dish.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <h4 className="font-semibold text-gray-900 mb-3">{dish.name}</h4>
+                          <div key={dish.id} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded">
+                            <span className="text-gray-900">{dish.name}</span>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleEditMainDish(dish)}
-                                className="flex-1 px-3 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                className="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteDish(dish.id)}
-                                className="px-3 py-2 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50"
+                                className="px-3 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
                               >
                                 Delete
                               </button>
@@ -299,38 +289,37 @@ export default function AdminDishesPage() {
         {/* Subcategories Section */}
         <div>
           <h2 className="text-2xl font-bold mb-6">Component Library</h2>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {subcategories.map(subcategory => {
               const dishes = getFilteredComponentDishes(subcategory.key);
-              if (dishes.length === 0 && searchTerm === '') return null;
 
               return (
                 <div key={subcategory.key} className="bg-white rounded-lg shadow">
-                  <div className="px-6 py-4 border-b bg-green-600">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <div className="px-4 py-3 border-b bg-green-50">
+                    <h3 className="text-base font-semibold text-green-900 flex items-center gap-2">
                       <span>{subcategory.icon}</span>
                       <span>{subcategory.label}</span>
-                      <span className="text-sm opacity-75">({componentDishes.filter(d => d.subcategory === subcategory.key).length})</span>
+                      <span className="text-sm text-green-600">({componentDishes.filter(d => d.subcategory === subcategory.key).length})</span>
                     </h3>
                   </div>
-                  <div className="p-6">
+                  <div className="p-4">
                     {dishes.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">No components found</p>
+                      <p className="text-gray-400 text-sm py-2">No components found</p>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="space-y-1">
                         {dishes.map(dish => (
-                          <div key={dish.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <h4 className="font-semibold text-gray-900 mb-3">{dish.name}</h4>
+                          <div key={dish.id} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded">
+                            <span className="text-gray-900">{dish.name}</span>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleEditComponent(dish)}
-                                className="flex-1 px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteDish(dish.id)}
-                                className="px-3 py-2 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50"
+                                className="px-3 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
                               >
                                 Delete
                               </button>
