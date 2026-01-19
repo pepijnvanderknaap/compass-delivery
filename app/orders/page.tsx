@@ -153,6 +153,7 @@ export default function OrdersPage() {
     setSaving(true);
     try {
       const portions = editedPortions[orderId];
+      console.log('Saving portions:', portions);
 
       // Update each order item
       for (const [date, categories] of Object.entries(portions)) {
@@ -163,13 +164,20 @@ export default function OrdersPage() {
               item.delivery_date === date && item.dishes.category === category
             );
 
+          console.log(`Looking for: date=${date}, category=${category}, portionCount=${portionCount}`);
+          console.log('Found orderItem:', orderItem);
+
           if (orderItem) {
             const { error } = await supabase
               .from('order_items')
               .update({ portions: portionCount })
               .eq('id', orderItem.id);
 
+            console.log(`Updated order_item ${orderItem.id} with portions=${portionCount}`, error ? `Error: ${error.message}` : 'Success');
+
             if (error) throw error;
+          } else {
+            console.warn(`No order item found for date=${date}, category=${category}`);
           }
         }
       }
