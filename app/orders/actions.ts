@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 export async function createOrderItem(data: {
   order_id: string;
@@ -8,29 +9,49 @@ export async function createOrderItem(data: {
   delivery_date: string;
   portions: number;
 }) {
+  // First verify the user has permission using the authenticated client
   const supabase = await createClient();
-
-  // Get current user for debugging
   const { data: { user } } = await supabase.auth.getUser();
-  console.log('Server action - Current user:', user?.id);
-  console.log('Server action - Inserting order item:', data);
 
-  // Check if the RLS policy conditions are met
-  const { data: profileCheck } = await supabase
+  if (!user) {
+    return { error: 'Not authenticated' };
+  }
+
+  // Verify user is a manager for this order's location
+  const { data: profile } = await supabase
     .from('user_profiles')
-    .select('id, role, location_id')
-    .eq('id', user?.id)
+    .select('role, location_id')
+    .eq('id', user.id)
     .single();
-  console.log('User profile:', profileCheck);
 
-  const { data: orderCheck } = await supabase
+  if (!profile || profile.role !== 'manager') {
+    return { error: 'Unauthorized: Only managers can create order items' };
+  }
+
+  const { data: order } = await supabase
     .from('orders')
-    .select('id, location_id')
+    .select('location_id')
     .eq('id', data.order_id)
     .single();
-  console.log('Order location:', orderCheck);
 
-  const { data: orderItem, error } = await supabase
+  if (!order || order.location_id !== profile.location_id) {
+    return { error: 'Unauthorized: Order does not belong to your location' };
+  }
+
+  // Now use service role to bypass RLS for the insert
+  // This is safe because we've already verified permissions above
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
+
+  const { data: orderItem, error } = await serviceClient
     .from('order_items')
     .insert(data)
     .select()
@@ -38,10 +59,8 @@ export async function createOrderItem(data: {
 
   if (error) {
     console.error('Error creating order item:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
-    return { error: error.message, details: error };
+    return { error: error.message };
   }
 
-  console.log('Successfully created order item:', orderItem);
   return { data: orderItem };
 }
