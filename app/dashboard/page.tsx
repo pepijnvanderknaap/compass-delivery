@@ -48,7 +48,7 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <main className="flex-1 max-w-6xl mx-auto px-8 py-16 w-full">
+      <main className="flex-1 max-w-6xl mx-auto px-8 pt-32 pb-16 w-full">
         <div className="mb-16 text-center">
           <h2 className="text-5xl font-bold text-black mb-3 tracking-tight">
             Welcome to Compass Delivery
