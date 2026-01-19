@@ -41,6 +41,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
   });
 
   const [availableComponents, setAvailableComponents] = useState<Dish[]>([]);
+  const [componentSearchTerms, setComponentSearchTerms] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -151,7 +152,25 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
   };
 
   const getComponentsByType = (type: DishSubcategory) => {
-    return availableComponents.filter(c => c.subcategory === type);
+    let filtered = availableComponents.filter(c => c.subcategory === type);
+    const searchTerm = componentSearchTerms[type] || '';
+    if (searchTerm) {
+      filtered = filtered.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return filtered.slice(0, 10);
+  };
+
+  const getVisibleSubcategories = () => {
+    if (formData.category === 'soup') {
+      return [{ key: 'topping' as DishSubcategory, label: 'Toppings', icon: '🌿' }];
+    }
+    // For all hot dishes (meat, fish, veg)
+    return [
+      { key: 'carb' as DishSubcategory, label: 'Carbs', icon: '🍚' },
+      { key: 'warm_veggie' as DishSubcategory, label: 'Warm Veggies', icon: '🥕' },
+      { key: 'salad' as DishSubcategory, label: 'Salads', icon: '🥗' },
+      { key: 'condiment' as DishSubcategory, label: 'Condiments', icon: '🧂' },
+    ];
   };
 
   const toggleComponent = (type: DishSubcategory, id: string) => {
@@ -163,13 +182,6 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     }));
   };
 
-  const subcategoryConfig = [
-    { key: 'topping' as DishSubcategory, label: 'Toppings', icon: '🌿' },
-    { key: 'carb' as DishSubcategory, label: 'Carbs', icon: '🍚' },
-    { key: 'warm_veggie' as DishSubcategory, label: 'Warm Veggies', icon: '🥕' },
-    { key: 'salad' as DishSubcategory, label: 'Salads', icon: '🥗' },
-    { key: 'condiment' as DishSubcategory, label: 'Condiments', icon: '🧂' },
-  ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -226,27 +238,49 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             {/* Components Selection */}
             <div>
               <h3 className="font-semibold mb-3">Linked Components</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                {formData.category === 'soup'
+                  ? 'Select toppings for this soup'
+                  : 'Select components for this hot dish'}
+              </p>
               <div className="space-y-4">
-                {subcategoryConfig.map(subcat => {
+                {getVisibleSubcategories().map(subcat => {
+                  const allComponents = availableComponents.filter(c => c.subcategory === subcat.key);
                   const components = getComponentsByType(subcat.key);
-                  if (components.length === 0) return null;
+                  const totalCount = allComponents.length;
 
                   return (
                     <div key={subcat.key} className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-2">{subcat.icon} {subcat.label}</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {components.map(component => (
-                          <label key={component.id} className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedComponents[subcat.key].includes(component.id)}
-                              onChange={() => toggleComponent(subcat.key, component.id)}
-                              className="rounded"
-                            />
-                            <span className="text-sm">{component.name}</span>
-                          </label>
-                        ))}
-                      </div>
+                      <h4 className="font-medium mb-2">
+                        {subcat.icon} {subcat.label}
+                        <span className="text-sm text-gray-500 ml-2">
+                          (Showing {components.length} of {totalCount})
+                        </span>
+                      </h4>
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={componentSearchTerms[subcat.key] || ''}
+                        onChange={(e) => setComponentSearchTerms({ ...componentSearchTerms, [subcat.key]: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500"
+                      />
+                      {components.length === 0 ? (
+                        <p className="text-gray-400 text-sm text-center py-2">No components found</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          {components.map(component => (
+                            <label key={component.id} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedComponents[subcat.key].includes(component.id)}
+                                onChange={() => toggleComponent(subcat.key, component.id)}
+                                className="rounded"
+                              />
+                              <span className="text-sm">{component.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
