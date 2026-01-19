@@ -113,21 +113,24 @@ function DashboardContent() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-end gap-8">
-              <Image src="/compass-logo.svg" alt="Compass Group" width={600} height={600} className="h-64 w-auto" priority />
-              <div className="border-l-2 border-gray-300 pl-8 pb-20">
-                <h1 className="text-xl font-semibold text-gray-900">Kitchen Orders</h1>
+              <Image src="/compass-logo.svg" alt="Compass Group" width={120} height={120} className="h-16 w-auto" priority />
+              <div className="border-l-2 border-gray-300 pl-8 pb-1">
+                <h1 className="text-xl font-semibold text-gray-900">Delivery</h1>
                 <p className="text-sm text-gray-600">
-                  {profile.full_name} · {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+                  {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
                   {profile.location_id && ` · ${(profile.locations as any)?.name || ''}`}
                 </p>
               </div>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="px-6 py-2 text-sm font-medium bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors"
-            >
-              Sign Out
-            </button>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-700">{profile.full_name}</span>
+              <button
+                onClick={handleSignOut}
+                className="px-6 py-2 text-sm font-medium bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </nav>
