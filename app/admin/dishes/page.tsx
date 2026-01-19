@@ -177,7 +177,8 @@ export default function AdminDishesPage() {
     if (searchKey) {
       filtered = filtered.filter(d => d.name.toLowerCase().includes(searchKey.toLowerCase()));
     }
-    return filtered.slice(0, 10);
+    // Show last 5 most recently added (sorted by created_at DESC already)
+    return filtered.slice(0, 5);
   };
 
   const getFilteredComponentDishes = (subcategoryKey: string) => {
@@ -186,7 +187,8 @@ export default function AdminDishesPage() {
     if (searchKey) {
       filtered = filtered.filter(d => d.name.toLowerCase().includes(searchKey.toLowerCase()));
     }
-    return filtered.slice(0, 10);
+    // Show last 5 most recently added (sorted by created_at DESC already)
+    return filtered.slice(0, 5);
   };
 
   if (loading) {
