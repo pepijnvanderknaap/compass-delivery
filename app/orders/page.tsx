@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { format, addDays, startOfWeek } from 'date-fns';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
+import HoverNumberInput from '@/components/HoverNumberInput';
 
 interface OrderWithItems {
   id: string;
@@ -380,13 +381,12 @@ export default function OrdersPage() {
                               .map(([date, items]) => (
                                 <td key={date} className="px-4 py-3 text-center">
                                   {isEditing ? (
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={items[key] || 0}
-                                      onChange={(e) => handlePortionChange(order.id, date, key, e.target.value)}
-                                      className="w-20 px-3 py-1.5 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                                    />
+                                    <div className="flex justify-center">
+                                      <HoverNumberInput
+                                        value={items[key] || 0}
+                                        onChange={(newValue) => handlePortionChange(order.id, date, key, String(newValue))}
+                                      />
+                                    </div>
                                   ) : (
                                     <span className="text-sm text-black/60">{items[key] || 0}</span>
                                   )}
