@@ -47,21 +47,8 @@ function DashboardContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-end gap-8">
-              <Image src="/compass-logo.svg" alt="Compass Group" width={120} height={120} className="h-16 w-auto" priority />
-              <div className="border-l-2 border-gray-300 pl-8 pb-1">
-                <h1 className="text-xl font-semibold text-gray-900">Delivery</h1>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto px-8 py-16">
+    <div className="min-h-screen bg-white flex flex-col">
+      <main className="flex-1 max-w-6xl mx-auto px-8 py-16 w-full">
         <div className="mb-16 text-center">
           <h2 className="text-5xl font-bold text-black mb-3 tracking-tight">
             Welcome to Compass Delivery
@@ -102,6 +89,24 @@ function DashboardContent() {
           ))}
         </div>
       </main>
+
+      <footer className="border-t border-gray-200 py-8">
+        <div className="max-w-6xl mx-auto px-8">
+          <div className="flex items-center justify-center gap-6">
+            <p className="text-lg text-gray-700">
+              Compass Delivery, proudly presented by:
+            </p>
+            <Image
+              src="/compass-logo.svg"
+              alt="Compass Group"
+              width={240}
+              height={240}
+              className="h-32 w-auto"
+              priority
+            />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
