@@ -93,16 +93,30 @@ export default function OrdersPage() {
     fetchData();
   }, [supabase, router]);
 
+  // Location-based presets
+  const locationPresets: Record<string, number> = {
+    'Snapchat 119': 75,
+    'Snapchat 165': 25,
+    'Symphony': 80,
+    'Atlassian': 100,
+    'Snowflake': 55,
+    'JAA Training': 30
+  };
+
   const handleEdit = (orderId: string, order: OrderWithItems) => {
     setEditingOrder(orderId);
 
     // Initialize edited portions from current order
     const portions: Record<string, Record<string, number>> = {};
+    const locationName = (profile?.locations as any)?.name || '';
+    const preset = locationPresets[locationName] || 0;
+
     order.order_items.forEach((item) => {
       if (!portions[item.delivery_date]) {
         portions[item.delivery_date] = {};
       }
-      portions[item.delivery_date][item.dishes.category] = item.portions;
+      // Use preset if current value is 0, otherwise use existing value
+      portions[item.delivery_date][item.dishes.category] = item.portions === 0 ? preset : item.portions;
     });
 
     setEditedPortions({ ...editedPortions, [orderId]: portions });
@@ -192,10 +206,10 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Colored header banner */}
-      <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-8">
+      <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <h1 className="text-4xl font-bold text-white tracking-tight">
-            ORDERS {profile?.locations ? `- ${(profile.locations as any).name}` : ''}
+          <h1 className="text-5xl font-light text-white tracking-[0.3em] uppercase">
+            DELIVERY
           </h1>
         </div>
       </div>
@@ -204,8 +218,8 @@ export default function OrdersPage() {
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="text-3xl font-bold text-gray-900 tracking-tight">
-              Delivery
+            <div className="text-2xl font-semibold text-gray-700">
+              Orders {profile?.locations ? `· ${(profile.locations as any).name}` : ''}
             </div>
             <button
               onClick={() => router.push('/location-management')}
@@ -352,7 +366,7 @@ export default function OrdersPage() {
                                       min="0"
                                       value={items[key] || 0}
                                       onChange={(e) => handlePortionChange(order.id, date, key, e.target.value)}
-                                      className="w-20 px-3 py-1.5 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                      className="w-20 px-3 py-1.5 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
                                     />
                                   ) : (
                                     <span className="text-sm text-black/60">{items[key] || 0}</span>
