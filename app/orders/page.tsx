@@ -155,7 +155,22 @@ export default function OrdersPage() {
     try {
       const portions = editedPortions[orderId];
 
-      // Update each order item
+      // Get all active dishes by category
+      const { data: dishes, error: dishesError } = await supabase
+        .from('dishes')
+        .select('id, category')
+        .eq('is_active', true);
+
+      if (dishesError) throw dishesError;
+
+      const dishByCategory: Record<string, string> = {};
+      dishes?.forEach(dish => {
+        if (!dishByCategory[dish.category]) {
+          dishByCategory[dish.category] = dish.id;
+        }
+      });
+
+      // Update or create each order item
       for (const [date, categories] of Object.entries(portions)) {
         for (const [category, portionCount] of Object.entries(categories)) {
           const orderItem = orders
@@ -165,10 +180,23 @@ export default function OrdersPage() {
             );
 
           if (orderItem) {
+            // Update existing order item
             const { error } = await supabase
               .from('order_items')
               .update({ portions: portionCount })
               .eq('id', orderItem.id);
+
+            if (error) throw error;
+          } else if (dishByCategory[category]) {
+            // Create missing order item
+            const { error } = await supabase
+              .from('order_items')
+              .insert({
+                order_id: orderId,
+                dish_id: dishByCategory[category],
+                delivery_date: date,
+                portions: portionCount
+              });
 
             if (error) throw error;
           }
