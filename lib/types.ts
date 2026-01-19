@@ -39,6 +39,25 @@ export interface Dish {
   updated_at: string;
 }
 
+export interface DishComponent {
+  id: string;
+  main_dish_id: string;
+  component_dish_id: string;
+  component_type: DishSubcategory;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DishWithComponents extends Dish {
+  components?: {
+    topping?: Dish[];
+    carb?: Dish[];
+    warm_veggie?: Dish[];
+    salad?: Dish[];
+    condiment?: Dish[];
+  };
+}
+
 export interface LocationDishPricing {
   id: string;
   location_id: string;
