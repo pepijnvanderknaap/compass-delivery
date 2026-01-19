@@ -24,7 +24,7 @@ export async function createOrderItem(data: {
     .eq('id', user.id)
     .single();
 
-  if (!profile || profile.role !== 'manager') {
+  if (!profile || (profile.role !== 'manager' && profile.role !== 'admin')) {
     return { error: 'Unauthorized: Only managers can create order items' };
   }
 
