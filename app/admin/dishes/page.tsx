@@ -126,13 +126,13 @@ export default function AdminDishesPage() {
 
     if (components) {
       components.forEach((comp: any) => {
-        const componentType = comp.component_type;
-        const componentDish = comp.component_dish;
+        const componentType = comp.component_type as 'topping' | 'carb' | 'warm_veggie' | 'salad' | 'condiment';
+        const componentDish = comp.component_dish as Dish;
         if (componentDish && dishWithComponents.components) {
-          if (!dishWithComponents.components[componentType]) {
-            dishWithComponents.components[componentType] = [];
+          const arr = dishWithComponents.components[componentType];
+          if (arr) {
+            arr.push(componentDish);
           }
-          dishWithComponents.components[componentType]!.push(componentDish);
         }
       });
     }
