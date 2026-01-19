@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface HoverNumberInputProps {
   value: number;
@@ -18,6 +18,11 @@ export default function HoverNumberInput({
   className = ''
 }: HoverNumberInputProps) {
   const [inputValue, setInputValue] = useState(String(value));
+
+  // Sync inputValue with value prop when it changes
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
 
   const handleIncrement = () => {
     const newValue = Math.min(max, value + 1);
