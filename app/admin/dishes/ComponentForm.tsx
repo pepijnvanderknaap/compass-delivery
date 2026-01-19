@@ -75,7 +75,7 @@ export default function ComponentForm({ component, onClose, onSave }: ComponentF
         // Create new component
         const { error } = await supabase
           .from('dishes')
-          .insert([{ ...dataToSave, category: 'off_menu', is_active: true }]);
+          .insert([{ ...dataToSave, category: 'component', is_active: true }]);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Component created!' });
       }

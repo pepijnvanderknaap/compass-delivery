@@ -15,7 +15,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: 'soup' as 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'off_menu',
+    category: 'soup' as 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'component',
     portion_size: '',
     portion_unit: 'milliliters' as 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays',
     allergen_gluten: false,
@@ -230,20 +230,22 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                   <option value="hot_dish_meat">Hot Dish - Meat</option>
                   <option value="hot_dish_fish">Hot Dish - Fish</option>
                   <option value="hot_dish_veg">Hot Dish - Veg</option>
-                  <option value="off_menu">Off Menu</option>
+                  <option value="component">Component</option>
                 </select>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-                className="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
+            {formData.category !== 'component' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            )}
 
             {/* Portion Size */}
             <div>
@@ -281,57 +283,59 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
               </div>
             </div>
 
-            {/* Components Selection */}
-            <div>
-              <h3 className="font-semibold mb-3">Linked Components</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                {formData.category === 'soup'
-                  ? 'Select toppings for this soup'
-                  : 'Select components for this hot dish'}
-              </p>
-              <div className="space-y-4">
-                {getVisibleSubcategories().map(subcat => {
-                  const allComponents = availableComponents.filter(c => c.subcategory === subcat.key);
-                  const components = getComponentsByType(subcat.key);
-                  const totalCount = allComponents.length;
+            {/* Components Selection - Only show for soups and hot dishes */}
+            {formData.category !== 'component' && (
+              <div>
+                <h3 className="font-semibold mb-3">Linked Components</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  {formData.category === 'soup'
+                    ? 'Select toppings for this soup'
+                    : 'Select components for this hot dish'}
+                </p>
+                <div className="space-y-4">
+                  {getVisibleSubcategories().map(subcat => {
+                    const allComponents = availableComponents.filter(c => c.subcategory === subcat.key);
+                    const components = getComponentsByType(subcat.key);
+                    const totalCount = allComponents.length;
 
-                  return (
-                    <div key={subcat.key} className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-2">
-                        {subcat.icon} {subcat.label}
-                        <span className="text-sm text-gray-500 ml-2">
-                          (Showing {components.length} of {totalCount})
-                        </span>
-                      </h4>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={componentSearchTerms[subcat.key] || ''}
-                        onChange={(e) => setComponentSearchTerms({ ...componentSearchTerms, [subcat.key]: e.target.value })}
-                        className="w-full px-3 py-2 text-sm border rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500"
-                      />
-                      {components.length === 0 ? (
-                        <p className="text-gray-400 text-sm text-center py-2">No components found</p>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-2">
-                          {components.map(component => (
-                            <label key={component.id} className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={selectedComponents[subcat.key].includes(component.id)}
-                                onChange={() => toggleComponent(subcat.key, component.id)}
-                                className="rounded"
-                              />
-                              <span className="text-sm">{component.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    return (
+                      <div key={subcat.key} className="border rounded-lg p-4">
+                        <h4 className="font-medium mb-2">
+                          {subcat.icon} {subcat.label}
+                          <span className="text-sm text-gray-500 ml-2">
+                            (Showing {components.length} of {totalCount})
+                          </span>
+                        </h4>
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          value={componentSearchTerms[subcat.key] || ''}
+                          onChange={(e) => setComponentSearchTerms({ ...componentSearchTerms, [subcat.key]: e.target.value })}
+                          className="w-full px-3 py-2 text-sm border rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500"
+                        />
+                        {components.length === 0 ? (
+                          <p className="text-gray-400 text-sm text-center py-2">No components found</p>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-2">
+                            {components.map(component => (
+                              <label key={component.id} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedComponents[subcat.key].includes(component.id)}
+                                  onChange={() => toggleComponent(subcat.key, component.id)}
+                                  className="rounded"
+                                />
+                                <span className="text-sm">{component.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Allergens */}
             <div>
