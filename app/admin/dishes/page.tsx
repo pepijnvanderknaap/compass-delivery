@@ -297,7 +297,7 @@ export default function AdminDishesPage() {
         {/* Subcategories Section - Grid Layout */}
         <div>
           <h2 className="text-2xl font-bold mb-6">Component Library</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {subcategories.map(subcategory => {
               const dishes = getFilteredComponentDishes(subcategory.key);
               const totalCount = componentDishes.filter(d => d.subcategory === subcategory.key).length;
