@@ -19,7 +19,7 @@ export default function DarkKitchenPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-          router.push('/login');
+          router.push('/login/dark-kitchen');
           return;
         }
 
@@ -47,7 +47,7 @@ export default function DarkKitchenPage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/dashboard');
   };
 
   if (loading) {

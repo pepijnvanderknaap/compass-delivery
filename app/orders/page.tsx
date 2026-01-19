@@ -66,7 +66,7 @@ export default function OrdersPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-          router.push('/login');
+          router.push('/login/location-management');
           return;
         }
 
@@ -76,8 +76,8 @@ export default function OrdersPage() {
           .eq('id', user.id)
           .single();
 
-        if (profileData?.role !== 'manager') {
-          router.push('/dashboard');
+        if (profileData?.role !== 'manager' && profileData?.role !== 'admin') {
+          router.push('/login/location-management');
           return;
         }
 
@@ -204,10 +204,10 @@ export default function OrdersPage() {
               </div>
             </div>
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/location-management')}
               className="px-6 py-2 text-sm font-medium bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors"
             >
-              Back to Dashboard
+              Back
             </button>
           </div>
         </div>

@@ -19,7 +19,7 @@ export default function RegionalManagementPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-          router.push('/login');
+          router.push('/login/regional-management');
           return;
         }
 
@@ -47,7 +47,7 @@ export default function RegionalManagementPage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/dashboard');
   };
 
   if (loading) {
