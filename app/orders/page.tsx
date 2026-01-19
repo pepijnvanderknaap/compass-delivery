@@ -7,7 +7,7 @@ import { format, addDays, startOfWeek } from 'date-fns';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 import HoverNumberInput from '@/components/HoverNumberInput';
-import { createOrderItem, createOrderItemsBatch } from './actions';
+import { createOrderItem, createOrderItemsBatch, updateOrderItem } from './actions';
 
 interface OrderWithItems {
   id: string;
@@ -185,14 +185,18 @@ export default function OrdersPage() {
             );
 
           if (orderItem) {
-            // Update existing order item
+            // Update existing order item using server action to avoid RLS issues
             console.log(`Updating ${category} for ${date}: ${orderItem.portions} -> ${portionCount}`);
-            const { error } = await supabase
-              .from('order_items')
-              .update({ portions: portionCount })
-              .eq('id', orderItem.id);
+            const result = await updateOrderItem({
+              id: orderItem.id,
+              portions: portionCount
+            });
 
-            if (error) throw error;
+            if (result.error) {
+              console.error('Update error:', result.error);
+              throw new Error(result.error);
+            }
+            console.log('Updated item:', result.data);
             updatedCount++;
           } else if (dishByCategory[category]) {
             // Create missing order item using server action to avoid RLS issues
