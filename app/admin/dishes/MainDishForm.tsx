@@ -15,7 +15,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: 'soup' as 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'component',
+    category: 'soup' as 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'component' | 'off_menu',
     portion_size: '',
     portion_unit: 'milliliters' as 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays',
     allergen_gluten: false,
