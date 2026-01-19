@@ -13,6 +13,7 @@ export default function AdminDishesPage() {
   const [componentDishes, setComponentDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categorySearchTerms, setCategorySearchTerms] = useState<Record<string, string>>({});
   const [editingDish, setEditingDish] = useState<DishWithComponents | null>(null);
   const [showMainDishForm, setShowMainDishForm] = useState(false);
   const [showComponentForm, setShowComponentForm] = useState(false);
@@ -23,6 +24,7 @@ export default function AdminDishesPage() {
   const mainCategories = [
     { key: 'soup', label: 'Soups', icon: '🍲' },
     { key: 'hot_dish_meat', label: 'Hot Dish - Meat', icon: '🥩' },
+    { key: 'hot_dish_fish', label: 'Hot Dish - Fish', icon: '🐟' },
     { key: 'hot_dish_veg', label: 'Hot Dish - Veg', icon: '🌱' },
     { key: 'off_menu', label: 'Off Menu / Bespoke', icon: '✨' },
   ];
@@ -171,16 +173,18 @@ export default function AdminDishesPage() {
 
   const getFilteredMainDishes = (categoryKey: string) => {
     let filtered = mainDishes.filter(d => d.category === categoryKey);
-    if (searchTerm) {
-      filtered = filtered.filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const searchKey = categorySearchTerms[categoryKey] || '';
+    if (searchKey) {
+      filtered = filtered.filter(d => d.name.toLowerCase().includes(searchKey.toLowerCase()));
     }
     return filtered.slice(0, 10);
   };
 
   const getFilteredComponentDishes = (subcategoryKey: string) => {
     let filtered = componentDishes.filter(d => d.subcategory === subcategoryKey);
-    if (searchTerm) {
-      filtered = filtered.filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const searchKey = categorySearchTerms[subcategoryKey] || '';
+    if (searchKey) {
+      filtered = filtered.filter(d => d.name.toLowerCase().includes(searchKey.toLowerCase()));
     }
     return filtered.slice(0, 10);
   };
@@ -217,15 +221,8 @@ export default function AdminDishesPage() {
           </div>
         )}
 
-        {/* Search Bar and Add Button */}
-        <div className="mb-8 flex gap-4">
-          <input
-            type="text"
-            placeholder="Search dishes by name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-          />
+        {/* Add Button */}
+        <div className="mb-8 flex justify-end">
           <button
             onClick={() => {
               setEditingDish(null);
@@ -237,12 +234,13 @@ export default function AdminDishesPage() {
           </button>
         </div>
 
-        {/* Main Categories Section */}
+        {/* Main Categories Section - Grid Layout */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Main Dishes</h2>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {mainCategories.map(category => {
               const dishes = getFilteredMainDishes(category.key);
+              const totalCount = mainDishes.filter(d => d.category === category.key).length;
 
               return (
                 <div key={category.key} className="bg-white rounded-lg shadow">
@@ -250,29 +248,37 @@ export default function AdminDishesPage() {
                     <h3 className="text-base font-semibold text-indigo-900 flex items-center gap-2">
                       <span>{category.icon}</span>
                       <span>{category.label}</span>
-                      <span className="text-sm text-indigo-600">({mainDishes.filter(d => d.category === category.key).length})</span>
+                      <span className="text-sm text-indigo-600">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="p-4">
+                  <div className="p-3">
+                    {/* Individual search bar */}
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={categorySearchTerms[category.key] || ''}
+                      onChange={(e) => setCategorySearchTerms({ ...categorySearchTerms, [category.key]: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500"
+                    />
                     {dishes.length === 0 ? (
-                      <p className="text-gray-400 text-sm py-2">No dishes found</p>
+                      <p className="text-gray-400 text-sm py-2 text-center">No dishes found</p>
                     ) : (
                       <div className="space-y-1">
                         {dishes.map(dish => (
-                          <div key={dish.id} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded">
-                            <span className="text-gray-900">{dish.name}</span>
-                            <div className="flex gap-2">
+                          <div key={dish.id} className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded text-sm">
+                            <span className="text-gray-900 truncate flex-1">{dish.name}</span>
+                            <div className="flex gap-1 ml-2">
                               <button
                                 onClick={() => handleEditMainDish(dish)}
-                                className="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteDish(dish.id)}
-                                className="px-3 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
+                                className="px-2 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
                               >
-                                Delete
+                                Del
                               </button>
                             </div>
                           </div>
@@ -286,12 +292,13 @@ export default function AdminDishesPage() {
           </div>
         </div>
 
-        {/* Subcategories Section */}
+        {/* Subcategories Section - Grid Layout */}
         <div>
           <h2 className="text-2xl font-bold mb-6">Component Library</h2>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {subcategories.map(subcategory => {
               const dishes = getFilteredComponentDishes(subcategory.key);
+              const totalCount = componentDishes.filter(d => d.subcategory === subcategory.key).length;
 
               return (
                 <div key={subcategory.key} className="bg-white rounded-lg shadow">
@@ -299,29 +306,37 @@ export default function AdminDishesPage() {
                     <h3 className="text-base font-semibold text-green-900 flex items-center gap-2">
                       <span>{subcategory.icon}</span>
                       <span>{subcategory.label}</span>
-                      <span className="text-sm text-green-600">({componentDishes.filter(d => d.subcategory === subcategory.key).length})</span>
+                      <span className="text-sm text-green-600">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="p-4">
+                  <div className="p-3">
+                    {/* Individual search bar */}
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={categorySearchTerms[subcategory.key] || ''}
+                      onChange={(e) => setCategorySearchTerms({ ...categorySearchTerms, [subcategory.key]: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-green-500"
+                    />
                     {dishes.length === 0 ? (
-                      <p className="text-gray-400 text-sm py-2">No components found</p>
+                      <p className="text-gray-400 text-sm py-2 text-center">No components found</p>
                     ) : (
                       <div className="space-y-1">
                         {dishes.map(dish => (
-                          <div key={dish.id} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded">
-                            <span className="text-gray-900">{dish.name}</span>
-                            <div className="flex gap-2">
+                          <div key={dish.id} className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded text-sm">
+                            <span className="text-gray-900 truncate flex-1">{dish.name}</span>
+                            <div className="flex gap-1 ml-2">
                               <button
                                 onClick={() => handleEditComponent(dish)}
-                                className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteDish(dish.id)}
-                                className="px-3 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
+                                className="px-2 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
                               >
-                                Delete
+                                Del
                               </button>
                             </div>
                           </div>
