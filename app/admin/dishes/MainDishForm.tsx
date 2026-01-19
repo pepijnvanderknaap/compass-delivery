@@ -16,6 +16,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     name: '',
     description: '',
     category: 'soup' as 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'component' | 'off_menu',
+    subcategory: null as DishSubcategory | null,
     portion_size: '',
     portion_unit: 'milliliters' as 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays',
     allergen_gluten: false,
@@ -54,6 +55,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
         name: dish.name,
         description: dish.description || '',
         category: dish.category,
+        subcategory: dish.subcategory || null,
         portion_size: dish.portion_size ? String(dish.portion_size) : '',
         portion_unit: (dish.portion_unit || 'milliliters') as any,
         allergen_gluten: dish.allergen_gluten || false,
@@ -208,29 +210,49 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium mb-2">Dish Name *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Dish Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Category *</label>
+                <label className="block text-sm font-medium mb-2">Dish Category</label>
                 <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                  value={formData.category === 'component' ? '' : formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value as any, subcategory: null })}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
+                  <option value="">-- Select if Main Dish --</option>
                   <option value="soup">Soup</option>
                   <option value="hot_dish_meat">Hot Dish - Meat</option>
                   <option value="hot_dish_fish">Hot Dish - Fish</option>
                   <option value="hot_dish_veg">Hot Dish - Veg</option>
-                  <option value="component">Component</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Component Type</label>
+                <select
+                  value={formData.subcategory || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    category: e.target.value ? 'component' : formData.category,
+                    subcategory: e.target.value as DishSubcategory || null
+                  })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="">-- Select if Component --</option>
+                  <option value="topping">Soup Topping</option>
+                  <option value="carb">Carb</option>
+                  <option value="warm_veggie">Warm Veggie</option>
+                  <option value="salad">Salad</option>
+                  <option value="condiment">Condiment</option>
                 </select>
               </div>
             </div>
