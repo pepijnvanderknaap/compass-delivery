@@ -7,6 +7,7 @@ import { format, addDays, startOfWeek } from 'date-fns';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 import HoverNumberInput from '@/components/HoverNumberInput';
+import { createOrderItem } from './actions';
 
 interface OrderWithItems {
   id: string;
@@ -194,18 +195,20 @@ export default function OrdersPage() {
             if (error) throw error;
             updatedCount++;
           } else if (dishByCategory[category]) {
-            // Create missing order item
+            // Create missing order item using server action to avoid RLS issues
             console.log(`Creating ${category} for ${date}: ${portionCount} portions`);
-            const { error } = await supabase
-              .from('order_items')
-              .insert({
-                order_id: orderId,
-                dish_id: dishByCategory[category],
-                delivery_date: date,
-                portions: portionCount
-              });
+            const result = await createOrderItem({
+              order_id: orderId,
+              dish_id: dishByCategory[category],
+              delivery_date: date,
+              portions: portionCount
+            });
 
-            if (error) throw error;
+            if (result.error) {
+              console.error('Insert error:', result.error);
+              throw new Error(result.error);
+            }
+            console.log('Created item:', result.data);
             createdCount++;
           }
         }
