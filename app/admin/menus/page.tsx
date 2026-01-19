@@ -67,6 +67,7 @@ export default function AdminMenusPage() {
       .select('*')
       .eq('is_active', true)
       .neq('category', 'salad_bar')
+      .neq('category', 'component')
       .order('name');
 
     if (error) {
