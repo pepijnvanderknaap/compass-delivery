@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { format, addDays } from 'date-fns';
+import { format, addDays, startOfWeek } from 'date-fns';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 
@@ -284,14 +284,20 @@ export default function OrdersPage() {
               const currentPortions = isEditing ? editedPortions[order.id] : groupedItems;
               const hasOffMenuItems = Object.keys(offMenuItems).length > 0;
 
+              // Check if this order is for the current week
+              const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+              const orderWeekStart = startOfWeek(new Date(order.week_start_date), { weekStartsOn: 1 });
+              const isCurrentWeek = format(orderWeekStart, 'yyyy-MM-dd') === format(currentWeekStart, 'yyyy-MM-dd');
+
               return (
-                <div key={order.id} className="bg-white border border-black/10 rounded-2xl overflow-hidden">
-                  <div className="bg-black/[0.02] px-6 py-4 border-b border-black/5 flex justify-between items-center">
+                <div key={order.id} className={`bg-white rounded-2xl overflow-hidden ${isCurrentWeek ? 'border-2 border-teal-500 shadow-lg' : 'border border-black/10'}`}>
+                  <div className={`px-6 py-4 border-b flex justify-between items-center ${isCurrentWeek ? 'bg-gradient-to-r from-teal-600 to-teal-700 border-teal-600' : 'bg-black/[0.02] border-black/5'}`}>
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900">
+                      <h2 className={`text-lg font-semibold flex items-center gap-3 ${isCurrentWeek ? 'text-white' : 'text-gray-900'}`}>
+                        {isCurrentWeek && <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">Current Week</span>}
                         {formatWeekRange(order.week_start_date)}
                       </h2>
-                      <p className="text-sm text-gray-600">
+                      <p className={`text-sm ${isCurrentWeek ? 'text-white/80' : 'text-gray-600'}`}>
                         Ordered on {format(new Date(order.created_at), 'MMM d, yyyy')}
                       </p>
                     </div>

@@ -23,6 +23,10 @@ export default function AdminMenusPage() {
   const weeks = Array.from({ length: 4 }, (_, i) => addWeeks(startDate, i));
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
+  // Determine which week is current (this week)
+  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const isCurrentWeek = (weekStart: Date) => format(weekStart, 'yyyy-MM-dd') === format(currentWeekStart, 'yyyy-MM-dd');
+
   useEffect(() => {
     const initializePage = async () => {
       try {
@@ -426,13 +430,13 @@ export default function AdminMenusPage() {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full px-4 py-2.5 border border-black/10 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
             >
-              <option value="all">All Categories</option>
-              <option value="soup">Soup</option>
-              <option value="hot_dish_beef">Hot Dish Meat</option>
-              <option value="hot_dish_chicken">Hot Dish Meat</option>
-              <option value="hot_dish_pork">Hot Dish Meat</option>
-              <option value="hot_dish_fish">Hot Dish Fish</option>
-              <option value="hot_dish_vega">Hot Dish Vegetarian</option>
+              <option value="all">All Dishes</option>
+              <option value="soup">Soups</option>
+              <option value="hot_dish_beef">Hot Dishes</option>
+              <option value="hot_dish_chicken">Hot Dishes</option>
+              <option value="hot_dish_pork">Hot Dishes</option>
+              <option value="hot_dish_fish">Hot Dishes</option>
+              <option value="hot_dish_vega">Hot Dishes</option>
             </select>
 
             {/* Dish list */}
@@ -457,10 +461,13 @@ export default function AdminMenusPage() {
 
           {/* 4-week calendar grid */}
           <div className="col-span-9 space-y-6">
-            {weeks.map((weekStart, weekIndex) => (
-              <div key={weekIndex} className="bg-white rounded-2xl border border-black/10 overflow-hidden">
-                <div className="bg-black/[0.02] px-6 py-4 border-b border-black/5">
-                  <h3 className="text-lg font-semibold text-gray-900">
+            {weeks.map((weekStart, weekIndex) => {
+              const isCurrent = isCurrentWeek(weekStart);
+              return (
+              <div key={weekIndex} className={`bg-white rounded-2xl overflow-hidden ${isCurrent ? 'border-2 border-slate-500 shadow-lg' : 'border border-black/10'}`}>
+                <div className={`px-6 py-4 border-b ${isCurrent ? 'bg-gradient-to-r from-slate-600 to-slate-700 border-slate-600' : 'bg-black/[0.02] border-black/5'}`}>
+                  <h3 className={`text-lg font-semibold flex items-center gap-3 ${isCurrent ? 'text-white' : 'text-gray-900'}`}>
+                    {isCurrent && <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">Current Week</span>}
                     Week {weekIndex + 1}: {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
                   </h3>
                 </div>
@@ -589,7 +596,8 @@ export default function AdminMenusPage() {
                   </table>
                 </div>
               </div>
-            ))}
+            );
+            })}
 
             {/* Auto-save status */}
             <div className="flex justify-end items-center gap-3 mt-6">
