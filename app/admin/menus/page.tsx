@@ -95,7 +95,7 @@ export default function AdminMenusPage() {
 
         // If this is week 4 and it doesn't exist, try to copy from week 1 (4 weeks ago)
         if (!weeklyMenu && weekIndex === 3) {
-          await copyPreviousWeek(weekStart);
+          await copyPreviousWeek();
 
           // Try to fetch again after copying
           const { data: newMenu } = await supabase
