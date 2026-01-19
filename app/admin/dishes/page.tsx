@@ -7,7 +7,7 @@ import type { Dish, UserProfile, DishComponent, DishWithComponents } from '@/lib
 import MainDishForm from './MainDishForm';
 import ComponentForm from './ComponentForm';
 
-// Grid layout with component management
+// Grid layout with component management - v2
 export default function AdminDishesPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [mainDishes, setMainDishes] = useState<Dish[]>([]);
