@@ -280,8 +280,8 @@ export default function NewOrderPage() {
               </div>
             </div>
             <button
-              onClick={() => router.push('/dashboard')}
-              className="px-6 py-2 text-sm font-medium bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors"
+              onClick={() => router.push('/orders')}
+              className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
             >
               Cancel
             </button>
@@ -395,7 +395,7 @@ export default function NewOrderPage() {
                     <button
                       type="button"
                       onClick={addOffMenuItem}
-                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                      className="flex items-center gap-2 text-sm text-teal-600 hover:text-teal-800 transition-colors"
                     >
                       <span className="text-lg">+</span> Add Bespoke Item
                     </button>
@@ -409,7 +409,7 @@ export default function NewOrderPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-8 py-3 bg-[#8B7355] text-white text-sm font-medium rounded-full hover:bg-[#6F5B44] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              className="px-8 py-3 bg-teal-600 text-white text-sm font-medium rounded-full hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               {submitting ? 'Submitting...' : 'Submit Order'}
             </button>

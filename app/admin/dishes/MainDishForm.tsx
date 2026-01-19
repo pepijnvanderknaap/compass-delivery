@@ -325,7 +325,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50"
               >
                 {saving ? 'Saving...' : (dish ? 'Update' : 'Create')}
               </button>

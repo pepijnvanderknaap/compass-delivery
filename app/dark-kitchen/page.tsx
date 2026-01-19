@@ -143,7 +143,7 @@ export default function DarkKitchenPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="text-sm text-slate-600 hover:text-slate-800"
               >
                 ← Back
               </button>

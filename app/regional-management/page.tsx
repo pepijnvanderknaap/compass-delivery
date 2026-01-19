@@ -119,7 +119,7 @@ export default function RegionalManagementPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="text-sm text-blue-700 hover:text-blue-900"
               >
                 ← Back
               </button>

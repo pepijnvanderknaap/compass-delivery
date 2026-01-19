@@ -237,7 +237,7 @@ export default function OrdersPage() {
             <p className="text-gray-600 mb-4">No orders found</p>
             <button
               onClick={() => router.push('/orders/new')}
-              className="px-6 py-2 bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors"
+              className="px-6 py-2 bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
             >
               Create New Order
             </button>
@@ -314,7 +314,7 @@ export default function OrdersPage() {
                           <button
                             onClick={() => handleSave(order.id)}
                             disabled={saving}
-                            className="px-4 py-2 text-sm font-medium bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors disabled:opacity-50"
+                            className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors disabled:opacity-50"
                           >
                             {saving ? 'Saving...' : 'Save'}
                           </button>
@@ -322,7 +322,7 @@ export default function OrdersPage() {
                       ) : (
                         <button
                           onClick={() => handleEdit(order.id, order)}
-                          className="px-4 py-2 text-sm font-medium bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors"
+                          className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
                         >
                           Edit
                         </button>

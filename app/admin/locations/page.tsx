@@ -149,9 +149,9 @@ export default function AdminLocationsPage() {
             <h1 className="text-xl font-bold text-gray-900">Manage Locations</h1>
             <button
               onClick={() => router.push('/dashboard')}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-slate-700 hover:text-slate-900"
             >
-              Back to Dashboard
+              Back
             </button>
           </div>
         </div>
@@ -178,7 +178,7 @@ export default function AdminLocationsPage() {
                 is_active: true,
               });
             }}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+            className="px-6 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 font-medium"
           >
             {showForm ? 'Cancel' : '+ Add New Location'}
           </button>
@@ -273,7 +273,7 @@ export default function AdminLocationsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  className="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800"
                 >
                   {editingId ? 'Update' : 'Create'}
                 </button>
@@ -328,7 +328,7 @@ export default function AdminLocationsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleEdit(location)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4"
+                      className="text-slate-700 hover:text-slate-900 mr-4"
                     >
                       Edit
                     </button>

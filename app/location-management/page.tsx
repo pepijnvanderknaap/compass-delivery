@@ -130,7 +130,7 @@ export default function LocationManagementPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="text-sm text-teal-600 hover:text-teal-800"
               >
                 ← Back
               </button>

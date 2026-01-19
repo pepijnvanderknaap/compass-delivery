@@ -207,10 +207,10 @@ export default function AdminDishesPage() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-bold text-gray-900">Dish Management</h1>
             <button
-              onClick={() => router.push('/dashboard')}
-              className="text-gray-600 hover:text-gray-900"
+              onClick={() => router.push('/dark-kitchen')}
+              className="text-slate-700 hover:text-slate-900"
             >
-              Back to Dashboard
+              Back
             </button>
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function AdminDishesPage() {
               setEditingDish(null);
               setShowMainDishForm(true);
             }}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800"
           >
             + Add New
           </button>
@@ -272,7 +272,7 @@ export default function AdminDishesPage() {
                             <div className="flex gap-0.5 ml-1">
                               <button
                                 onClick={() => handleEditMainDish(dish)}
-                                className="px-1.5 py-0.5 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                className="px-1.5 py-0.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-800"
                               >
                                 Edit
                               </button>
@@ -330,7 +330,7 @@ export default function AdminDishesPage() {
                             <div className="flex gap-0.5 ml-1">
                               <button
                                 onClick={() => handleEditComponent(dish)}
-                                className="px-1.5 py-0.5 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                className="px-1.5 py-0.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-800"
                               >
                                 Edit
                               </button>

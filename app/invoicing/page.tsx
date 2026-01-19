@@ -135,10 +135,10 @@ export default function InvoicingPage() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-bold text-gray-900">Invoicing</h1>
             <button
-              onClick={() => router.push('/dashboard')}
-              className="text-gray-600 hover:text-gray-900"
+              onClick={() => router.push('/regional-management')}
+              className="text-blue-700 hover:text-blue-900"
             >
-              Back to Dashboard
+              Back
             </button>
           </div>
         </div>
@@ -171,7 +171,7 @@ export default function InvoicingPage() {
           <button
             onClick={exportToExcel}
             disabled={orders.length === 0}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Export to Excel
           </button>
