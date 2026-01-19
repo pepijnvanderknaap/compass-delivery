@@ -216,12 +216,17 @@ export default function OrdersPage() {
         }
       }
 
-      // Execute all updates in parallel
+      // Execute all updates in parallel and wait for completion
       if (updates.length > 0) {
+        console.log(`Executing ${updates.length} updates in parallel`);
         const results = await Promise.all(updates);
         for (const result of results) {
-          if (result.error) throw result.error;
+          if (result.error) {
+            console.error('Update error:', result.error);
+            throw result.error;
+          }
         }
+        console.log('All updates completed');
       }
 
       // Batch create all new items
@@ -239,16 +244,14 @@ export default function OrdersPage() {
 
       console.log(`Save complete: ${updatedCount} updated, ${createdCount} created`);
 
-      // Small delay to ensure database changes are committed
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Refresh orders
+      // Refresh orders first, then exit edit mode
       if (profile) {
         console.log('Refreshing orders...');
         await fetchOrders(profile);
         console.log('Orders refreshed');
       }
 
+      // Only exit edit mode after data is refreshed
       setEditingOrder(null);
     } catch (err) {
       console.error('Error saving order:', err);
