@@ -111,12 +111,25 @@ export default function OrdersPage() {
     const locationName = (profile?.locations as any)?.name || '';
     const preset = locationPresets[locationName] || 0;
 
+    // Get all dates for the week and initialize with 0
+    const weekStart = new Date(order.week_start_date);
+    for (let i = 0; i < 5; i++) {
+      const date = addDays(weekStart, i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      portions[dateStr] = {
+        soup: 0,
+        salad_bar: 0,
+        hot_dish_meat: 0,
+        hot_dish_vegetarian: 0
+      };
+    }
+
+    // Fill in actual values from order items
     order.order_items.forEach((item) => {
-      if (!portions[item.delivery_date]) {
-        portions[item.delivery_date] = {};
+      if (portions[item.delivery_date] && item.dishes.category !== 'off_menu') {
+        // Use preset if current value is 0, otherwise use existing value
+        portions[item.delivery_date][item.dishes.category] = item.portions === 0 ? preset : item.portions;
       }
-      // Use preset if current value is 0, otherwise use existing value
-      portions[item.delivery_date][item.dishes.category] = item.portions === 0 ? preset : item.portions;
     });
 
     setEditedPortions({ ...editedPortions, [orderId]: portions });

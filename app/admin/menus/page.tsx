@@ -18,8 +18,8 @@ export default function AdminMenusPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Generate 4 weeks starting from next Monday
-  const startDate = addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1);
+  // Generate 4 weeks starting from current Monday
+  const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weeks = Array.from({ length: 4 }, (_, i) => addWeeks(startDate, i));
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -315,7 +315,9 @@ export default function AdminMenusPage() {
 
   const filteredDishes = dishes.filter(dish => {
     const matchesSearch = dish.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || dish.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' ||
+                           dish.category === selectedCategory ||
+                           (selectedCategory === 'hot_dish' && dish.category.startsWith('hot_dish_'));
     return matchesSearch && matchesCategory;
   });
 
@@ -432,11 +434,7 @@ export default function AdminMenusPage() {
             >
               <option value="all">All Dishes</option>
               <option value="soup">Soups</option>
-              <option value="hot_dish_beef">Hot Dishes</option>
-              <option value="hot_dish_chicken">Hot Dishes</option>
-              <option value="hot_dish_pork">Hot Dishes</option>
-              <option value="hot_dish_fish">Hot Dishes</option>
-              <option value="hot_dish_vega">Hot Dishes</option>
+              <option value="hot_dish">Hot Dishes</option>
             </select>
 
             {/* Dish list */}

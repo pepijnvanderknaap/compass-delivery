@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+/* Force number input spinners to always show */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: inner-spin-button;
+  display: inline-block;
+}
