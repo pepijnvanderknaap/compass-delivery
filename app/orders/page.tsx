@@ -128,8 +128,8 @@ export default function OrdersPage() {
     // Fill in actual values from order items
     order.order_items.forEach((item) => {
       if (portions[item.delivery_date] && item.dishes.category !== 'off_menu') {
-        // Use preset if current value is 0, otherwise use existing value
-        portions[item.delivery_date][item.dishes.category] = item.portions === 0 ? preset : item.portions;
+        // Always use the existing value from the database
+        portions[item.delivery_date][item.dishes.category] = item.portions;
       }
     });
 

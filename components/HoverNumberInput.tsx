@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 interface HoverNumberInputProps {
   value: number;
@@ -17,112 +17,63 @@ export default function HoverNumberInput({
   max = 9999,
   className = ''
 }: HoverNumberInputProps) {
-  const [isHovering, setIsHovering] = useState(false);
-  const [hoverY, setHoverY] = useState(0);
-  const [tempValue, setTempValue] = useState(value);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [inputValue, setInputValue] = useState(String(value));
 
-  useEffect(() => {
-    setTempValue(value);
-  }, [value]);
-
-  const startCounter = (direction: 'up' | 'down', speed: number) => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    intervalRef.current = setInterval(() => {
-      setTempValue(prev => {
-        const step = Math.max(1, Math.floor(speed / 50));
-        const newValue = direction === 'up' ? prev + step : prev - step;
-        return Math.max(min, Math.min(max, newValue));
-      });
-    }, 50);
+  const handleIncrement = () => {
+    const newValue = Math.min(max, value + 1);
+    onChange(newValue);
+    setInputValue(String(newValue));
   };
 
-  const stopCounter = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  const handleDecrement = () => {
+    const newValue = Math.max(min, value - 1);
+    onChange(newValue);
+    setInputValue(String(newValue));
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+
+    const numValue = parseInt(val);
+    if (!isNaN(numValue)) {
+      const boundedValue = Math.max(min, Math.min(max, numValue));
+      onChange(boundedValue);
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const centerY = rect.top + rect.height / 2;
-    const mouseY = e.clientY;
-    const distance = centerY - mouseY; // Positive = above center, Negative = below center
-
-    setHoverY(distance);
-
-    // Only count if mouse is significantly away from center (dead zone in middle)
-    const threshold = 10;
-    if (Math.abs(distance) < threshold) {
-      stopCounter();
-      return;
-    }
-
-    // Calculate speed based on distance from center
-    const speed = Math.abs(distance);
-
-    if (distance > threshold) {
-      // Mouse above center - count up
-      startCounter('up', speed);
-    } else if (distance < -threshold) {
-      // Mouse below center - count down
-      startCounter('down', speed);
-    }
-  };
-
-  const handleMouseEnter = () => {
-    setIsHovering(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovering(false);
-    stopCounter();
-    onChange(tempValue);
-  };
-
-  const handleClick = () => {
-    onChange(tempValue);
+  const handleBlur = () => {
+    // Ensure the input shows the actual bounded value
+    setInputValue(String(value));
   };
 
   return (
-    <div
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-      className={`relative w-20 h-10 flex items-center justify-center cursor-pointer select-none transition-all ${
-        isHovering ? 'bg-blue-50 border-2 border-blue-300' : 'bg-white border border-black/10'
-      } rounded-lg ${className}`}
-    >
-      <span className={`text-sm font-medium ${isHovering ? 'text-blue-900' : 'text-black/60'}`}>
-        {tempValue}
-      </span>
-
-      {isHovering && (
-        <>
-          {/* Up indicator */}
-          {hoverY > 10 && (
-            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-blue-600 text-xs font-medium animate-pulse">
-              ↑
-            </div>
-          )}
-
-          {/* Down indicator */}
-          {hoverY < -10 && (
-            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-blue-600 text-xs font-medium animate-pulse">
-              ↓
-            </div>
-          )}
-        </>
-      )}
+    <div className={`flex items-center gap-1 ${className}`}>
+      <button
+        type="button"
+        onClick={handleDecrement}
+        disabled={value <= min}
+        className="w-7 h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded text-gray-700 font-bold transition-colors"
+      >
+        −
+      </button>
+      <input
+        type="number"
+        value={inputValue}
+        onChange={handleInputChange}
+        onBlur={handleBlur}
+        min={min}
+        max={max}
+        className="w-16 px-2 py-1.5 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+      />
+      <button
+        type="button"
+        onClick={handleIncrement}
+        disabled={value >= max}
+        className="w-7 h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded text-gray-700 font-bold transition-colors"
+      >
+        +
+      </button>
     </div>
   );
 }
