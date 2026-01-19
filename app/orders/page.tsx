@@ -7,7 +7,7 @@ import { format, addDays, startOfWeek } from 'date-fns';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 import HoverNumberInput from '@/components/HoverNumberInput';
-import { createOrderItem } from './actions';
+import { createOrderItem, createOrderItemsBatch } from './actions';
 
 interface OrderWithItems {
   id: string;
@@ -175,7 +175,16 @@ export default function OrdersPage() {
       let updatedCount = 0;
       let createdCount = 0;
 
-      // Update or create each order item
+      // Collect all updates and inserts
+      const updates: Promise<any>[] = [];
+      const itemsToCreate: Array<{
+        order_id: string;
+        dish_id: string;
+        delivery_date: string;
+        portions: number;
+      }> = [];
+
+      // Process each order item
       for (const [date, categories] of Object.entries(portions)) {
         for (const [category, portionCount] of Object.entries(categories)) {
           const orderItem = orders
@@ -185,33 +194,47 @@ export default function OrdersPage() {
             );
 
           if (orderItem) {
-            // Update existing order item
+            // Queue update for existing order item
             console.log(`Updating ${category} for ${date}: ${orderItem.portions} -> ${portionCount}`);
-            const { error } = await supabase
-              .from('order_items')
-              .update({ portions: portionCount })
-              .eq('id', orderItem.id);
-
-            if (error) throw error;
+            updates.push(
+              supabase
+                .from('order_items')
+                .update({ portions: portionCount })
+                .eq('id', orderItem.id)
+            );
             updatedCount++;
           } else if (dishByCategory[category]) {
-            // Create missing order item using server action to avoid RLS issues
-            console.log(`Creating ${category} for ${date}: ${portionCount} portions`);
-            const result = await createOrderItem({
+            // Queue item for batch creation
+            console.log(`Queuing ${category} for ${date}: ${portionCount} portions`);
+            itemsToCreate.push({
               order_id: orderId,
               dish_id: dishByCategory[category],
               delivery_date: date,
               portions: portionCount
             });
-
-            if (result.error) {
-              console.error('Insert error:', result.error);
-              throw new Error(result.error);
-            }
-            console.log('Created item:', result.data);
-            createdCount++;
           }
         }
+      }
+
+      // Execute all updates in parallel
+      if (updates.length > 0) {
+        const results = await Promise.all(updates);
+        for (const result of results) {
+          if (result.error) throw result.error;
+        }
+      }
+
+      // Batch create all new items
+      if (itemsToCreate.length > 0) {
+        console.log(`Creating ${itemsToCreate.length} items in batch`);
+        const result = await createOrderItemsBatch(itemsToCreate);
+
+        if (result.error) {
+          console.error('Batch insert error:', result.error);
+          throw new Error(result.error);
+        }
+        console.log('Created items:', result.data);
+        createdCount = itemsToCreate.length;
       }
 
       console.log(`Save complete: ${updatedCount} updated, ${createdCount} created`);
