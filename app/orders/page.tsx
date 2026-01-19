@@ -366,7 +366,7 @@ export default function OrdersPage() {
                                       min="0"
                                       value={items[key] || 0}
                                       onChange={(e) => handlePortionChange(order.id, date, key, e.target.value)}
-                                      className="w-20 px-3 py-1.5 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
+                                      className="w-20 px-3 py-1.5 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                                     />
                                   ) : (
                                     <span className="text-sm text-black/60">{items[key] || 0}</span>
