@@ -239,6 +239,9 @@ export default function OrdersPage() {
 
       console.log(`Save complete: ${updatedCount} updated, ${createdCount} created`);
 
+      // Small delay to ensure database changes are committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Refresh orders
       if (profile) {
         console.log('Refreshing orders...');
