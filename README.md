@@ -2,6 +2,13 @@
 
 A cloud-based ordering system for production kitchens serving multiple office locations. Built for Compass Group to manage daily meal orders, track portions, and generate monthly invoices.
 
+## 🔗 Production URL
+
+**IMPORTANT**: The production site is deployed at:
+- **https://compass-kitchen-orders.vercel.app**
+
+**NOTE**: The GitHub repository is named `compass-delivery`, but the Vercel project is named `compass-kitchen-orders`. Always use the Vercel project name URL for production access.
+
 ## Features
 
 ### For Location Managers
