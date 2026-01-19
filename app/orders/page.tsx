@@ -208,7 +208,7 @@ export default function OrdersPage() {
       {/* Colored header banner */}
       <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <h1 className="text-5xl font-light text-white tracking-[0.3em] uppercase">
+          <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
             DELIVERY
           </h1>
         </div>
@@ -218,7 +218,7 @@ export default function OrdersPage() {
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-semibold text-gray-700">
+            <div className="text-2xl font-light text-gray-700">
               Orders {profile?.locations ? `· ${(profile.locations as any).name}` : ''}
             </div>
             <button
