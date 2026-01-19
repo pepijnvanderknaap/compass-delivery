@@ -1,5 +1,6 @@
 // Database types
-export type DishCategory = 'soup' | 'salad_bar' | 'hot_dish_beef' | 'hot_dish_chicken' | 'hot_dish_pork' | 'hot_dish_fish' | 'hot_dish_vega' | 'off_menu';
+export type DishCategory = 'soup' | 'hot_dish_meat' | 'hot_dish_veg' | 'off_menu';
+export type DishSubcategory = 'topping' | 'carb' | 'warm_veggie' | 'salad' | 'condiment';
 export type UserRole = 'admin' | 'kitchen' | 'manager';
 
 export interface Location {
@@ -19,6 +20,7 @@ export interface Dish {
   id: string;
   name: string;
   category: DishCategory;
+  subcategory?: DishSubcategory | null;
   default_portion_size_ml: number | null;
   default_portion_size_g: number | null;
   is_active: boolean;
