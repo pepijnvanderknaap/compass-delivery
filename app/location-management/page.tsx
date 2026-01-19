@@ -72,25 +72,58 @@ export default function LocationManagementPage() {
   }
 
   const sections = [
-    { title: 'Menu Overview', href: '#', description: 'Coming soon', icon: '📅', available: false },
-    { title: 'Orders', href: '/orders', description: 'View and manage your orders', icon: '📝', available: true },
-    { title: 'Feedback', href: '#', description: 'Coming soon', icon: '💬', available: false },
+    {
+      title: 'Menu Overview',
+      href: '#',
+      description: 'Coming soon',
+      available: false,
+      icon: (
+        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
+    },
+    {
+      title: 'Orders',
+      href: '/orders',
+      description: 'View and manage your orders',
+      available: true,
+      icon: (
+        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
+    },
+    {
+      title: 'Feedback',
+      href: '#',
+      description: 'Coming soon',
+      available: false,
+      icon: (
+        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
+      {/* Colored header banner */}
+      <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <h1 className="text-4xl font-bold text-white tracking-tight">LOCATION MANAGEMENT</h1>
+        </div>
+      </div>
+
+      {/* White navigation bar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-end gap-8">
-              <Image src="/compass-logo.svg" alt="Compass Group" width={120} height={120} className="h-16 w-auto" priority />
-              <div className="border-l-2 border-gray-300 pl-8 pb-1">
-                <h1 className="text-xl font-semibold text-gray-900">Location Management</h1>
-                <p className="text-sm text-gray-600">
-                  {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
-                  {profile.location_id && ` · ${(profile.locations as any)?.name || ''}`}
-                </p>
-              </div>
+            <div className="text-3xl font-bold text-gray-900 tracking-tight">
+              Delivery
             </div>
             <div className="flex items-center gap-4">
               <button
@@ -102,7 +135,7 @@ export default function LocationManagementPage() {
               <span className="text-sm text-gray-700">{profile.full_name}</span>
               <button
                 onClick={handleSignOut}
-                className="px-6 py-2 text-sm font-medium bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors"
+                className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
               >
                 Sign Out
               </button>
@@ -113,38 +146,39 @@ export default function LocationManagementPage() {
 
       <main className="max-w-6xl mx-auto px-8 py-16">
         <div className="mb-12">
-          <h2 className="text-4xl font-semibold text-black mb-2 tracking-tight">
-            Location Management
-          </h2>
-          <p className="text-lg text-black/50">
+          <p className="text-lg text-gray-600">
             Manage menus, orders, and feedback for your location
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sections.map((section) => (
             section.available ? (
               <Link
                 key={section.href}
                 href={section.href}
-                className="group bg-white border border-black/10 rounded-2xl p-8 hover:border-black/20 transition-all"
+                className="group relative overflow-hidden bg-white border border-teal-200 rounded-2xl p-8 hover:border-teal-600 hover:shadow-lg transition-all duration-300"
               >
-                <div className="text-4xl mb-4">{section.icon}</div>
-                <h3 className="text-xl font-semibold text-black mb-1.5">
+                <div className="text-teal-600 mb-6 group-hover:text-teal-700 group-hover:scale-110 transition-all duration-300">
+                  {section.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {section.title}
                 </h3>
-                <p className="text-sm text-black/50">{section.description}</p>
+                <p className="text-sm text-gray-600">{section.description}</p>
               </Link>
             ) : (
               <div
                 key={section.title}
-                className="bg-white border border-black/5 rounded-2xl p-8 opacity-50 cursor-not-allowed"
+                className="relative overflow-hidden bg-white border border-gray-100 rounded-2xl p-8 opacity-50 cursor-not-allowed"
               >
-                <div className="text-4xl mb-4">{section.icon}</div>
-                <h3 className="text-xl font-semibold text-black mb-1.5">
+                <div className="text-gray-400 mb-6">
+                  {section.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {section.title}
                 </h3>
-                <p className="text-sm text-black/50">{section.description}</p>
+                <p className="text-sm text-gray-600">{section.description}</p>
               </div>
             )
           ))}

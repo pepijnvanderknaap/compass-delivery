@@ -190,22 +190,26 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
+      {/* Colored header banner */}
+      <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <h1 className="text-4xl font-bold text-white tracking-tight">
+            ORDERS {profile?.locations ? `- ${(profile.locations as any).name}` : ''}
+          </h1>
+        </div>
+      </div>
+
+      {/* White navigation bar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-end gap-8">
-              <Image src="/compass-logo.svg" alt="Compass Group" width={600} height={600} className="h-64 w-auto" priority />
-              <div className="border-l-2 border-gray-300 pl-8 pb-20">
-                <h1 className="text-xl font-semibold text-gray-900">My Orders</h1>
-                {profile?.locations && (
-                  <p className="text-sm text-gray-600">{(profile.locations as any).name}</p>
-                )}
-              </div>
+            <div className="text-3xl font-bold text-gray-900 tracking-tight">
+              Delivery
             </div>
             <button
               onClick={() => router.push('/location-management')}
-              className="px-6 py-2 text-sm font-medium bg-[#8B7355] text-white rounded-full hover:bg-[#6F5B44] transition-colors"
+              className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
             >
               Back
             </button>
