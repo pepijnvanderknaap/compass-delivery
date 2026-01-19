@@ -155,6 +155,14 @@ export default function OrdersPage() {
       const portions = editedPortions[orderId];
       console.log('Saving portions:', portions);
 
+      const order = orders.find(o => o.id === orderId);
+      console.log('All order items for this order:', order?.order_items.map(item => ({
+        date: item.delivery_date,
+        category: item.dishes.category,
+        name: item.dishes.name,
+        portions: item.portions
+      })));
+
       // Update each order item
       for (const [date, categories] of Object.entries(portions)) {
         for (const [category, portionCount] of Object.entries(categories)) {
