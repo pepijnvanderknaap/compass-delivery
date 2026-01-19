@@ -175,16 +175,7 @@ export default function OrdersPage() {
       let updatedCount = 0;
       let createdCount = 0;
 
-      // Collect all updates and inserts
-      const updates: Promise<any>[] = [];
-      const itemsToCreate: Array<{
-        order_id: string;
-        dish_id: string;
-        delivery_date: string;
-        portions: number;
-      }> = [];
-
-      // Process each order item
+      // Update or create each order item
       for (const [date, categories] of Object.entries(portions)) {
         for (const [category, portionCount] of Object.entries(categories)) {
           const orderItem = orders
@@ -194,47 +185,33 @@ export default function OrdersPage() {
             );
 
           if (orderItem) {
-            // Queue update for existing order item
+            // Update existing order item
             console.log(`Updating ${category} for ${date}: ${orderItem.portions} -> ${portionCount}`);
-            updates.push(
-              supabase
-                .from('order_items')
-                .update({ portions: portionCount })
-                .eq('id', orderItem.id)
-            );
+            const { error } = await supabase
+              .from('order_items')
+              .update({ portions: portionCount })
+              .eq('id', orderItem.id);
+
+            if (error) throw error;
             updatedCount++;
           } else if (dishByCategory[category]) {
-            // Queue item for batch creation
-            console.log(`Queuing ${category} for ${date}: ${portionCount} portions`);
-            itemsToCreate.push({
+            // Create missing order item using server action to avoid RLS issues
+            console.log(`Creating ${category} for ${date}: ${portionCount} portions`);
+            const result = await createOrderItem({
               order_id: orderId,
               dish_id: dishByCategory[category],
               delivery_date: date,
               portions: portionCount
             });
+
+            if (result.error) {
+              console.error('Insert error:', result.error);
+              throw new Error(result.error);
+            }
+            console.log('Created item:', result.data);
+            createdCount++;
           }
         }
-      }
-
-      // Execute all updates in parallel
-      if (updates.length > 0) {
-        const results = await Promise.all(updates);
-        for (const result of results) {
-          if (result.error) throw result.error;
-        }
-      }
-
-      // Batch create all new items
-      if (itemsToCreate.length > 0) {
-        console.log(`Creating ${itemsToCreate.length} items in batch`);
-        const result = await createOrderItemsBatch(itemsToCreate);
-
-        if (result.error) {
-          console.error('Batch insert error:', result.error);
-          throw new Error(result.error);
-        }
-        console.log('Created items:', result.data);
-        createdCount = itemsToCreate.length;
       }
 
       console.log(`Save complete: ${updatedCount} updated, ${createdCount} created`);
