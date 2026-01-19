@@ -200,7 +200,8 @@ export default function NewOrderPage() {
 
         dishCategories.forEach(({ key }) => {
           const portions = orderData[key][dayIndex];
-          if (portions > 0 && dishByCategory[key]) {
+          // Always create order items, even with 0 portions
+          if (dishByCategory[key]) {
             orderItems.push({
               order_id: order.id,
               dish_id: dishByCategory[key],
