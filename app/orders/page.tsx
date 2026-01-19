@@ -154,6 +154,7 @@ export default function OrdersPage() {
     setSaving(true);
     try {
       const portions = editedPortions[orderId];
+      console.log('Saving portions:', portions);
 
       // Get all active dishes by category
       const { data: dishes, error: dishesError } = await supabase
@@ -170,6 +171,9 @@ export default function OrdersPage() {
         }
       });
 
+      let updatedCount = 0;
+      let createdCount = 0;
+
       // Update or create each order item
       for (const [date, categories] of Object.entries(portions)) {
         for (const [category, portionCount] of Object.entries(categories)) {
@@ -181,14 +185,17 @@ export default function OrdersPage() {
 
           if (orderItem) {
             // Update existing order item
+            console.log(`Updating ${category} for ${date}: ${orderItem.portions} -> ${portionCount}`);
             const { error } = await supabase
               .from('order_items')
               .update({ portions: portionCount })
               .eq('id', orderItem.id);
 
             if (error) throw error;
+            updatedCount++;
           } else if (dishByCategory[category]) {
             // Create missing order item
+            console.log(`Creating ${category} for ${date}: ${portionCount} portions`);
             const { error } = await supabase
               .from('order_items')
               .insert({
@@ -199,13 +206,18 @@ export default function OrdersPage() {
               });
 
             if (error) throw error;
+            createdCount++;
           }
         }
       }
 
+      console.log(`Save complete: ${updatedCount} updated, ${createdCount} created`);
+
       // Refresh orders
       if (profile) {
+        console.log('Refreshing orders...');
         await fetchOrders(profile);
+        console.log('Orders refreshed');
       }
 
       setEditingOrder(null);
