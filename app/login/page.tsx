@@ -30,8 +30,31 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Redirect to dashboard
-        router.push('/dashboard');
+        // Fetch user profile to determine role
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        // Redirect based on role
+        if (profile) {
+          switch (profile.role) {
+            case 'admin':
+              router.push('/dashboard'); // Admins see all 3 sections
+              break;
+            case 'kitchen':
+              router.push('/dark-kitchen'); // Kitchen goes directly to Dark Kitchen
+              break;
+            case 'manager':
+              router.push('/location-management'); // Managers go directly to Location Management
+              break;
+            default:
+              router.push('/dashboard');
+          }
+        } else {
+          router.push('/dashboard');
+        }
         router.refresh();
       }
     } catch (err) {
