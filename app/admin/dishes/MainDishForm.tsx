@@ -16,6 +16,8 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     name: '',
     description: '',
     category: 'soup' as 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'off_menu',
+    portion_size: '',
+    portion_unit: 'milliliters' as 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays',
     allergen_gluten: false,
     allergen_soy: false,
     allergen_lactose: false,
@@ -52,6 +54,8 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
         name: dish.name,
         description: dish.description || '',
         category: dish.category,
+        portion_size: dish.portion_size ? String(dish.portion_size) : '',
+        portion_unit: (dish.portion_unit || 'milliliters') as any,
         allergen_gluten: dish.allergen_gluten || false,
         allergen_soy: dish.allergen_soy || false,
         allergen_lactose: dish.allergen_lactose || false,
@@ -93,18 +97,24 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     try {
       let dishId = dish?.id;
 
+      // Prepare data with converted types
+      const dataToSave = {
+        ...formData,
+        portion_size: formData.portion_size ? parseFloat(formData.portion_size) : null,
+      };
+
       if (dish) {
         // Update existing dish
         const { error } = await supabase
           .from('dishes')
-          .update(formData)
+          .update(dataToSave)
           .eq('id', dish.id);
         if (error) throw error;
       } else {
         // Create new dish
         const { data: newDish, error } = await supabase
           .from('dishes')
-          .insert([{ ...formData, is_active: true }])
+          .insert([{ ...dataToSave, is_active: true }])
           .select()
           .single();
         if (error) throw error;
@@ -233,6 +243,42 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                 rows={3}
                 className="w-full px-3 py-2 border rounded-lg"
               />
+            </div>
+
+            {/* Portion Size */}
+            <div>
+              <h3 className="font-semibold mb-3">Portion Size</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Specify the size of one portion for production calculations
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Portion Size</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.portion_size}
+                    onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
+                    placeholder="e.g., 150"
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Unit</label>
+                  <select
+                    value={formData.portion_unit}
+                    onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <option value="pieces">Pieces</option>
+                    <option value="grams">Grams (g)</option>
+                    <option value="kilograms">Kilograms (kg)</option>
+                    <option value="milliliters">Milliliters (ml)</option>
+                    <option value="liters">Liters (L)</option>
+                    <option value="trays">Trays</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Components Selection */}

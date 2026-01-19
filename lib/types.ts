@@ -1,6 +1,7 @@
 // Database types
 export type DishCategory = 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'off_menu';
 export type DishSubcategory = 'topping' | 'carb' | 'warm_veggie' | 'salad' | 'condiment';
+export type PortionUnit = 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays';
 export type UserRole = 'admin' | 'kitchen' | 'manager';
 
 export interface Location {
@@ -23,6 +24,8 @@ export interface Dish {
   subcategory?: DishSubcategory | null;
   default_portion_size_ml: number | null;
   default_portion_size_g: number | null;
+  portion_unit?: PortionUnit | null;
+  portion_size?: number | null;
   is_active: boolean;
   description?: string;
   photo_url?: string;
