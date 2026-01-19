@@ -30,11 +30,11 @@ export default function AdminDishesPage() {
   ];
 
   const subcategories = [
-    { key: 'topping', label: 'Toppings', icon: '🌿' },
+    { key: 'topping', label: 'Soup Toppings', icon: '🌿' },
     { key: 'carb', label: 'Carbs', icon: '🍚' },
     { key: 'warm_veggie', label: 'Warm Veggies', icon: '🥕' },
     { key: 'salad', label: 'Salads', icon: '🥗' },
-    { key: 'condiment', label: 'Condiments', icon: '🧂' },
+    { key: 'condiment', label: 'Hot Dish Add-ons', icon: '🧂' },
   ];
 
   useEffect(() => {

@@ -162,14 +162,14 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
 
   const getVisibleSubcategories = () => {
     if (formData.category === 'soup') {
-      return [{ key: 'topping' as DishSubcategory, label: 'Toppings', icon: '🌿' }];
+      return [{ key: 'topping' as DishSubcategory, label: 'Soup Toppings', icon: '🌿' }];
     }
     // For all hot dishes (meat, fish, veg)
     return [
       { key: 'carb' as DishSubcategory, label: 'Carbs', icon: '🍚' },
       { key: 'warm_veggie' as DishSubcategory, label: 'Warm Veggies', icon: '🥕' },
       { key: 'salad' as DishSubcategory, label: 'Salads', icon: '🥗' },
-      { key: 'condiment' as DishSubcategory, label: 'Condiments', icon: '🧂' },
+      { key: 'condiment' as DishSubcategory, label: 'Hot Dish Add-ons', icon: '🧂' },
     ];
   };
 
