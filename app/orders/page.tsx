@@ -175,7 +175,7 @@ export default function OrdersPage() {
       let updatedCount = 0;
       let createdCount = 0;
 
-      // Update or create each order item
+      // Update or create each order item sequentially (one at a time)
       for (const [date, categories] of Object.entries(portions)) {
         for (const [category, portionCount] of Object.entries(categories)) {
           const orderItem = orders
