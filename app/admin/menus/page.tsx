@@ -576,7 +576,7 @@ export default function AdminMenusPage() {
               const isCurrent = isCurrentWeek(weekStart);
               return (
               <div key={weekIndex} className={`bg-white rounded-lg ${isCurrent ? 'border-2 border-blue-600 shadow-lg' : 'border border-black/10'}`}>
-                <div className={`px-6 py-4 rounded-lg mx-4 mt-4 mb-3 shadow-sm ${isCurrent ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-gray-600 to-gray-700'}`}>
+                <div className={`px-6 py-4 rounded-lg mt-4 mb-3 shadow-sm ${isCurrent ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-gray-600 to-gray-700'}`}>
                   <h3 className="text-lg font-semibold flex items-center gap-3 text-white">
                     {isCurrent && <span className="px-3 py-1 bg-white/20 rounded-md text-xs font-medium">Current Week</span>}
                     Week {weekIndex + 1}: {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}

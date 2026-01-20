@@ -287,7 +287,7 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={category.key} className="bg-white rounded-lg border border-black/10">
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg mx-3 mt-3 mb-3 shadow-sm">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg mt-3 mb-3 shadow-sm">
                     <h3 className="text-sm font-semibold text-white flex items-center justify-between">
                       <span className="font-medium">{category.label}</span>
                       <span className="text-xs text-blue-50 font-normal">({totalCount})</span>
@@ -344,7 +344,7 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={subcategory.key} className="bg-white rounded-lg border border-black/10">
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg mx-3 mt-3 mb-3 shadow-sm">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg mt-3 mb-3 shadow-sm">
                     <h3 className="text-sm font-semibold text-white flex items-center justify-between">
                       <span className="font-medium">{subcategory.label}</span>
                       <span className="text-xs text-blue-50 font-normal">({totalCount})</span>
