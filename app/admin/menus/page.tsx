@@ -206,6 +206,107 @@ export default function AdminMenusPage() {
     }
   };
 
+  const autoSaveWithData = async (dataToSave: Record<string, Record<string, string | null>>) => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Save each week's menu
+      for (let weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
+        const weekStart = format(weeks[weekIndex], 'yyyy-MM-dd');
+
+        // Get or create weekly menu
+        let { data: weeklyMenu, error: menuError } = await supabase
+          .from('weekly_menus')
+          .select('*')
+          .eq('week_start_date', weekStart)
+          .maybeSingle();
+
+        if (menuError) {
+          console.error('Error fetching weekly menu:', menuError);
+          continue;
+        }
+
+        if (!weeklyMenu) {
+          const { data: newMenu, error: createError } = await supabase
+            .from('weekly_menus')
+            .insert({
+              week_start_date: weekStart,
+              created_by: user?.id
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating menu:', createError);
+            continue;
+          }
+          weeklyMenu = newMenu;
+        }
+
+        // Delete existing menu items for this week
+        const { error: deleteError } = await supabase
+          .from('menu_items')
+          .delete()
+          .eq('menu_id', weeklyMenu.id);
+
+        if (deleteError) {
+          console.error('Error deleting old menu items:', deleteError);
+        }
+
+        // Insert new menu items
+        const itemsToInsert = [];
+
+        for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+          const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
+          const dayData = dataToSave[dateKey];
+
+          if (dayData) {
+            if (dayData.soup) {
+              itemsToInsert.push({
+                menu_id: weeklyMenu.id,
+                dish_id: dayData.soup,
+                day_of_week: dayIndex,
+                meal_type: 'soup'
+              });
+            }
+            if (dayData.hot_meat) {
+              itemsToInsert.push({
+                menu_id: weeklyMenu.id,
+                dish_id: dayData.hot_meat,
+                day_of_week: dayIndex,
+                meal_type: 'hot_meat'
+              });
+            }
+            if (dayData.hot_veg) {
+              itemsToInsert.push({
+                menu_id: weeklyMenu.id,
+                dish_id: dayData.hot_veg,
+                day_of_week: dayIndex,
+                meal_type: 'hot_veg'
+              });
+            }
+          }
+        }
+
+        if (itemsToInsert.length > 0) {
+          const { error: insertError } = await supabase
+            .from('menu_items')
+            .insert(itemsToInsert);
+
+          if (insertError) {
+            console.error('Error inserting menu items:', insertError);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error saving menu:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const saveMenuData = async () => {
     setSaving(true);
     try {
@@ -335,16 +436,21 @@ export default function AdminMenusPage() {
 
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
 
-    setMenuData(prev => ({
-      ...prev,
-      [dateKey]: {
-        ...prev[dateKey],
-        [slot]: dishId
-      }
-    }));
+    // Update state and trigger auto-save with the new data
+    setMenuData(prev => {
+      const updated = {
+        ...prev,
+        [dateKey]: {
+          ...prev[dateKey],
+          [slot]: dishId
+        }
+      };
 
-    // Auto-save after a short delay
-    setTimeout(() => saveMenuData(), 500);
+      // Auto-save after a short delay with the updated data
+      setTimeout(() => autoSaveWithData(updated), 500);
+
+      return updated;
+    });
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -358,16 +464,22 @@ export default function AdminMenusPage() {
 
   const clearSlot = async (weekIndex: number, dayIndex: number, slot: string) => {
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
-    setMenuData(prev => ({
-      ...prev,
-      [dateKey]: {
-        ...prev[dateKey],
-        [slot]: null
-      }
-    }));
 
-    // Auto-save after a short delay
-    setTimeout(() => saveMenuData(), 500);
+    // Update state and trigger auto-save with the new data
+    setMenuData(prev => {
+      const updated = {
+        ...prev,
+        [dateKey]: {
+          ...prev[dateKey],
+          [slot]: null
+        }
+      };
+
+      // Auto-save after a short delay with the updated data
+      setTimeout(() => autoSaveWithData(updated), 500);
+
+      return updated;
+    });
   };
 
   if (loading) {
