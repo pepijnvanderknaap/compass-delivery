@@ -125,7 +125,7 @@ export default function DarkKitchenPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Colored header banner */}
-      <div className="bg-gradient-to-r from-slate-600 to-slate-700 py-6">
+      <div className="bg-gradient-to-r from-blue-800 to-blue-900 py-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
             DELIVERY
@@ -143,14 +143,14 @@ export default function DarkKitchenPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="text-sm text-slate-600 hover:text-slate-700"
+                className="text-sm text-blue-700 hover:text-blue-900"
               >
                 ← Back
               </button>
               <span className="text-sm text-gray-700">{profile.full_name}</span>
               <button
                 onClick={handleSignOut}
-                className="px-6 py-2 text-sm font-medium bg-slate-600 text-white rounded-md hover:bg-slate-700 transition-colors"
+                className="px-6 py-2 text-sm font-medium bg-blue-800 text-white rounded-md hover:bg-blue-900 transition-colors"
               >
                 Sign Out
               </button>
@@ -172,9 +172,9 @@ export default function DarkKitchenPage() {
               <Link
                 key={section.href}
                 href={section.href}
-                className="group relative overflow-hidden bg-white border border-slate-200 rounded-lg p-8 hover:border-slate-600 hover:shadow-lg transition-all duration-300"
+                className="group relative overflow-hidden bg-white border border-blue-200 rounded-lg p-8 hover:border-blue-800 hover:shadow-lg transition-all duration-300"
               >
-                <div className="text-slate-600 mb-6 group-hover:text-slate-800 group-hover:scale-110 transition-all duration-300">
+                <div className="text-blue-800 mb-6 group-hover:text-blue-900 group-hover:scale-110 transition-all duration-300">
                   {section.icon}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
