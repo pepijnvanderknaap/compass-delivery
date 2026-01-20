@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Dish, DishWithComponents, DishSubcategory } from '@/lib/types';
+import QuickComponentForm from './QuickComponentForm';
 
 interface MainDishFormProps {
   dish: DishWithComponents | null;
@@ -47,6 +48,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
   const [componentSearchTerms, setComponentSearchTerms] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [quickFormType, setQuickFormType] = useState<'component' | 'warm_veggie' | 'salad' | null>(null);
 
   useEffect(() => {
     fetchComponents();
@@ -194,10 +196,29 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     }));
   };
 
+  const handleQuickComponentCreated = async (newComponent: { id: string; name: string }) => {
+    // Refresh components list to include the new one
+    await fetchComponents();
+
+    // Auto-select the new component in the appropriate category
+    if (quickFormType) {
+      const categoryKey = quickFormType === 'component' ? 'topping' : quickFormType;
+      setSelectedComponents(prev => ({
+        ...prev,
+        [categoryKey]: [...prev[categoryKey], newComponent.id]
+      }));
+    }
+
+    // Close the quick form
+    setQuickFormType(null);
+  };
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="flex gap-0 max-h-[90vh]">
+        {/* Main Form */}
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <h2 className="text-2xl font-bold mb-6">
             {dish ? 'Edit Main Dish' : 'Create Main Dish'}
@@ -324,19 +345,38 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
 
                     return (
                       <div key={subcat.key} className="border rounded-lg p-4">
-                        <h4 className="font-medium mb-2">
-                          {subcat.label}
-                          <span className="text-sm text-gray-500 ml-2">
-                            (Showing {components.length} of {totalCount})
-                          </span>
-                        </h4>
-                        <input
-                          type="text"
-                          placeholder="Search..."
-                          value={componentSearchTerms[subcat.key] || ''}
-                          onChange={(e) => setComponentSearchTerms({ ...componentSearchTerms, [subcat.key]: e.target.value })}
-                          className="w-full px-3 py-2 text-sm border rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500"
-                        />
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">
+                            {subcat.label}
+                            <span className="text-sm text-gray-500 ml-2">
+                              (Showing {components.length} of {totalCount})
+                            </span>
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (subcat.key === 'topping') {
+                                setQuickFormType('component');
+                              } else if (subcat.key === 'warm_veggie') {
+                                setQuickFormType('warm_veggie');
+                              } else if (subcat.key === 'salad') {
+                                setQuickFormType('salad');
+                              }
+                            }}
+                            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                          >
+                            <span>+ New</span>
+                          </button>
+                        </div>
+                        {totalCount > 10 && (
+                          <input
+                            type="text"
+                            placeholder="Search..."
+                            value={componentSearchTerms[subcat.key] || ''}
+                            onChange={(e) => setComponentSearchTerms({ ...componentSearchTerms, [subcat.key]: e.target.value })}
+                            className="w-full px-3 py-2 text-sm border rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500"
+                          />
+                        )}
                         {components.length === 0 ? (
                           <p className="text-gray-400 text-sm text-center py-2">No components found</p>
                         ) : (
@@ -407,6 +447,16 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
           </form>
         </div>
       </div>
+
+      {/* Quick Component Form - Side by Side */}
+      {quickFormType && (
+        <QuickComponentForm
+          type={quickFormType}
+          onClose={() => setQuickFormType(null)}
+          onCreated={handleQuickComponentCreated}
+        />
+      )}
+    </div>
     </div>
   );
 }

@@ -278,10 +278,8 @@ export default function ProductionSheetsPage() {
         portionSizeMl = locationSettings.soup_portion_size_ml;
       }
 
-      // Override salad bar portion size if location has custom setting
-      if (locationSettings?.salad_bar_portion_size_g && dish.category === 'salad_bar') {
-        portionSizeG = locationSettings.salad_bar_portion_size_g;
-      }
+      // Note: salad_bar is not a dish category in the current schema
+      // Salad bar items use subcategory 'salad' with category 'component'
     }
 
     // Calculate using portion size (location-specific or default)
