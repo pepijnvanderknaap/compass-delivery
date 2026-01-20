@@ -110,9 +110,9 @@ export default function DarkKitchenPage() {
     },
     {
       title: 'Production Sheets',
-      href: '#',
-      description: 'Coming soon',
-      available: false,
+      href: '/admin/production',
+      description: 'View daily production requirements',
+      available: true,
       icon: (
         <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M3 3v18h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
