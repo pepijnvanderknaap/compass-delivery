@@ -286,8 +286,8 @@ export default function AdminDishesPage() {
               const totalCount = mainDishes.filter(d => d.category === category.key).length;
 
               return (
-                <div key={category.key} className="bg-white rounded-lg border border-black/10 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-black/5 bg-blue-100">
+                <div key={category.key} className="bg-white rounded-lg border border-black/10">
+                  <div className="px-4 py-3 bg-blue-100 rounded-lg mx-3 mt-3 mb-2">
                     <h3 className="text-sm font-semibold text-blue-800 flex items-center justify-between">
                       <span className="font-medium">{category.label}</span>
                       <span className="text-xs text-blue-700 font-normal">({totalCount})</span>
@@ -343,8 +343,8 @@ export default function AdminDishesPage() {
               const totalCount = componentDishes.filter(d => d.subcategory === subcategory.key).length;
 
               return (
-                <div key={subcategory.key} className="bg-white rounded-lg border border-black/10 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-black/5 bg-blue-100">
+                <div key={subcategory.key} className="bg-white rounded-lg border border-black/10">
+                  <div className="px-4 py-3 bg-blue-100 rounded-lg mx-3 mt-3 mb-2">
                     <h3 className="text-sm font-semibold text-blue-800 flex items-center justify-between">
                       <span className="font-medium">{subcategory.label}</span>
                       <span className="text-xs text-blue-700 font-normal">({totalCount})</span>

@@ -575,15 +575,15 @@ export default function AdminMenusPage() {
             {weeks.map((weekStart, weekIndex) => {
               const isCurrent = isCurrentWeek(weekStart);
               return (
-              <div key={weekIndex} className={`bg-white rounded-lg overflow-hidden ${isCurrent ? 'border-2 border-blue-600 shadow-lg' : 'border border-black/10'}`}>
-                <div className={`px-6 py-4 border-b ${isCurrent ? 'bg-gradient-to-r from-blue-800 to-blue-900 border-blue-800' : 'bg-black/[0.02] border-black/5'}`}>
+              <div key={weekIndex} className={`bg-white rounded-lg ${isCurrent ? 'border-2 border-blue-600 shadow-lg' : 'border border-black/10'}`}>
+                <div className={`px-6 py-4 mx-4 mt-4 mb-3 rounded-lg ${isCurrent ? 'bg-gradient-to-r from-blue-800 to-blue-900' : 'bg-gray-100'}`}>
                   <h3 className={`text-lg font-semibold flex items-center gap-3 ${isCurrent ? 'text-white' : 'text-gray-900'}`}>
                     {isCurrent && <span className="px-3 py-1 bg-white/20 rounded-md text-xs font-medium">Current Week</span>}
                     Week {weekIndex + 1}: {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
                   </h3>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto px-4">
                   <table className="w-full table-fixed">
                     <thead className="bg-black/[0.02] border-b border-black/5">
                       <tr>
@@ -706,6 +706,7 @@ export default function AdminMenusPage() {
                     </tbody>
                   </table>
                 </div>
+                <div className="h-4"></div>
               </div>
             );
             })}
