@@ -421,47 +421,6 @@ export default function AdminMenusPage() {
     }
   };
 
-  const filteredDishes = dishes.filter(dish => {
-    const matchesSearch = dish.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' ||
-                           dish.category === selectedCategory ||
-                           (selectedCategory === 'hot_dish' && dish.category.startsWith('hot_dish_'));
-    return matchesSearch && matchesCategory;
-  });
-
-  const handleDragStart = (e: React.DragEvent, dishId: string) => {
-    e.dataTransfer.effectAllowed = 'copy';
-    e.dataTransfer.setData('text/plain', dishId);
-  };
-
-  const handleDrop = async (e: React.DragEvent, weekIndex: number, dayIndex: number, slot: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const dishId = e.dataTransfer.getData('text/plain');
-    if (!dishId) return;
-
-    const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
-
-    // Update state and trigger auto-save with the new data
-    setMenuData(prev => {
-      const updated = {
-        ...prev,
-        [dateKey]: {
-          ...prev[dateKey],
-          [slot]: dishId
-        }
-      };
-
-      // Auto-save after a short delay with the updated data
-      setTimeout(() => autoSaveWithData(updated), 500);
-
-      return updated;
-    });
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
 
   const getDishById = (dishId: string | null) => {
     if (!dishId) return null;
