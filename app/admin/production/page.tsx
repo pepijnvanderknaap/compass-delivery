@@ -108,6 +108,21 @@ export default function ProductionSheetsPage() {
     const dateStr = format(date, 'yyyy-MM-dd');
     const weekStart = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
+    // Get ALL active locations (including duplicates) to fetch orders
+    const { data: allLocations } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('is_active', true);
+
+    // Create a map from any location ID to the deduplicated display location
+    const locationIdMap: Record<string, string> = {};
+    allLocations?.forEach(loc => {
+      const displayLoc = locs.find(l => l.name === loc.name);
+      if (displayLoc) {
+        locationIdMap[loc.id] = displayLoc.id;
+      }
+    });
+
     // Get menu for the week
     const { data: weeklyMenu } = await supabase
       .from('weekly_menus')
@@ -168,14 +183,16 @@ export default function ProductionSheetsPage() {
       // Get meal type for this dish from menu items
       const mealType = menuItems?.find(item => item.dish_id === mainDish.id)?.meal_type;
 
-      // Get orders for this main dish grouped by location
+      // Get orders for this main dish grouped by deduplicated location
       const locationOrders: LocationOrders = {};
       let totalPortions = 0;
 
       const dishOrderItems = orderItems?.filter(item => item.dish_id === mainDish.id) || [];
       dishOrderItems.forEach((item: any) => {
         if (item.orders?.location_id) {
-          locationOrders[item.orders.location_id] = (locationOrders[item.orders.location_id] || 0) + item.portions;
+          // Map to deduplicated location ID
+          const displayLocationId = locationIdMap[item.orders.location_id] || item.orders.location_id;
+          locationOrders[displayLocationId] = (locationOrders[displayLocationId] || 0) + item.portions;
           totalPortions += item.portions;
         }
       });
@@ -231,7 +248,22 @@ export default function ProductionSheetsPage() {
   };
 
   const calculateWeight = (portions: number, dish: Dish) => {
-    // Just show portions instead of converting to weight/volume
+    if (dish.default_portion_size_ml) {
+      const ml = portions * dish.default_portion_size_ml;
+      if (ml >= 1000) {
+        const liters = ml / 1000;
+        return `${liters.toFixed(2)}L`;
+      }
+      return `${ml.toFixed(0)}ml`;
+    }
+    if (dish.default_portion_size_g) {
+      const grams = portions * dish.default_portion_size_g;
+      if (grams >= 1000) {
+        const kg = grams / 1000;
+        return `${kg.toFixed(2)}kg`;
+      }
+      return `${grams.toFixed(0)}g`;
+    }
     return `${portions} portions`;
   };
 
