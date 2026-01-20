@@ -174,14 +174,14 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
 
   const getVisibleSubcategories = () => {
     if (formData.category === 'soup') {
-      return [{ key: 'topping' as DishSubcategory, label: 'Soup Toppings', icon: '🌿' }];
+      return [{ key: 'topping' as DishSubcategory, label: 'Soup Toppings' }];
     }
     // For all hot dishes (meat, fish, veg)
     return [
-      { key: 'carb' as DishSubcategory, label: 'Carbs', icon: '🍚' },
-      { key: 'warm_veggie' as DishSubcategory, label: 'Warm Veggies', icon: '🥕' },
-      { key: 'salad' as DishSubcategory, label: 'Salads', icon: '🥗' },
-      { key: 'condiment' as DishSubcategory, label: 'Hot Dish Add-ons', icon: '🧂' },
+      { key: 'carb' as DishSubcategory, label: 'Carbs' },
+      { key: 'warm_veggie' as DishSubcategory, label: 'Warm Veggies' },
+      { key: 'salad' as DishSubcategory, label: 'Salads' },
+      { key: 'condiment' as DishSubcategory, label: 'Hot Dish Add-ons' },
     ];
   };
 
@@ -323,7 +323,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                     return (
                       <div key={subcat.key} className="border rounded-lg p-4">
                         <h4 className="font-medium mb-2">
-                          {subcat.icon} {subcat.label}
+                          {subcat.label}
                           <span className="text-sm text-gray-500 ml-2">
                             (Showing {components.length} of {totalCount})
                           </span>

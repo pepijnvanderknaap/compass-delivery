@@ -23,18 +23,18 @@ export default function AdminDishesPage() {
   const supabase = createClient();
 
   const mainCategories = [
-    { key: 'soup', label: 'Soups', icon: '🍲' },
-    { key: 'hot_dish_meat', label: 'Hot Dish - Meat', icon: '🥩' },
-    { key: 'hot_dish_fish', label: 'Hot Dish - Fish', icon: '🐟' },
-    { key: 'hot_dish_veg', label: 'Hot Dish - Veg', icon: '🌱' },
+    { key: 'soup', label: 'Soups' },
+    { key: 'hot_dish_meat', label: 'Hot Dish - Meat' },
+    { key: 'hot_dish_fish', label: 'Hot Dish - Fish' },
+    { key: 'hot_dish_veg', label: 'Hot Dish - Veg' },
   ];
 
   const subcategories = [
-    { key: 'topping', label: 'Soup Toppings', icon: '🌿' },
-    { key: 'carb', label: 'Carbs', icon: '🍚' },
-    { key: 'warm_veggie', label: 'Warm Veggies', icon: '🥕' },
-    { key: 'salad', label: 'Salads', icon: '🥗' },
-    { key: 'condiment', label: 'Hot Dish Add-ons', icon: '🧂' },
+    { key: 'topping', label: 'Soup Toppings' },
+    { key: 'carb', label: 'Carbs' },
+    { key: 'warm_veggie', label: 'Warm Veggies' },
+    { key: 'salad', label: 'Salads' },
+    { key: 'condiment', label: 'Hot Dish Add-ons' },
   ];
 
   useEffect(() => {
@@ -71,9 +71,36 @@ export default function AdminDishesPage() {
   }, [supabase, router]);
 
   const fetchDishes = async () => {
+    // First, get all dish IDs that are currently in use in menu_items
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select('dish_id');
+
+    if (menuError) {
+      console.error('Error fetching menu items:', menuError);
+      return;
+    }
+
+    // Get unique dish IDs that are in use
+    const dishIdsInUse = new Set(menuItems?.map(item => item.dish_id) || []);
+
+    // Also get components that are linked to main dishes via dish_components
+    const { data: dishComponents, error: componentsError } = await supabase
+      .from('dish_components')
+      .select('component_dish_id');
+
+    if (componentsError) {
+      console.error('Error fetching dish components:', componentsError);
+    } else {
+      // Add component IDs to the set
+      dishComponents?.forEach(comp => dishIdsInUse.add(comp.component_dish_id));
+    }
+
+    // Now fetch only dishes that are in use
     const { data, error } = await supabase
       .from('dishes')
       .select('*')
+      .in('id', Array.from(dishIdsInUse))
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -177,8 +204,8 @@ export default function AdminDishesPage() {
     if (searchKey) {
       filtered = filtered.filter(d => d.name.toLowerCase().includes(searchKey.toLowerCase()));
     }
-    // Show last 5 most recently added (sorted by created_at DESC already)
-    return filtered.slice(0, 5);
+    // Show all in-use dishes (no limit)
+    return filtered;
   };
 
   const getFilteredComponentDishes = (subcategoryKey: string) => {
@@ -187,8 +214,8 @@ export default function AdminDishesPage() {
     if (searchKey) {
       filtered = filtered.filter(d => d.name.toLowerCase().includes(searchKey.toLowerCase()));
     }
-    // Show last 5 most recently added (sorted by created_at DESC already)
-    return filtered.slice(0, 5);
+    // Show all in-use components (no limit)
+    return filtered;
   };
 
   if (loading) {
@@ -201,14 +228,25 @@ export default function AdminDishesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <nav className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-bold text-gray-900">Dish Management</h1>
+      {/* Colored header banner */}
+      <div className="bg-gradient-to-r from-slate-700 to-slate-800 py-6">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+            DELIVERY
+          </h1>
+        </div>
+      </div>
+
+      {/* White navigation bar */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="text-2xl font-light text-gray-700">
+              Dish Dashboard
+            </div>
             <button
               onClick={() => router.push('/dark-kitchen')}
-              className="text-slate-700 hover:text-slate-900"
+              className="px-6 py-2 text-sm font-medium bg-slate-700 text-white rounded-full hover:bg-slate-800 transition-colors"
             >
               Back
             </button>
@@ -216,21 +254,24 @@ export default function AdminDishesPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+          <div className={`mb-6 p-4 rounded-xl ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {message.text}
           </div>
         )}
 
         {/* Add Button */}
-        <div className="mb-8 flex justify-end">
+        <div className="mb-8 flex justify-between items-center">
+          <p className="text-gray-600">
+            Showing dishes and components currently in use
+          </p>
           <button
             onClick={() => {
               setEditingDish(null);
               setShowMainDishForm(true);
             }}
-            className="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800"
+            className="px-8 py-3 bg-slate-700 text-white rounded-full hover:bg-slate-800 font-medium shadow-sm transition-colors"
           >
             + Add New
           </button>
@@ -238,49 +279,48 @@ export default function AdminDishesPage() {
 
         {/* Main Categories Section - Grid Layout */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Main Dishes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-900">Main Dishes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {mainCategories.map(category => {
               const dishes = getFilteredMainDishes(category.key);
               const totalCount = mainDishes.filter(d => d.category === category.key).length;
 
               return (
-                <div key={category.key} className="bg-white rounded-lg shadow">
-                  <div className="px-3 py-2 border-b bg-indigo-50">
-                    <h3 className="text-sm font-semibold text-indigo-900 flex items-center gap-1">
-                      <span className="text-base">{category.icon}</span>
+                <div key={category.key} className="bg-white rounded-2xl border border-black/10 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-black/5 bg-black/[0.02]">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center justify-between">
                       <span>{category.label}</span>
-                      <span className="text-xs text-indigo-600">({totalCount})</span>
+                      <span className="text-xs text-gray-500 font-normal">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="p-2">
+                  <div className="p-3">
                     {/* Individual search bar */}
                     <input
                       type="text"
                       placeholder="Search..."
                       value={categorySearchTerms[category.key] || ''}
                       onChange={(e) => setCategorySearchTerms({ ...categorySearchTerms, [category.key]: e.target.value })}
-                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 text-sm border border-black/10 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                     />
                     {dishes.length === 0 ? (
-                      <p className="text-gray-400 text-xs py-2 text-center">No dishes found</p>
+                      <p className="text-gray-400 text-sm py-4 text-center">No dishes in use</p>
                     ) : (
-                      <div className="space-y-0.5">
+                      <div className="space-y-1">
                         {dishes.map(dish => (
-                          <div key={dish.id} className="flex items-center justify-between py-1.5 px-1.5 hover:bg-gray-50 rounded text-xs">
-                            <span className="text-gray-900 truncate flex-1">{dish.name}</span>
-                            <div className="flex gap-0.5 ml-1">
+                          <div key={dish.id} className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded-lg text-sm group">
+                            <span className="text-gray-900 truncate flex-1 font-medium">{dish.name}</span>
+                            <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleEditMainDish(dish)}
-                                className="px-1.5 py-0.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-800"
+                                className="px-3 py-1 text-xs bg-slate-700 text-white rounded-full hover:bg-slate-800 transition-colors"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteDish(dish.id)}
-                                className="px-1.5 py-0.5 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
+                                className="px-3 py-1 text-xs border border-red-300 text-red-600 rounded-full hover:bg-red-50 transition-colors"
                               >
-                                Del
+                                Delete
                               </button>
                             </div>
                           </div>
@@ -296,49 +336,48 @@ export default function AdminDishesPage() {
 
         {/* Subcategories Section - Grid Layout */}
         <div>
-          <h2 className="text-2xl font-bold mb-6">Component Library</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-900">Component Library</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {subcategories.map(subcategory => {
               const dishes = getFilteredComponentDishes(subcategory.key);
               const totalCount = componentDishes.filter(d => d.subcategory === subcategory.key).length;
 
               return (
-                <div key={subcategory.key} className="bg-white rounded-lg shadow">
-                  <div className="px-3 py-2 border-b bg-green-50">
-                    <h3 className="text-sm font-semibold text-green-900 flex items-center gap-1">
-                      <span className="text-base">{subcategory.icon}</span>
+                <div key={subcategory.key} className="bg-white rounded-2xl border border-black/10 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-black/5 bg-black/[0.02]">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center justify-between">
                       <span>{subcategory.label}</span>
-                      <span className="text-xs text-green-600">({totalCount})</span>
+                      <span className="text-xs text-gray-500 font-normal">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="p-2">
+                  <div className="p-3">
                     {/* Individual search bar */}
                     <input
                       type="text"
                       placeholder="Search..."
                       value={categorySearchTerms[subcategory.key] || ''}
                       onChange={(e) => setCategorySearchTerms({ ...categorySearchTerms, [subcategory.key]: e.target.value })}
-                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 text-sm border border-black/10 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                     />
                     {dishes.length === 0 ? (
-                      <p className="text-gray-400 text-xs py-2 text-center">No components found</p>
+                      <p className="text-gray-400 text-sm py-4 text-center">No components in use</p>
                     ) : (
-                      <div className="space-y-0.5">
+                      <div className="space-y-1">
                         {dishes.map(dish => (
-                          <div key={dish.id} className="flex items-center justify-between py-1.5 px-1.5 hover:bg-gray-50 rounded text-xs">
-                            <span className="text-gray-900 truncate flex-1">{dish.name}</span>
-                            <div className="flex gap-0.5 ml-1">
+                          <div key={dish.id} className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded-lg text-sm group">
+                            <span className="text-gray-900 truncate flex-1 font-medium">{dish.name}</span>
+                            <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleEditComponent(dish)}
-                                className="px-1.5 py-0.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-800"
+                                className="px-3 py-1 text-xs bg-slate-700 text-white rounded-full hover:bg-slate-800 transition-colors"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteDish(dish.id)}
-                                className="px-1.5 py-0.5 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
+                                className="px-3 py-1 text-xs border border-red-300 text-red-600 rounded-full hover:bg-red-50 transition-colors"
                               >
-                                Del
+                                Delete
                               </button>
                             </div>
                           </div>
