@@ -92,9 +92,11 @@ export default function DishCommandPalette({
     setShowCreateForm(true);
   };
 
-  const handleDishCreated = (newDish: any) => {
+  const handleDishCreated = () => {
     setShowCreateForm(false);
-    handleSelectDish(newDish.id);
+    // Refresh the dish list to include newly created dish
+    // Close palette - user will need to reopen to select the new dish
+    onClose();
   };
 
   const getCategoryLabel = () => {
