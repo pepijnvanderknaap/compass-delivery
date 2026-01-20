@@ -229,7 +229,7 @@ export default function AdminDishesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Colored header banner */}
-      <div className="bg-gradient-to-r from-slate-700 to-slate-800 py-6">
+      <div className="bg-gradient-to-r from-blue-700 to-blue-800 py-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
             DELIVERY
@@ -246,7 +246,7 @@ export default function AdminDishesPage() {
             </div>
             <button
               onClick={() => router.push('/dark-kitchen')}
-              className="px-6 py-2 text-sm font-medium bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors"
+              className="px-6 py-2 text-sm font-medium bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
             >
               Back
             </button>
@@ -271,7 +271,7 @@ export default function AdminDishesPage() {
               setEditingDish(null);
               setShowMainDishForm(true);
             }}
-            className="px-8 py-3 bg-slate-700 text-white rounded-md hover:bg-slate-800 font-medium shadow-sm transition-colors"
+            className="px-8 py-3 bg-blue-700 text-white rounded-md hover:bg-blue-800 font-medium shadow-sm transition-colors"
           >
             + Add New
           </button>
@@ -287,10 +287,10 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={category.key} className="bg-white rounded-lg border border-black/10 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-black/5 bg-slate-200">
-                    <h3 className="text-sm font-semibold text-slate-700 flex items-center justify-between">
+                  <div className="px-4 py-3 border-b border-black/5 bg-blue-50">
+                    <h3 className="text-sm font-semibold text-blue-700 flex items-center justify-between">
                       <span className="font-medium">{category.label}</span>
-                      <span className="text-xs text-slate-600 font-normal">({totalCount})</span>
+                      <span className="text-xs text-blue-600 font-normal">({totalCount})</span>
                     </h3>
                   </div>
                   <div className="p-3">
@@ -300,7 +300,7 @@ export default function AdminDishesPage() {
                       placeholder="Search..."
                       value={categorySearchTerms[category.key] || ''}
                       onChange={(e) => setCategorySearchTerms({ ...categorySearchTerms, [category.key]: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-black/10 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm border border-black/10 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     {dishes.length === 0 ? (
                       <p className="text-gray-400 text-sm py-4 text-center">No dishes in use</p>
@@ -312,7 +312,7 @@ export default function AdminDishesPage() {
                             <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleEditMainDish(dish)}
-                                className="px-3 py-1 text-xs bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors"
+                                className="px-3 py-1 text-xs bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
                               >
                                 Edit
                               </button>
@@ -344,10 +344,10 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={subcategory.key} className="bg-white rounded-lg border border-black/10 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-black/5 bg-slate-200">
-                    <h3 className="text-sm font-semibold text-slate-700 flex items-center justify-between">
+                  <div className="px-4 py-3 border-b border-black/5 bg-blue-50">
+                    <h3 className="text-sm font-semibold text-blue-700 flex items-center justify-between">
                       <span className="font-medium">{subcategory.label}</span>
-                      <span className="text-xs text-slate-600 font-normal">({totalCount})</span>
+                      <span className="text-xs text-blue-600 font-normal">({totalCount})</span>
                     </h3>
                   </div>
                   <div className="p-3">
@@ -357,7 +357,7 @@ export default function AdminDishesPage() {
                       placeholder="Search..."
                       value={categorySearchTerms[subcategory.key] || ''}
                       onChange={(e) => setCategorySearchTerms({ ...categorySearchTerms, [subcategory.key]: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-black/10 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm border border-black/10 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     {dishes.length === 0 ? (
                       <p className="text-gray-400 text-sm py-4 text-center">No components in use</p>
@@ -369,7 +369,7 @@ export default function AdminDishesPage() {
                             <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleEditComponent(dish)}
-                                className="px-3 py-1 text-xs bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors"
+                                className="px-3 py-1 text-xs bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
                               >
                                 Edit
                               </button>
