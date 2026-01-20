@@ -304,32 +304,33 @@ export default function ProductionSheetsPage() {
       </nav>
 
       <main className="max-w-full mx-auto px-6 lg:px-8 py-10">
-        {/* Date Picker */}
-        <div className="mb-8 flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700">Production Date:</label>
-          <input
-            type="date"
-            value={format(selectedDate, 'yyyy-MM-dd')}
-            onChange={(e) => setSelectedDate(new Date(e.target.value))}
-            className="px-4 py-2 border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={() => window.print()}
-            className="ml-auto px-6 py-2 bg-blue-800 text-white rounded-md hover:bg-blue-900 transition-colors"
-          >
-            Print
-          </button>
+        {/* Date and Actions */}
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-3xl font-extralight text-gray-800 tracking-wide">
+            Production for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+          </h2>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                const newDate = window.prompt('Enter date (YYYY-MM-DD):', format(selectedDate, 'yyyy-MM-dd'));
+                if (newDate) setSelectedDate(new Date(newDate));
+              }}
+              className="px-6 py-2 bg-gray-600 text-white hover:bg-gray-700 transition-colors"
+            >
+              Change Date
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-2 bg-blue-800 text-white hover:bg-blue-900 transition-colors"
+            >
+              Print
+            </button>
+          </div>
         </div>
 
         {/* Production Table */}
         <div className="mb-6">
-          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-xl px-6 py-4 mb-4 shadow-sm">
-            <h2 className="text-xl font-semibold text-white">
-              Production for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-            </h2>
-          </div>
-
-          <div className="bg-white rounded-xl border border-black/10 overflow-hidden shadow-sm">
+          <div className="bg-white border border-black/10 overflow-hidden shadow-sm">
             {productionRows.length === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-gray-500">No production scheduled for this date</p>
@@ -337,16 +338,15 @@ export default function ProductionSheetsPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-300">
+                  <thead className="bg-gradient-to-r from-gray-700 to-gray-800 border-b-2 border-gray-900">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Item</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
                       {locations.map(location => (
-                        <th key={location.id} className="px-4 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">
+                        <th key={location.id} className="px-4 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
                           {location.name}
                         </th>
                       ))}
-                      <th className="px-4 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">Total</th>
-                      <th className="px-4 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">Weight/Volume</th>
+                      <th className="px-4 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -360,8 +360,26 @@ export default function ProductionSheetsPage() {
                       const hotVegRows = productionRows.filter(row => row.mealType === 'hot_veg' && !row.isComponent);
                       const hotVegComponents = productionRows.filter(row => row.mealType === 'hot_veg' && row.isComponent);
 
-                      // Combine all hot dish components
+                      // Combine all hot dish components and aggregate by dish name
                       const allHotComponents = [...hotMeatComponents, ...hotVegComponents];
+
+                      // Aggregate components by dish ID to combine duplicates
+                      const aggregatedHotComponents: Record<string, ProductionRow> = {};
+                      allHotComponents.forEach(comp => {
+                        const key = `${comp.dish.id}-${comp.componentType}`;
+                        if (!aggregatedHotComponents[key]) {
+                          aggregatedHotComponents[key] = { ...comp };
+                        } else {
+                          // Merge location orders
+                          Object.keys(comp.locationOrders).forEach(locId => {
+                            aggregatedHotComponents[key].locationOrders[locId] =
+                              (aggregatedHotComponents[key].locationOrders[locId] || 0) + comp.locationOrders[locId];
+                          });
+                          aggregatedHotComponents[key].totalPortions += comp.totalPortions;
+                        }
+                      });
+
+                      const aggregatedHotComponentsList = Object.values(aggregatedHotComponents);
 
                       // Helper to get components by type
                       const getComponentsByType = (components: ProductionRow[], type: string) =>
@@ -374,8 +392,8 @@ export default function ProductionSheetsPage() {
 
                         const rows = (
                           <>
-                            <tr className="bg-gray-200/60">
-                              <td colSpan={locations.length + 3} className="px-8 py-2">
+                            <tr className="bg-gray-200/80">
+                              <td colSpan={locations.length + 2} className="px-8 py-2">
                                 <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{label}</h4>
                               </td>
                             </tr>
@@ -385,21 +403,21 @@ export default function ProductionSheetsPage() {
                                 <tr
                                   key={`${type}-${idx}`}
                                   className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
-                                    globalIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                    globalIdx % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                                   }`}
                                 >
                                   <td className="px-10 py-3 text-sm font-medium text-gray-900">
                                     {row.dish.name}
                                   </td>
-                                  {locations.map(location => (
-                                    <td key={location.id} className="px-4 py-3 text-sm text-center text-gray-700 font-medium">
-                                      {row.locationOrders[location.id] || '-'}
-                                    </td>
-                                  ))}
+                                  {locations.map(location => {
+                                    const portions = row.locationOrders[location.id] || 0;
+                                    return (
+                                      <td key={location.id} className="px-4 py-3 text-sm text-center text-gray-700 font-medium">
+                                        {portions > 0 ? calculateWeight(portions, row.dish) : '-'}
+                                      </td>
+                                    );
+                                  })}
                                   <td className="px-4 py-3 text-sm text-center font-bold text-gray-900">
-                                    {row.totalPortions}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-center text-gray-700 font-semibold">
                                     {calculateWeight(row.totalPortions, row.dish)}
                                   </td>
                                 </tr>
@@ -419,7 +437,7 @@ export default function ProductionSheetsPage() {
                           {soupRows.length > 0 && (
                             <>
                               <tr className="bg-gradient-to-r from-slate-200 to-slate-100">
-                                <td colSpan={locations.length + 3} className="px-6 py-3">
+                                <td colSpan={locations.length + 2} className="px-6 py-3">
                                   <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Soup</h3>
                                 </td>
                               </tr>
@@ -429,21 +447,21 @@ export default function ProductionSheetsPage() {
                                   <tr
                                     key={`soup-main-${idx}`}
                                     className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
-                                      rowCounter % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                      rowCounter % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                                     }`}
                                   >
                                     <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
                                       {row.dish.name}
                                     </td>
-                                    {locations.map(location => (
-                                      <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                        {row.locationOrders[location.id] || '-'}
-                                      </td>
-                                    ))}
+                                    {locations.map(location => {
+                                      const portions = row.locationOrders[location.id] || 0;
+                                      return (
+                                        <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                          {portions > 0 ? calculateWeight(portions, row.dish) : '-'}
+                                        </td>
+                                      );
+                                    })}
                                     <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
-                                      {row.totalPortions}
-                                    </td>
-                                    <td className="px-4 py-3.5 text-sm text-center text-gray-700 font-semibold">
                                       {calculateWeight(row.totalPortions, row.dish)}
                                     </td>
                                   </tr>
@@ -461,7 +479,7 @@ export default function ProductionSheetsPage() {
                           {(hotMeatRows.length > 0 || hotVegRows.length > 0) && (
                             <>
                               <tr className="bg-gradient-to-r from-slate-200 to-slate-100">
-                                <td colSpan={locations.length + 3} className="px-6 py-3">
+                                <td colSpan={locations.length + 2} className="px-6 py-3">
                                   <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Hot Dish</h3>
                                 </td>
                               </tr>
@@ -472,21 +490,21 @@ export default function ProductionSheetsPage() {
                                   <tr
                                     key={`hot-meat-main-${idx}`}
                                     className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
-                                      rowCounter % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                      rowCounter % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                                     }`}
                                   >
                                     <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
                                       {row.dish.name}
                                     </td>
-                                    {locations.map(location => (
-                                      <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                        {row.locationOrders[location.id] || '-'}
-                                      </td>
-                                    ))}
+                                    {locations.map(location => {
+                                      const portions = row.locationOrders[location.id] || 0;
+                                      return (
+                                        <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                          {portions > 0 ? calculateWeight(portions, row.dish) : '-'}
+                                        </td>
+                                      );
+                                    })}
                                     <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
-                                      {row.totalPortions}
-                                    </td>
-                                    <td className="px-4 py-3.5 text-sm text-center text-gray-700 font-semibold">
                                       {calculateWeight(row.totalPortions, row.dish)}
                                     </td>
                                   </tr>
@@ -499,44 +517,44 @@ export default function ProductionSheetsPage() {
                                   <tr
                                     key={`hot-veg-main-${idx}`}
                                     className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
-                                      rowCounter % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                      rowCounter % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                                     }`}
                                   >
                                     <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
                                       {row.dish.name}
                                     </td>
-                                    {locations.map(location => (
-                                      <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                        {row.locationOrders[location.id] || '-'}
-                                      </td>
-                                    ))}
+                                    {locations.map(location => {
+                                      const portions = row.locationOrders[location.id] || 0;
+                                      return (
+                                        <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                          {portions > 0 ? calculateWeight(portions, row.dish) : '-'}
+                                        </td>
+                                      );
+                                    })}
                                     <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
-                                      {row.totalPortions}
-                                    </td>
-                                    <td className="px-4 py-3.5 text-sm text-center text-gray-700 font-semibold">
                                       {calculateWeight(row.totalPortions, row.dish)}
                                     </td>
                                   </tr>
                                 );
                               })}
-                              {/* Components in order: Carbs, Warm Veggies/Salad, Add-ons */}
+                              {/* Components in order: Carbs, Warm Veggies/Salad, Add-ons - using aggregated components */}
                               {(() => {
-                                const carbResult = renderComponentSection(allHotComponents, 'carb', 'Carbs', rowCounter);
+                                const carbResult = renderComponentSection(aggregatedHotComponentsList, 'carb', 'Carbs', rowCounter);
                                 rowCounter += carbResult.count;
                                 return carbResult.rows;
                               })()}
                               {(() => {
-                                const warmVeggieResult = renderComponentSection(allHotComponents, 'warm_veggie', 'Warm Vegetables', rowCounter);
+                                const warmVeggieResult = renderComponentSection(aggregatedHotComponentsList, 'warm_veggie', 'Warm Vegetables', rowCounter);
                                 rowCounter += warmVeggieResult.count;
                                 return warmVeggieResult.rows;
                               })()}
                               {(() => {
-                                const saladResult = renderComponentSection(allHotComponents, 'salad', 'Salad', rowCounter);
+                                const saladResult = renderComponentSection(aggregatedHotComponentsList, 'salad', 'Salad', rowCounter);
                                 rowCounter += saladResult.count;
                                 return saladResult.rows;
                               })()}
                               {(() => {
-                                const condimentResult = renderComponentSection(allHotComponents, 'condiment', 'Add-ons', rowCounter);
+                                const condimentResult = renderComponentSection(aggregatedHotComponentsList, 'condiment', 'Add-ons', rowCounter);
                                 rowCounter += condimentResult.count;
                                 return condimentResult.rows;
                               })()}
