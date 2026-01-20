@@ -184,3 +184,54 @@ export interface MonthlyInvoiceSummary {
   }[];
   total_amount: number;
 }
+
+export interface LocationSettings {
+  id: string;
+  location_id: string;
+
+  // Client Details
+  general_phone?: string | null;
+  contact_person_name?: string | null;
+  contact_person_email?: string | null;
+  contact_person_mobile?: string | null;
+  billing_contact_name?: string | null;
+  billing_contact_email?: string | null;
+  billing_contact_phone?: string | null;
+  delivery_directions?: string | null;
+
+  // Compass Team
+  site_manager_name?: string | null;
+  site_manager_email?: string | null;
+  site_manager_mobile?: string | null;
+  regional_manager_name?: string | null;
+  regional_manager_email?: string | null;
+  regional_manager_mobile?: string | null;
+
+  // Dish Settings
+  soup_portion_size_ml?: number | null;
+  salad_bar_portion_size_g?: number | null;
+
+  // Key Interest Points
+  key_interest_points?: string | null;
+
+  // Satisfaction Score
+  satisfaction_score?: number | null;
+
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LocationStaff {
+  id: string;
+  location_id: string;
+  staff_name: string;
+  staff_role?: string | null;
+  staff_mobile?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LocationWithSettings extends Location {
+  settings?: LocationSettings;
+  staff?: LocationStaff[];
+}

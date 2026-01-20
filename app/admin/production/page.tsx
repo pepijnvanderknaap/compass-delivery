@@ -27,6 +27,7 @@ export default function ProductionSheetsPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [productionRows, setProductionRows] = useState<ProductionRow[]>([]);
+  const [locationSettingsMap, setLocationSettingsMap] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
@@ -60,9 +61,9 @@ export default function ProductionSheetsPage() {
           .select('*')
           .eq('is_active', true);
 
-        // Deduplicate by name (keep first occurrence) and custom sort
+        // Deduplicate by name (keep first occurrence) and filter out Dark Kitchen
         const uniqueLocations = locationsData?.reduce((acc: Location[], loc) => {
-          if (!acc.find(l => l.name === loc.name)) {
+          if (!acc.find(l => l.name === loc.name) && loc.name !== 'Dark Kitchen') {
             acc.push(loc);
           }
           return acc;
@@ -107,6 +108,16 @@ export default function ProductionSheetsPage() {
   const fetchProductionData = async (date: Date, locs: Location[]) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const weekStart = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
+    // Fetch location settings for custom portion sizes
+    const { data: locationSettingsData } = await supabase
+      .from('location_settings')
+      .select('*');
+
+    const settingsMap = new Map(
+      (locationSettingsData || []).map(s => [s.location_id, s])
+    );
+    setLocationSettingsMap(settingsMap);
 
     // Get ALL active locations (including duplicates) to fetch orders
     const { data: allLocations } = await supabase
@@ -248,22 +259,42 @@ export default function ProductionSheetsPage() {
   };
 
   // Calculate weight with 1 decimal place for kg/L
-  const calculateWeight = (portions: number, dish: Dish) => {
+  // Uses location-specific portion sizes when available
+  const calculateWeight = (portions: number, dish: Dish, locationId?: string) => {
     // If portion_unit is "pieces", show as pieces
     if (dish.portion_unit === 'pieces') {
       return `${portions} pcs`;
     }
 
-    if (dish.default_portion_size_ml) {
-      const ml = portions * dish.default_portion_size_ml;
+    // Check for location-specific portion size overrides
+    let portionSizeMl = dish.default_portion_size_ml;
+    let portionSizeG = dish.default_portion_size_g;
+
+    if (locationId && locationSettingsMap.size > 0) {
+      const locationSettings = locationSettingsMap.get(locationId);
+
+      // Override soup portion size if location has custom setting
+      if (locationSettings?.soup_portion_size_ml && dish.category === 'soup') {
+        portionSizeMl = locationSettings.soup_portion_size_ml;
+      }
+
+      // Override salad bar portion size if location has custom setting
+      if (locationSettings?.salad_bar_portion_size_g && dish.category === 'salad_bar') {
+        portionSizeG = locationSettings.salad_bar_portion_size_g;
+      }
+    }
+
+    // Calculate using portion size (location-specific or default)
+    if (portionSizeMl) {
+      const ml = portions * portionSizeMl;
       if (ml >= 1000) {
         const liters = ml / 1000;
         return `${Math.round(liters * 10) / 10}L`;
       }
       return `${Math.round(ml)}ml`;
     }
-    if (dish.default_portion_size_g) {
-      const grams = portions * dish.default_portion_size_g;
+    if (portionSizeG) {
+      const grams = portions * portionSizeG;
       if (grams >= 1000) {
         const kg = grams / 1000;
         return `${Math.round(kg * 10) / 10}kg`;
@@ -502,7 +533,7 @@ export default function ProductionSheetsPage() {
                                     const portions = row.locationOrders[location.id] || 0;
                                     return (
                                       <td key={location.id} className="px-4 py-3 text-sm text-center text-gray-700 font-medium">
-                                        {portions > 0 ? calculateWeight(portions, row.dish) : '-'}
+                                        {portions > 0 ? calculateWeight(portions, row.dish, location.id) : '-'}
                                       </td>
                                     );
                                   })}
@@ -546,7 +577,7 @@ export default function ProductionSheetsPage() {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
                                         <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                          {portions > 0 ? calculateWeight(portions, row.dish) : '-'}
+                                          {portions > 0 ? calculateWeight(portions, row.dish, location.id) : '-'}
                                         </td>
                                       );
                                     })}
@@ -589,7 +620,7 @@ export default function ProductionSheetsPage() {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
                                         <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                          {portions > 0 ? calculateWeight(portions, row.dish) : '-'}
+                                          {portions > 0 ? calculateWeight(portions, row.dish, location.id) : '-'}
                                         </td>
                                       );
                                     })}
@@ -616,7 +647,7 @@ export default function ProductionSheetsPage() {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
                                         <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                          {portions > 0 ? calculateWeight(portions, row.dish) : '-'}
+                                          {portions > 0 ? calculateWeight(portions, row.dish, location.id) : '-'}
                                         </td>
                                       );
                                     })}

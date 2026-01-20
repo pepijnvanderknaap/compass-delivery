@@ -137,8 +137,14 @@ export default function DishCommandPalette({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[600px] flex flex-col">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[600px] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Search Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="relative">
@@ -202,8 +208,8 @@ export default function DishCommandPalette({
                       {usage && (
                         <div className="flex items-center gap-1 group relative">
                           <span className="text-red-500 text-lg">⚠⚠</span>
-                          {/* Tooltip */}
-                          <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                          {/* Tooltip - shows above the icons */}
+                          <div className="absolute left-0 bottom-full mb-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                             Used on {formatUsageDate(usage.lastUsed)}
                           </div>
                         </div>

@@ -17,7 +17,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     description: '',
     category: 'soup' as 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'component' | 'off_menu',
     subcategory: null as DishSubcategory | null,
-    portion_size: '',
+    portion_size: '150', // Default to 150ml for soups
     portion_unit: 'milliliters' as 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays',
     allergen_gluten: false,
     allergen_soy: false,
@@ -269,41 +269,43 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
               </div>
             )}
 
-            {/* Portion Size */}
-            <div>
-              <h3 className="font-semibold mb-3">Portion Size</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Specify the size of one portion for production calculations
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Portion Size</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.portion_size}
-                    onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
-                    placeholder="e.g., 150"
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Unit</label>
-                  <select
-                    value={formData.portion_unit}
-                    onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  >
-                    <option value="pieces">Pieces</option>
-                    <option value="grams">Grams (g)</option>
-                    <option value="kilograms">Kilograms (kg)</option>
-                    <option value="milliliters">Milliliters (ml)</option>
-                    <option value="liters">Liters (L)</option>
-                    <option value="trays">Trays</option>
-                  </select>
+            {/* Portion Size - Hidden for soups (managed by location settings) */}
+            {formData.category !== 'soup' && (
+              <div>
+                <h3 className="font-semibold mb-3">Portion Size</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Specify the size of one portion for production calculations
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Portion Size</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.portion_size}
+                      onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
+                      placeholder="e.g., 150"
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Unit</label>
+                    <select
+                      value={formData.portion_unit}
+                      onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    >
+                      <option value="pieces">Pieces</option>
+                      <option value="grams">Grams (g)</option>
+                      <option value="kilograms">Kilograms (kg)</option>
+                      <option value="milliliters">Milliliters (ml)</option>
+                      <option value="liters">Liters (L)</option>
+                      <option value="trays">Trays</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Components Selection - Only show for soups and hot dishes */}
             {formData.category !== 'component' && (
