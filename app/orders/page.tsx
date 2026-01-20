@@ -284,7 +284,7 @@ export default function OrdersPage() {
             </div>
             <button
               onClick={() => router.push('/location-management')}
-              className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
+              className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors"
             >
               Back
             </button>
@@ -298,7 +298,7 @@ export default function OrdersPage() {
             <p className="text-gray-600 mb-4">No orders found</p>
             <button
               onClick={() => router.push('/orders/new')}
-              className="px-6 py-2 bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
+              className="px-6 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors"
             >
               Create New Order
             </button>
@@ -351,11 +351,11 @@ export default function OrdersPage() {
               const isCurrentWeek = format(orderWeekStart, 'yyyy-MM-dd') === format(currentWeekStart, 'yyyy-MM-dd');
 
               return (
-                <div key={order.id} className={`bg-white rounded-2xl overflow-hidden ${isCurrentWeek ? 'border-2 border-teal-500 shadow-lg' : 'border border-black/10'}`}>
+                <div key={order.id} className={`bg-white rounded-lg overflow-hidden ${isCurrentWeek ? 'border-2 border-teal-500 shadow-lg' : 'border border-black/10'}`}>
                   <div className={`px-6 py-4 border-b flex justify-between items-center ${isCurrentWeek ? 'bg-gradient-to-r from-teal-600 to-teal-700 border-teal-600' : 'bg-black/[0.02] border-black/5'}`}>
                     <div>
                       <h2 className={`text-lg font-semibold flex items-center gap-3 ${isCurrentWeek ? 'text-white' : 'text-gray-900'}`}>
-                        {isCurrentWeek && <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">Current Week</span>}
+                        {isCurrentWeek && <span className="px-3 py-1 bg-white/20 rounded-md text-xs font-medium">Current Week</span>}
                         {formatWeekRange(order.week_start_date)}
                       </h2>
                       <p className={`text-sm ${isCurrentWeek ? 'text-white/80' : 'text-gray-600'}`}>
@@ -368,14 +368,14 @@ export default function OrdersPage() {
                           <button
                             onClick={() => handleCancel()}
                             disabled={saving}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={() => handleSave(order.id)}
                             disabled={saving}
-                            className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors disabled:opacity-50"
+                            className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors disabled:opacity-50"
                           >
                             {saving ? 'Saving...' : 'Save'}
                           </button>
@@ -383,7 +383,7 @@ export default function OrdersPage() {
                       ) : (
                         <button
                           onClick={() => handleEdit(order.id, order)}
-                          className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
+                          className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors"
                         >
                           Edit
                         </button>

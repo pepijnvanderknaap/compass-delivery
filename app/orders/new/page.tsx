@@ -282,7 +282,7 @@ export default function NewOrderPage() {
             </div>
             <button
               onClick={() => router.push('/orders')}
-              className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
+              className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors"
             >
               Cancel
             </button>
@@ -292,7 +292,7 @@ export default function NewOrderPage() {
 
       <main className="max-w-6xl mx-auto px-8 py-10">
         {message && (
-          <div className={`mb-6 px-4 py-3 rounded-xl ${message.type === 'success' ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'} text-sm font-medium`}>
+          <div className={`mb-6 px-4 py-3 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'} text-sm font-medium`}>
             {message.text}
           </div>
         )}
@@ -310,7 +310,7 @@ export default function NewOrderPage() {
             />
           </div>
 
-          <div className="bg-white border border-black/10 rounded-2xl overflow-hidden">
+          <div className="bg-white border border-black/10 rounded-lg overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="bg-black/[0.02]">
@@ -410,7 +410,7 @@ export default function NewOrderPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-8 py-3 bg-teal-600 text-white text-sm font-medium rounded-full hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              className="px-8 py-3 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               {submitting ? 'Submitting...' : 'Submit Order'}
             </button>

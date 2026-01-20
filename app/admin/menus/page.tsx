@@ -398,7 +398,7 @@ export default function AdminMenusPage() {
             </div>
             <button
               onClick={() => router.push('/dark-kitchen')}
-              className="px-6 py-2 text-sm font-medium bg-slate-700 text-white rounded-full hover:bg-slate-800 transition-colors"
+              className="px-6 py-2 text-sm font-medium bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors"
             >
               Back
             </button>
@@ -408,14 +408,14 @@ export default function AdminMenusPage() {
 
       <main className="max-w-full mx-auto px-6 lg:px-8 py-10">
         {message && (
-          <div className={`mb-6 p-4 rounded-xl ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {message.text}
           </div>
         )}
 
         <div className="grid grid-cols-12 gap-6">
           {/* Sidebar with dishes */}
-          <div className="col-span-3 bg-white rounded-2xl border border-black/10 p-6 h-fit sticky top-24">
+          <div className="col-span-3 bg-white rounded-lg border border-black/10 p-6 h-fit sticky top-24">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Available Dishes</h2>
 
             {/* Search */}
@@ -463,10 +463,10 @@ export default function AdminMenusPage() {
             {weeks.map((weekStart, weekIndex) => {
               const isCurrent = isCurrentWeek(weekStart);
               return (
-              <div key={weekIndex} className={`bg-white rounded-2xl overflow-hidden ${isCurrent ? 'border-2 border-slate-500 shadow-lg' : 'border border-black/10'}`}>
+              <div key={weekIndex} className={`bg-white rounded-lg overflow-hidden ${isCurrent ? 'border-2 border-slate-500 shadow-lg' : 'border border-black/10'}`}>
                 <div className={`px-6 py-4 border-b ${isCurrent ? 'bg-gradient-to-r from-slate-600 to-slate-700 border-slate-600' : 'bg-black/[0.02] border-black/5'}`}>
                   <h3 className={`text-lg font-semibold flex items-center gap-3 ${isCurrent ? 'text-white' : 'text-gray-900'}`}>
-                    {isCurrent && <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">Current Week</span>}
+                    {isCurrent && <span className="px-3 py-1 bg-white/20 rounded-md text-xs font-medium">Current Week</span>}
                     Week {weekIndex + 1}: {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
                   </h3>
                 </div>
@@ -508,7 +508,7 @@ export default function AdminMenusPage() {
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={() => clearSlot(weekIndex, dayIndex, 'soup')}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                                     >
                                       ×
                                     </button>
@@ -543,7 +543,7 @@ export default function AdminMenusPage() {
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={() => clearSlot(weekIndex, dayIndex, 'hot_meat')}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                                     >
                                       ×
                                     </button>
@@ -578,7 +578,7 @@ export default function AdminMenusPage() {
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={() => clearSlot(weekIndex, dayIndex, 'hot_veg')}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                                     >
                                       ×
                                     </button>
@@ -609,7 +609,7 @@ export default function AdminMenusPage() {
               <button
                 onClick={saveMenuData}
                 disabled={saving}
-                className="px-8 py-3 bg-slate-700 text-white rounded-full hover:bg-slate-800 font-medium shadow-sm disabled:opacity-50 transition-colors"
+                className="px-8 py-3 bg-slate-700 text-white rounded-md hover:bg-slate-800 font-medium shadow-sm disabled:opacity-50 transition-colors"
               >
                 {saving ? 'Saving...' : 'Save 4-Week Menu'}
               </button>
