@@ -287,13 +287,13 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={category.key} className="space-y-3">
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-sm">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-500/90 to-blue-600/90 rounded-xl shadow-sm">
                     <h3 className="text-sm font-semibold text-white flex items-center justify-between">
                       <span className="font-medium">{category.label}</span>
                       <span className="text-xs text-blue-50 font-normal">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="bg-white rounded-lg border border-black/10 p-3">
+                  <div className="bg-white rounded-xl border border-black/10 p-3">
                     {/* Individual search bar */}
                     <input
                       type="text"
@@ -344,13 +344,13 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={subcategory.key} className="space-y-3">
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-sm">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-500/90 to-blue-600/90 rounded-xl shadow-sm">
                     <h3 className="text-sm font-semibold text-white flex items-center justify-between">
                       <span className="font-medium">{subcategory.label}</span>
                       <span className="text-xs text-blue-50 font-normal">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="bg-white rounded-lg border border-black/10 p-3">
+                  <div className="bg-white rounded-xl border border-black/10 p-3">
                     {/* Individual search bar */}
                     <input
                       type="text"
