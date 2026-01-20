@@ -286,14 +286,14 @@ export default function AdminDishesPage() {
               const totalCount = mainDishes.filter(d => d.category === category.key).length;
 
               return (
-                <div key={category.key} className="bg-white rounded-lg border border-black/10">
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg mt-3 mb-3 shadow-sm">
+                <div key={category.key} className="space-y-3">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-sm">
                     <h3 className="text-sm font-semibold text-white flex items-center justify-between">
                       <span className="font-medium">{category.label}</span>
                       <span className="text-xs text-blue-50 font-normal">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="px-3 pb-3">
+                  <div className="bg-white rounded-lg border border-black/10 p-3">
                     {/* Individual search bar */}
                     <input
                       type="text"
@@ -343,14 +343,14 @@ export default function AdminDishesPage() {
               const totalCount = componentDishes.filter(d => d.subcategory === subcategory.key).length;
 
               return (
-                <div key={subcategory.key} className="bg-white rounded-lg border border-black/10">
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg mt-3 mb-3 shadow-sm">
+                <div key={subcategory.key} className="space-y-3">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-sm">
                     <h3 className="text-sm font-semibold text-white flex items-center justify-between">
                       <span className="font-medium">{subcategory.label}</span>
                       <span className="text-xs text-blue-50 font-normal">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="px-3 pb-3">
+                  <div className="bg-white rounded-lg border border-black/10 p-3">
                     {/* Individual search bar */}
                     <input
                       type="text"
