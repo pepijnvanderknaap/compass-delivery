@@ -247,29 +247,23 @@ export default function ProductionSheetsPage() {
     setProductionRows(rows);
   };
 
+  // Calculate weight with 1 decimal place for kg/L
   const calculateWeight = (portions: number, dish: Dish) => {
-    console.log('calculateWeight:', {
-      dishName: dish.name,
-      portions,
-      portion_size_ml: dish.default_portion_size_ml,
-      portion_size_g: dish.default_portion_size_g
-    });
-
     if (dish.default_portion_size_ml) {
       const ml = portions * dish.default_portion_size_ml;
       if (ml >= 1000) {
         const liters = ml / 1000;
-        return `${liters.toFixed(2)}L`;
+        return `${Math.round(liters * 10) / 10}L`;
       }
-      return `${ml.toFixed(0)}ml`;
+      return `${Math.round(ml)}ml`;
     }
     if (dish.default_portion_size_g) {
       const grams = portions * dish.default_portion_size_g;
       if (grams >= 1000) {
         const kg = grams / 1000;
-        return `${kg.toFixed(2)}kg`;
+        return `${Math.round(kg * 10) / 10}kg`;
       }
-      return `${grams.toFixed(0)}g`;
+      return `${Math.round(grams)}g`;
     }
     return `${portions} portions`;
   };
