@@ -16,6 +16,7 @@ interface ProductionRow {
   parentDish?: string;
   locationOrders: LocationOrders;
   totalPortions: number;
+  mealType?: string;
 }
 
 export default function ProductionSheetsPage() {
@@ -50,14 +51,39 @@ export default function ProductionSheetsPage() {
 
         setProfile(profileData);
 
-        // Get active locations
+        // Get active locations - deduplicate by name and sort in custom order
         const { data: locationsData } = await supabase
           .from('locations')
           .select('*')
-          .eq('is_active', true)
-          .order('name');
+          .eq('is_active', true);
 
-        setLocations(locationsData || []);
+        // Deduplicate by name (keep first occurrence) and custom sort
+        const uniqueLocations = locationsData?.reduce((acc: Location[], loc) => {
+          if (!acc.find(l => l.name === loc.name)) {
+            acc.push(loc);
+          }
+          return acc;
+        }, []) || [];
+
+        // Custom sort order
+        const sortOrder = ['SnapChat 119', 'SnapChat 165', 'Symphonys', 'Atlasian', 'Snowflake', 'JAA Training'];
+        uniqueLocations.sort((a, b) => {
+          const indexA = sortOrder.findIndex(name => a.name.includes(name.split(' ')[0]));
+          const indexB = sortOrder.findIndex(name => b.name.includes(name.split(' ')[0]));
+
+          if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name);
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+
+          // For SnapChat, sort by number
+          if (a.name.includes('SnapChat') && b.name.includes('SnapChat')) {
+            return a.name.localeCompare(b.name);
+          }
+
+          return indexA - indexB;
+        });
+
+        setLocations(uniqueLocations);
         await fetchProductionData(selectedDate, locationsData || []);
       } catch (err) {
         console.error('Error initializing page:', err);
@@ -129,6 +155,9 @@ export default function ProductionSheetsPage() {
     const rows: ProductionRow[] = [];
 
     dishes?.forEach(mainDish => {
+      // Get meal type for this dish from menu items
+      const mealType = menuItems?.find(item => item.dish_id === mainDish.id)?.meal_type;
+
       // Get orders for this main dish grouped by location
       const locationOrders: LocationOrders = {};
       let totalPortions = 0;
@@ -146,7 +175,8 @@ export default function ProductionSheetsPage() {
         dish: mainDish,
         isComponent: false,
         locationOrders,
-        totalPortions
+        totalPortions,
+        mealType
       });
 
       // Add component rows
@@ -158,7 +188,8 @@ export default function ProductionSheetsPage() {
             isComponent: true,
             parentDish: mainDish.name,
             locationOrders: locationOrders, // Components have same distribution as main dish
-            totalPortions: totalPortions
+            totalPortions: totalPortions,
+            mealType
           });
         }
       });
@@ -234,7 +265,7 @@ export default function ProductionSheetsPage() {
         </div>
 
         {/* Production Table */}
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden shadow-sm">
           <div className="px-6 py-4 bg-gradient-to-r from-blue-500/90 to-blue-600/90">
             <h2 className="text-xl font-semibold text-white">
               Production for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
@@ -248,38 +279,101 @@ export default function ProductionSheetsPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-300">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Item</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Item</th>
                     {locations.map(location => (
-                      <th key={location.id} className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
+                      <th key={location.id} className="px-4 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">
                         {location.name}
                       </th>
                     ))}
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Total</th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Weight/Volume</th>
+                    <th className="px-4 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">Total</th>
+                    <th className="px-4 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">Weight/Volume</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {productionRows.map((row, idx) => (
-                    <tr key={idx} className={row.isComponent ? 'bg-blue-50/30' : 'bg-white'}>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {row.isComponent && <span className="text-gray-500 mr-2">↳</span>}
-                        {row.dish.name}
-                      </td>
-                      {locations.map(location => (
-                        <td key={location.id} className="px-6 py-4 text-sm text-center text-gray-700">
-                          {row.locationOrders[location.id] || '-'}
-                        </td>
-                      ))}
-                      <td className="px-6 py-4 text-sm text-center font-semibold text-gray-900">
-                        {row.totalPortions}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-center text-gray-700 font-medium">
-                        {calculateWeight(row.totalPortions, row.dish)}
-                      </td>
-                    </tr>
-                  ))}
+                <tbody>
+                  {(() => {
+                    const soupRows = productionRows.filter(row => row.mealType === 'soup');
+                    const hotDishRows = productionRows.filter(row => row.mealType && row.mealType !== 'soup');
+
+                    return (
+                      <>
+                        {/* Soup Section */}
+                        {soupRows.length > 0 && (
+                          <>
+                            <tr className="bg-gradient-to-r from-amber-100 to-amber-50">
+                              <td colSpan={locations.length + 3} className="px-6 py-3">
+                                <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide">Soup</h3>
+                              </td>
+                            </tr>
+                            {soupRows.map((row, idx) => (
+                              <tr
+                                key={`soup-${idx}`}
+                                className={`border-b border-gray-100 transition-colors hover:bg-amber-50/30 ${
+                                  row.isComponent
+                                    ? idx % 2 === 0 ? 'bg-amber-50/40' : 'bg-amber-50/20'
+                                    : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                }`}
+                              >
+                                <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
+                                  {row.isComponent && <span className="text-amber-600 mr-2">↳</span>}
+                                  {row.dish.name}
+                                </td>
+                                {locations.map(location => (
+                                  <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                    {row.locationOrders[location.id] || '-'}
+                                  </td>
+                                ))}
+                                <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
+                                  {row.totalPortions}
+                                </td>
+                                <td className="px-4 py-3.5 text-sm text-center text-blue-700 font-semibold">
+                                  {calculateWeight(row.totalPortions, row.dish)}
+                                </td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Hot Dish Section */}
+                        {hotDishRows.length > 0 && (
+                          <>
+                            <tr className="bg-gradient-to-r from-orange-100 to-orange-50">
+                              <td colSpan={locations.length + 3} className="px-6 py-3">
+                                <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">Hot Dish</h3>
+                              </td>
+                            </tr>
+                            {hotDishRows.map((row, idx) => (
+                              <tr
+                                key={`hot-${idx}`}
+                                className={`border-b border-gray-100 transition-colors hover:bg-orange-50/30 ${
+                                  row.isComponent
+                                    ? idx % 2 === 0 ? 'bg-orange-50/40' : 'bg-orange-50/20'
+                                    : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                }`}
+                              >
+                                <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
+                                  {row.isComponent && <span className="text-orange-600 mr-2">↳</span>}
+                                  {row.dish.name}
+                                </td>
+                                {locations.map(location => (
+                                  <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                    {row.locationOrders[location.id] || '-'}
+                                  </td>
+                                ))}
+                                <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
+                                  {row.totalPortions}
+                                </td>
+                                <td className="px-4 py-3.5 text-sm text-center text-blue-700 font-semibold">
+                                  {calculateWeight(row.totalPortions, row.dish)}
+                                </td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
                 </tbody>
               </table>
             </div>
