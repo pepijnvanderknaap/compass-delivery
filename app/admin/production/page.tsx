@@ -4,24 +4,25 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format, addDays, startOfWeek } from 'date-fns';
-import type { UserProfile, Dish, Location } from '@/lib/types';
+import type { UserProfile, Dish, Location, DishWithComponents } from '@/lib/types';
 
-interface OrderSummary {
-  location_id: string;
-  location_name: string;
-  portions: number;
+interface LocationOrders {
+  [locationId: string]: number; // portions
 }
 
-interface DishProduction {
+interface ProductionRow {
   dish: Dish;
-  orders: OrderSummary[];
+  isComponent: boolean;
+  parentDish?: string;
+  locationOrders: LocationOrders;
   totalPortions: number;
 }
 
 export default function ProductionSheetsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [production, setProduction] = useState<DishProduction[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [productionRows, setProductionRows] = useState<ProductionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
@@ -48,7 +49,16 @@ export default function ProductionSheetsPage() {
         }
 
         setProfile(profileData);
-        await fetchProductionData(selectedDate);
+
+        // Get active locations
+        const { data: locationsData } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        setLocations(locationsData || []);
+        await fetchProductionData(selectedDate, locationsData || []);
       } catch (err) {
         console.error('Error initializing page:', err);
       } finally {
@@ -60,12 +70,12 @@ export default function ProductionSheetsPage() {
   }, [supabase, router]);
 
   useEffect(() => {
-    if (profile) {
-      fetchProductionData(selectedDate);
+    if (profile && locations.length > 0) {
+      fetchProductionData(selectedDate, locations);
     }
   }, [selectedDate]);
 
-  const fetchProductionData = async (date: Date) => {
+  const fetchProductionData = async (date: Date, locs: Location[]) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const weekStart = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
@@ -77,12 +87,12 @@ export default function ProductionSheetsPage() {
       .single();
 
     if (!weeklyMenu) {
-      setProduction([]);
+      setProductionRows([]);
       return;
     }
 
     // Get menu items for this date
-    const dayOfWeek = (date.getDay() + 6) % 7; // Convert to Monday = 0
+    const dayOfWeek = (date.getDay() + 6) % 7;
     const { data: menuItems } = await supabase
       .from('menu_items')
       .select('dish_id, meal_type')
@@ -90,61 +100,83 @@ export default function ProductionSheetsPage() {
       .eq('day_of_week', dayOfWeek);
 
     if (!menuItems || menuItems.length === 0) {
-      setProduction([]);
+      setProductionRows([]);
       return;
     }
 
     const dishIds = menuItems.map(item => item.dish_id);
 
-    // Get dishes
+    // Get main dishes with components
     const { data: dishes } = await supabase
       .from('dishes')
       .select('*')
       .in('id', dishIds);
 
+    // Get components for each main dish
+    const { data: dishComponents } = await supabase
+      .from('dish_components')
+      .select('*, component_dish:dishes!component_dish_id(*)')
+      .in('main_dish_id', dishIds);
+
     // Get orders for this date
     const { data: orderItems } = await supabase
       .from('order_items')
-      .select('dish_id, portions, orders(location_id, locations(name))')
+      .select('dish_id, portions, orders(location_id)')
       .eq('delivery_date', dateStr)
       .in('dish_id', dishIds);
 
-    // Get locations
-    const { data: locations } = await supabase
-      .from('locations')
-      .select('*')
-      .eq('is_active', true);
+    // Build production rows
+    const rows: ProductionRow[] = [];
 
-    // Organize production data
-    const productionMap = new Map<string, DishProduction>();
-
-    dishes?.forEach(dish => {
-      const dishOrders: OrderSummary[] = [];
+    dishes?.forEach(mainDish => {
+      // Get orders for this main dish grouped by location
+      const locationOrders: LocationOrders = {};
       let totalPortions = 0;
 
-      // Get orders for this dish
-      const dishOrderItems = orderItems?.filter(item => item.dish_id === dish.id) || [];
-
+      const dishOrderItems = orderItems?.filter(item => item.dish_id === mainDish.id) || [];
       dishOrderItems.forEach((item: any) => {
-        const location = item.orders?.locations;
-        if (location) {
-          dishOrders.push({
-            location_id: item.orders.location_id,
-            location_name: location.name,
-            portions: item.portions
-          });
+        if (item.orders?.location_id) {
+          locationOrders[item.orders.location_id] = (locationOrders[item.orders.location_id] || 0) + item.portions;
           totalPortions += item.portions;
         }
       });
 
-      productionMap.set(dish.id, {
-        dish,
-        orders: dishOrders,
+      // Add main dish row
+      rows.push({
+        dish: mainDish,
+        isComponent: false,
+        locationOrders,
         totalPortions
+      });
+
+      // Add component rows
+      const components = dishComponents?.filter(dc => dc.main_dish_id === mainDish.id) || [];
+      components.forEach((comp: any) => {
+        if (comp.component_dish) {
+          rows.push({
+            dish: comp.component_dish,
+            isComponent: true,
+            parentDish: mainDish.name,
+            locationOrders: locationOrders, // Components have same distribution as main dish
+            totalPortions: totalPortions
+          });
+        }
       });
     });
 
-    setProduction(Array.from(productionMap.values()));
+    setProductionRows(rows);
+  };
+
+  const calculateWeight = (portions: number, dish: Dish) => {
+    if (dish.default_portion_size_ml) {
+      const liters = (portions * dish.default_portion_size_ml) / 1000;
+      return `${liters.toFixed(2)}L`;
+    }
+    if (dish.default_portion_size_g) {
+      const kg = (portions * dish.default_portion_size_g) / 1000;
+      return `${kg.toFixed(2)}kg`;
+    }
+    return '-';
   };
 
   if (loading) {
@@ -159,7 +191,7 @@ export default function ProductionSheetsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-800 to-blue-900 py-6">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-6 lg:px-8">
           <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
             DELIVERY
           </h1>
@@ -168,7 +200,7 @@ export default function ProductionSheetsPage() {
 
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="text-2xl font-light text-gray-700">
               Production Sheets
@@ -183,7 +215,7 @@ export default function ProductionSheetsPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
+      <main className="max-w-full mx-auto px-6 lg:px-8 py-10">
         {/* Date Picker */}
         <div className="mb-8 flex items-center gap-4">
           <label className="text-sm font-medium text-gray-700">Production Date:</label>
@@ -201,60 +233,55 @@ export default function ProductionSheetsPage() {
           </button>
         </div>
 
-        {/* Production Summary */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold text-gray-900">
-            Production for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-          </h2>
+        {/* Production Table */}
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-500/90 to-blue-600/90">
+            <h2 className="text-xl font-semibold text-white">
+              Production for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            </h2>
+          </div>
 
-          {production.length === 0 ? (
-            <div className="bg-white rounded-xl border border-black/10 p-8 text-center">
+          {productionRows.length === 0 ? (
+            <div className="p-8 text-center">
               <p className="text-gray-500">No production scheduled for this date</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {production.map(({ dish, orders, totalPortions }) => (
-                <div key={dish.id} className="bg-white rounded-xl border border-black/10 overflow-hidden">
-                  <div className="px-6 py-4 bg-gradient-to-r from-blue-500/90 to-blue-600/90">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-white">{dish.name}</h3>
-                      <span className="px-4 py-1 bg-white/20 rounded-lg text-white font-semibold">
-                        Total: {totalPortions} portions
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    {orders.length === 0 ? (
-                      <p className="text-gray-500 text-sm">No orders for this dish</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {orders.map((order) => (
-                          <div key={order.location_id} className="flex items-center justify-between py-2 px-4 bg-gray-50 rounded-lg">
-                            <span className="font-medium text-gray-900">{order.location_name}</span>
-                            <span className="text-gray-700">{order.portions} portions</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {dish.default_portion_size_ml && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <p className="text-sm text-gray-600">
-                          Total volume: <span className="font-semibold">{totalPortions * dish.default_portion_size_ml} ml</span>
-                        </p>
-                      </div>
-                    )}
-                    {dish.default_portion_size_g && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <p className="text-sm text-gray-600">
-                          Total weight: <span className="font-semibold">{totalPortions * dish.default_portion_size_g} g</span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Item</th>
+                    {locations.map(location => (
+                      <th key={location.id} className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
+                        {location.name}
+                      </th>
+                    ))}
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Total</th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Weight/Volume</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {productionRows.map((row, idx) => (
+                    <tr key={idx} className={row.isComponent ? 'bg-blue-50/30' : 'bg-white'}>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        {row.isComponent && <span className="text-gray-500 mr-2">↳</span>}
+                        {row.dish.name}
+                      </td>
+                      {locations.map(location => (
+                        <td key={location.id} className="px-6 py-4 text-sm text-center text-gray-700">
+                          {row.locationOrders[location.id] || '-'}
+                        </td>
+                      ))}
+                      <td className="px-6 py-4 text-sm text-center font-semibold text-gray-900">
+                        {row.totalPortions}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-center text-gray-700 font-medium">
+                        {calculateWeight(row.totalPortions, row.dish)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
