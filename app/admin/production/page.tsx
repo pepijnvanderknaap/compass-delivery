@@ -87,7 +87,7 @@ export default function ProductionSheetsPage() {
         });
 
         setLocations(uniqueLocations);
-        await fetchProductionData(selectedDate, locationsData || []);
+        await fetchProductionData(selectedDate, uniqueLocations);
       } catch (err) {
         console.error('Error initializing page:', err);
       } finally {
