@@ -5,16 +5,22 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format, startOfWeek, addDays, addWeeks } from 'date-fns';
 import type { Dish, UserProfile } from '@/lib/types';
+import DishCommandPalette from '../menu-planner/components/DishCommandPalette';
 
 export default function AdminMenusPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [menuData, setMenuData] = useState<Record<string, Record<string, string | null>>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [paletteState, setPaletteState] = useState<{
+    isOpen: boolean;
+    category: string;
+    weekIndex: number;
+    dayIndex: number;
+    slot: string;
+  } | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -482,6 +488,50 @@ export default function AdminMenusPage() {
     });
   };
 
+  // Map slot names to dish categories
+  const getSlotCategory = (slot: string): string => {
+    if (slot === 'soup') return 'soup';
+    if (slot === 'hot_meat') return 'hot_dish_meat'; // Will match meat OR fish in the palette
+    if (slot === 'hot_veg') return 'hot_dish_veg';
+    return 'soup';
+  };
+
+  // Open command palette for a specific slot
+  const openPalette = (weekIndex: number, dayIndex: number, slot: string) => {
+    setPaletteState({
+      isOpen: true,
+      category: getSlotCategory(slot),
+      weekIndex,
+      dayIndex,
+      slot,
+    });
+  };
+
+  // Handle dish selection from palette
+  const handleDishSelect = (dishId: string) => {
+    if (!paletteState) return;
+
+    const { weekIndex, dayIndex, slot } = paletteState;
+    const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
+
+    // Update state and trigger auto-save
+    setMenuData(prev => {
+      const updated = {
+        ...prev,
+        [dateKey]: {
+          ...prev[dateKey],
+          [slot]: dishId
+        }
+      };
+
+      setTimeout(() => autoSaveWithData(updated), 500);
+      return updated;
+    });
+
+    // Refetch dishes to show newly created dish if any
+    fetchDishes();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -525,53 +575,18 @@ export default function AdminMenusPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-12 gap-6">
-          {/* Sidebar with dishes */}
-          <div className="col-span-3 bg-white rounded-lg border border-black/10 p-6 h-fit sticky top-24">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Available Dishes</h2>
+        {/* Command Palette */}
+        {paletteState && (
+          <DishCommandPalette
+            category={paletteState.category}
+            onSelect={handleDishSelect}
+            onClose={() => setPaletteState(null)}
+            isOpen={paletteState.isOpen}
+          />
+        )}
 
-            {/* Search */}
-            <input
-              type="text"
-              placeholder="Search dishes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2.5 border border-black/10 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-
-            {/* Category filter */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-2.5 border border-black/10 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            >
-              <option value="all">All Dishes</option>
-              <option value="soup">Soups</option>
-              <option value="hot_dish">Hot Dishes</option>
-            </select>
-
-            {/* Dish list */}
-            <div className="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
-              {filteredDishes.map(dish => (
-                <div
-                  key={dish.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, dish.id)}
-                  className="p-3 bg-gray-50 border border-black/10 rounded-lg cursor-move hover:bg-blue-50 hover:border-blue-400 hover:shadow-sm transition-all"
-                >
-                  <div className="font-medium text-sm text-gray-900">{dish.name}</div>
-                </div>
-              ))}
-              {filteredDishes.length === 0 && (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  No dishes found
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 4-week calendar grid */}
-          <div className="col-span-9 space-y-6">
+        {/* 4-week calendar grid - now full width */}
+        <div className="space-y-6">
             {weeks.map((weekStart, weekIndex) => {
               const isCurrent = isCurrentWeek(weekStart);
               return (
@@ -608,27 +623,28 @@ export default function AdminMenusPage() {
                           const dish = getDishById(dishId);
 
                           return (
-                            <td
-                              key={dayIndex}
-                              onDrop={(e) => handleDrop(e, weekIndex, dayIndex, 'soup')}
-                              onDragOver={handleDragOver}
-                              className="px-2 py-3"
-                            >
-                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center">
+                            <td key={dayIndex} className="px-2 py-3">
+                              <button
+                                onClick={() => openPalette(weekIndex, dayIndex, 'soup')}
+                                className="w-full h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"
+                              >
                                 {dish ? (
                                   <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
                                     <button
-                                      onClick={() => clearSlot(weekIndex, dayIndex, 'soup')}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearSlot(weekIndex, dayIndex, 'soup');
+                                      }}
                                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-black/30">Drop dish here</div>
+                                  <div className="text-xs text-black/30">Click to add</div>
                                 )}
-                              </div>
+                              </button>
                             </td>
                           );
                         })}
@@ -643,27 +659,28 @@ export default function AdminMenusPage() {
                           const dish = getDishById(dishId);
 
                           return (
-                            <td
-                              key={dayIndex}
-                              onDrop={(e) => handleDrop(e, weekIndex, dayIndex, 'hot_meat')}
-                              onDragOver={handleDragOver}
-                              className="px-2 py-3"
-                            >
-                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center">
+                            <td key={dayIndex} className="px-2 py-3">
+                              <button
+                                onClick={() => openPalette(weekIndex, dayIndex, 'hot_meat')}
+                                className="w-full h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"
+                              >
                                 {dish ? (
                                   <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
                                     <button
-                                      onClick={() => clearSlot(weekIndex, dayIndex, 'hot_meat')}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearSlot(weekIndex, dayIndex, 'hot_meat');
+                                      }}
                                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-black/30">Drop dish here</div>
+                                  <div className="text-xs text-black/30">Click to add</div>
                                 )}
-                              </div>
+                              </button>
                             </td>
                           );
                         })}
@@ -678,27 +695,28 @@ export default function AdminMenusPage() {
                           const dish = getDishById(dishId);
 
                           return (
-                            <td
-                              key={dayIndex}
-                              onDrop={(e) => handleDrop(e, weekIndex, dayIndex, 'hot_veg')}
-                              onDragOver={handleDragOver}
-                              className="px-2 py-3"
-                            >
-                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center">
+                            <td key={dayIndex} className="px-2 py-3">
+                              <button
+                                onClick={() => openPalette(weekIndex, dayIndex, 'hot_veg')}
+                                className="w-full h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"
+                              >
                                 {dish ? (
                                   <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
                                     <button
-                                      onClick={() => clearSlot(weekIndex, dayIndex, 'hot_veg')}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearSlot(weekIndex, dayIndex, 'hot_veg');
+                                      }}
                                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-black/30">Drop dish here</div>
+                                  <div className="text-xs text-black/30">Click to add</div>
                                 )}
-                              </div>
+                              </button>
                             </td>
                           );
                         })}
