@@ -17,6 +17,9 @@ interface ProductionRow {
   locationOrders: LocationOrders;
   totalPortions: number;
   mealType?: string;
+  componentType?: string;
+  isSubHeader?: boolean;
+  subHeaderLabel?: string;
 }
 
 export default function ProductionSheetsPage() {
@@ -151,8 +154,15 @@ export default function ProductionSheetsPage() {
       .eq('delivery_date', dateStr)
       .in('dish_id', dishIds);
 
-    // Build production rows
+    // Build production rows with aggregated components
     const rows: ProductionRow[] = [];
+    const componentAggregation: Record<string, {
+      dish: Dish;
+      locationOrders: LocationOrders;
+      totalPortions: number;
+      componentType: string;
+      mealType?: string;
+    }> = {};
 
     dishes?.forEach(mainDish => {
       // Get meal type for this dish from menu items
@@ -179,19 +189,41 @@ export default function ProductionSheetsPage() {
         mealType
       });
 
-      // Add component rows
+      // Aggregate components by dish name and type
       const components = dishComponents?.filter(dc => dc.main_dish_id === mainDish.id) || [];
       components.forEach((comp: any) => {
         if (comp.component_dish) {
-          rows.push({
-            dish: comp.component_dish,
-            isComponent: true,
-            parentDish: mainDish.name,
-            locationOrders: locationOrders, // Components have same distribution as main dish
-            totalPortions: totalPortions,
-            mealType
+          const key = `${comp.component_dish.id}-${comp.component_type}-${mealType}`;
+
+          if (!componentAggregation[key]) {
+            componentAggregation[key] = {
+              dish: comp.component_dish,
+              locationOrders: {},
+              totalPortions: 0,
+              componentType: comp.component_type,
+              mealType
+            };
+          }
+
+          // Add to aggregated component
+          Object.keys(locationOrders).forEach(locId => {
+            componentAggregation[key].locationOrders[locId] =
+              (componentAggregation[key].locationOrders[locId] || 0) + locationOrders[locId];
           });
+          componentAggregation[key].totalPortions += totalPortions;
         }
+      });
+    });
+
+    // Add aggregated components to rows, grouped by meal type and component type
+    Object.values(componentAggregation).forEach(comp => {
+      rows.push({
+        dish: comp.dish,
+        isComponent: true,
+        locationOrders: comp.locationOrders,
+        totalPortions: comp.totalPortions,
+        mealType: comp.mealType,
+        componentType: comp.componentType
       });
     });
 
@@ -199,15 +231,8 @@ export default function ProductionSheetsPage() {
   };
 
   const calculateWeight = (portions: number, dish: Dish) => {
-    if (dish.default_portion_size_ml) {
-      const liters = (portions * dish.default_portion_size_ml) / 1000;
-      return `${liters.toFixed(2)}L`;
-    }
-    if (dish.default_portion_size_g) {
-      const kg = (portions * dish.default_portion_size_g) / 1000;
-      return `${kg.toFixed(2)}kg`;
-    }
-    return '-';
+    // Just show portions instead of converting to weight/volume
+    return `${portions} portions`;
   };
 
   if (loading) {
@@ -293,8 +318,58 @@ export default function ProductionSheetsPage() {
                 </thead>
                 <tbody>
                   {(() => {
-                    const soupRows = productionRows.filter(row => row.mealType === 'soup');
-                    const hotDishRows = productionRows.filter(row => row.mealType && row.mealType !== 'soup');
+                    const soupRows = productionRows.filter(row => row.mealType === 'soup' && !row.isComponent);
+                    const soupComponents = productionRows.filter(row => row.mealType === 'soup' && row.isComponent);
+
+                    const hotMeatRows = productionRows.filter(row => row.mealType === 'hot_meat' && !row.isComponent);
+                    const hotMeatComponents = productionRows.filter(row => row.mealType === 'hot_meat' && row.isComponent);
+
+                    const hotVegRows = productionRows.filter(row => row.mealType === 'hot_veg' && !row.isComponent);
+                    const hotVegComponents = productionRows.filter(row => row.mealType === 'hot_veg' && row.isComponent);
+
+                    // Helper to get components by type
+                    const getComponentsByType = (components: ProductionRow[], type: string) =>
+                      components.filter(c => c.componentType === type);
+
+                    // Helper to render component section
+                    const renderComponentSection = (components: ProductionRow[], type: string, label: string) => {
+                      const filtered = getComponentsByType(components, type);
+                      if (filtered.length === 0) return null;
+
+                      return (
+                        <>
+                          <tr className="bg-gray-100/50">
+                            <td colSpan={locations.length + 3} className="px-8 py-2">
+                              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{label}</h4>
+                            </td>
+                          </tr>
+                          {filtered.map((row, idx) => (
+                            <tr
+                              key={`${type}-${idx}`}
+                              className={`border-b border-gray-100 transition-colors hover:bg-orange-50/20 ${
+                                idx % 2 === 0 ? 'bg-orange-50/30' : 'bg-orange-50/15'
+                              }`}
+                            >
+                              <td className="px-8 py-3 text-sm font-medium text-gray-900">
+                                <span className="text-orange-500 mr-2">↳</span>
+                                {row.dish.name}
+                              </td>
+                              {locations.map(location => (
+                                <td key={location.id} className="px-4 py-3 text-sm text-center text-gray-700 font-medium">
+                                  {row.locationOrders[location.id] || '-'}
+                                </td>
+                              ))}
+                              <td className="px-4 py-3 text-sm text-center font-bold text-gray-900">
+                                {row.totalPortions}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-center text-blue-700 font-semibold">
+                                {calculateWeight(row.totalPortions, row.dish)}
+                              </td>
+                            </tr>
+                          ))}
+                        </>
+                      );
+                    };
 
                     return (
                       <>
@@ -308,15 +383,12 @@ export default function ProductionSheetsPage() {
                             </tr>
                             {soupRows.map((row, idx) => (
                               <tr
-                                key={`soup-${idx}`}
+                                key={`soup-main-${idx}`}
                                 className={`border-b border-gray-100 transition-colors hover:bg-amber-50/30 ${
-                                  row.isComponent
-                                    ? idx % 2 === 0 ? 'bg-amber-50/40' : 'bg-amber-50/20'
-                                    : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                  idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                 }`}
                               >
                                 <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
-                                  {row.isComponent && <span className="text-amber-600 mr-2">↳</span>}
                                   {row.dish.name}
                                 </td>
                                 {locations.map(location => (
@@ -332,28 +404,26 @@ export default function ProductionSheetsPage() {
                                 </td>
                               </tr>
                             ))}
+                            {renderComponentSection(soupComponents, 'topping', 'Soup Toppings')}
                           </>
                         )}
 
-                        {/* Hot Dish Section */}
-                        {hotDishRows.length > 0 && (
+                        {/* Hot Dish - Meat */}
+                        {hotMeatRows.length > 0 && (
                           <>
                             <tr className="bg-gradient-to-r from-orange-100 to-orange-50">
                               <td colSpan={locations.length + 3} className="px-6 py-3">
-                                <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">Hot Dish</h3>
+                                <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">Hot Dish - Meat</h3>
                               </td>
                             </tr>
-                            {hotDishRows.map((row, idx) => (
+                            {hotMeatRows.map((row, idx) => (
                               <tr
-                                key={`hot-${idx}`}
+                                key={`hot-meat-main-${idx}`}
                                 className={`border-b border-gray-100 transition-colors hover:bg-orange-50/30 ${
-                                  row.isComponent
-                                    ? idx % 2 === 0 ? 'bg-orange-50/40' : 'bg-orange-50/20'
-                                    : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                  idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                 }`}
                               >
                                 <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
-                                  {row.isComponent && <span className="text-orange-600 mr-2">↳</span>}
                                   {row.dish.name}
                                 </td>
                                 {locations.map(location => (
@@ -369,6 +439,48 @@ export default function ProductionSheetsPage() {
                                 </td>
                               </tr>
                             ))}
+                            {renderComponentSection(hotMeatComponents, 'carb', 'Carbs')}
+                            {renderComponentSection(hotMeatComponents, 'warm_veggie', 'Warm Vegetables')}
+                            {renderComponentSection(hotMeatComponents, 'salad', 'Salad')}
+                            {renderComponentSection(hotMeatComponents, 'condiment', 'Add-ons')}
+                          </>
+                        )}
+
+                        {/* Hot Dish - Veg */}
+                        {hotVegRows.length > 0 && (
+                          <>
+                            <tr className="bg-gradient-to-r from-orange-100 to-orange-50">
+                              <td colSpan={locations.length + 3} className="px-6 py-3">
+                                <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">Hot Dish - Veg</h3>
+                              </td>
+                            </tr>
+                            {hotVegRows.map((row, idx) => (
+                              <tr
+                                key={`hot-veg-main-${idx}`}
+                                className={`border-b border-gray-100 transition-colors hover:bg-orange-50/30 ${
+                                  idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                }`}
+                              >
+                                <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
+                                  {row.dish.name}
+                                </td>
+                                {locations.map(location => (
+                                  <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                    {row.locationOrders[location.id] || '-'}
+                                  </td>
+                                ))}
+                                <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
+                                  {row.totalPortions}
+                                </td>
+                                <td className="px-4 py-3.5 text-sm text-center text-blue-700 font-semibold">
+                                  {calculateWeight(row.totalPortions, row.dish)}
+                                </td>
+                              </tr>
+                            ))}
+                            {renderComponentSection(hotVegComponents, 'carb', 'Carbs')}
+                            {renderComponentSection(hotVegComponents, 'warm_veggie', 'Warm Vegetables')}
+                            {renderComponentSection(hotVegComponents, 'salad', 'Salad')}
+                            {renderComponentSection(hotVegComponents, 'condiment', 'Add-ons')}
                           </>
                         )}
                       </>
