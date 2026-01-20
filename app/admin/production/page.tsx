@@ -24,7 +24,7 @@ interface ProductionRow {
 
 export default function ProductionSheetsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [productionRows, setProductionRows] = useState<ProductionRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ export default function ProductionSheetsPage() {
         });
 
         setLocations(uniqueLocations);
-        await fetchProductionData(selectedDate, uniqueLocations);
+        // Don't fetch production data yet - wait for date selection
       } catch (err) {
         console.error('Error initializing page:', err);
       } finally {
@@ -99,7 +99,7 @@ export default function ProductionSheetsPage() {
   }, [supabase, router]);
 
   useEffect(() => {
-    if (profile && locations.length > 0) {
+    if (profile && locations.length > 0 && selectedDate) {
       fetchProductionData(selectedDate, locations);
     }
   }, [selectedDate]);
@@ -248,6 +248,13 @@ export default function ProductionSheetsPage() {
   };
 
   const calculateWeight = (portions: number, dish: Dish) => {
+    console.log('calculateWeight:', {
+      dishName: dish.name,
+      portions,
+      portion_size_ml: dish.default_portion_size_ml,
+      portion_size_g: dish.default_portion_size_g
+    });
+
     if (dish.default_portion_size_ml) {
       const ml = portions * dish.default_portion_size_ml;
       if (ml >= 1000) {
@@ -271,6 +278,92 @@ export default function ProductionSheetsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  // Show date selector if no date is selected
+  if (!selectedDate) {
+    const today = new Date();
+    const nextWeek = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      return date;
+    });
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-800 to-blue-900 py-6">
+          <div className="max-w-full mx-auto px-6 lg:px-8">
+            <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+              DELIVERY
+            </h1>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+          <div className="max-w-full mx-auto px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="text-2xl font-light text-gray-700">
+                Production Sheets
+              </div>
+              <button
+                onClick={() => router.push('/dark-kitchen')}
+                className="px-6 py-2 text-sm font-medium bg-blue-800 text-white rounded-md hover:bg-blue-900 transition-colors"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        <main className="max-w-4xl mx-auto px-6 lg:px-8 py-10">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-extralight text-gray-800 mb-4">Choose Date</h2>
+            <p className="text-gray-600">Select a production date to view the sheet</p>
+          </div>
+
+          <div className="bg-white border border-black/10 shadow-sm p-8">
+            <div className="grid grid-cols-7 gap-4">
+              {nextWeek.map((date, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedDate(date)}
+                  className="flex flex-col items-center p-4 border-2 border-gray-200 hover:border-blue-600 hover:bg-blue-50 transition-all"
+                >
+                  <div className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                    {format(date, 'EEE')}
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {format(date, 'd')}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {format(date, 'MMM yyyy')}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  const dateStr = window.prompt('Enter custom date (YYYY-MM-DD):');
+                  if (dateStr) {
+                    const customDate = new Date(dateStr);
+                    if (!isNaN(customDate.getTime())) {
+                      setSelectedDate(customDate);
+                    }
+                  }
+                }}
+                className="w-full px-6 py-3 bg-gray-600 text-white hover:bg-gray-700 transition-colors"
+              >
+                Enter Custom Date
+              </button>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -307,14 +400,11 @@ export default function ProductionSheetsPage() {
         {/* Date and Actions */}
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-3xl font-extralight text-gray-800 tracking-wide">
-            Production for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            Production for {format(selectedDate!, 'EEEE, MMMM d, yyyy')}
           </h2>
           <div className="flex gap-3">
             <button
-              onClick={() => {
-                const newDate = window.prompt('Enter date (YYYY-MM-DD):', format(selectedDate, 'yyyy-MM-dd'));
-                if (newDate) setSelectedDate(new Date(newDate));
-              }}
+              onClick={() => setSelectedDate(null)}
               className="px-6 py-2 bg-gray-600 text-white hover:bg-gray-700 transition-colors"
             >
               Change Date
