@@ -287,10 +287,10 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={category.key} className="bg-white rounded-2xl border border-black/10 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-black/5 bg-black/[0.02]">
-                    <h3 className="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                  <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                    <h3 className="text-sm font-semibold text-slate-700 flex items-center justify-between">
                       <span>{category.label}</span>
-                      <span className="text-xs text-gray-500 font-normal">({totalCount})</span>
+                      <span className="text-xs text-slate-500 font-normal">({totalCount})</span>
                     </h3>
                   </div>
                   <div className="p-3">
@@ -344,10 +344,10 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={subcategory.key} className="bg-white rounded-2xl border border-black/10 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-black/5 bg-black/[0.02]">
-                    <h3 className="text-sm font-semibold text-gray-900 flex items-center justify-between">
+                  <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                    <h3 className="text-sm font-semibold text-slate-700 flex items-center justify-between">
                       <span>{subcategory.label}</span>
-                      <span className="text-xs text-gray-500 font-normal">({totalCount})</span>
+                      <span className="text-xs text-slate-500 font-normal">({totalCount})</span>
                     </h3>
                   </div>
                   <div className="p-3">
