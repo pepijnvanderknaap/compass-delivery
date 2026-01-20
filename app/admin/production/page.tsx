@@ -249,6 +249,11 @@ export default function ProductionSheetsPage() {
 
   // Calculate weight with 1 decimal place for kg/L
   const calculateWeight = (portions: number, dish: Dish) => {
+    // If portion_unit is "pieces", show as pieces
+    if (dish.portion_unit === 'pieces') {
+      return `${portions} pcs`;
+    }
+
     if (dish.default_portion_size_ml) {
       const ml = portions * dish.default_portion_size_ml;
       if (ml >= 1000) {
