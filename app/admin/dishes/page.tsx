@@ -287,13 +287,13 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={category.key} className="bg-white rounded-lg border border-black/10">
-                  <div className="px-4 py-3 bg-blue-100 rounded-lg mx-3 mt-3 mb-2">
-                    <h3 className="text-sm font-semibold text-blue-800 flex items-center justify-between">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-800 to-blue-900 rounded-t-lg">
+                    <h3 className="text-sm font-semibold text-white flex items-center justify-between">
                       <span className="font-medium">{category.label}</span>
-                      <span className="text-xs text-blue-700 font-normal">({totalCount})</span>
+                      <span className="text-xs text-blue-100 font-normal">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="p-3">
+                  <div className="p-3 pt-4">
                     {/* Individual search bar */}
                     <input
                       type="text"
@@ -344,13 +344,13 @@ export default function AdminDishesPage() {
 
               return (
                 <div key={subcategory.key} className="bg-white rounded-lg border border-black/10">
-                  <div className="px-4 py-3 bg-blue-100 rounded-lg mx-3 mt-3 mb-2">
-                    <h3 className="text-sm font-semibold text-blue-800 flex items-center justify-between">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-800 to-blue-900 rounded-t-lg">
+                    <h3 className="text-sm font-semibold text-white flex items-center justify-between">
                       <span className="font-medium">{subcategory.label}</span>
-                      <span className="text-xs text-blue-700 font-normal">({totalCount})</span>
+                      <span className="text-xs text-blue-100 font-normal">({totalCount})</span>
                     </h3>
                   </div>
-                  <div className="p-3">
+                  <div className="p-3 pt-4">
                     {/* Individual search bar */}
                     <input
                       type="text"
