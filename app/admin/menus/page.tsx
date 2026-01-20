@@ -493,7 +493,7 @@ export default function AdminMenusPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Colored header banner */}
-      <div className="bg-gradient-to-r from-blue-700 to-blue-800 py-6">
+      <div className="bg-gradient-to-r from-slate-600 to-slate-700 py-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
             DELIVERY
@@ -510,7 +510,7 @@ export default function AdminMenusPage() {
             </div>
             <button
               onClick={() => router.push('/dark-kitchen')}
-              className="px-6 py-2 text-sm font-medium bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
+              className="px-6 py-2 text-sm font-medium bg-slate-600 text-white rounded-md hover:bg-slate-700 transition-colors"
             >
               Back
             </button>
@@ -536,14 +536,14 @@ export default function AdminMenusPage() {
               placeholder="Search dishes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2.5 border border-black/10 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-4 py-2.5 border border-black/10 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-sm"
             />
 
             {/* Category filter */}
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-2.5 border border-black/10 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-4 py-2.5 border border-black/10 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent text-sm"
             >
               <option value="all">All Dishes</option>
               <option value="soup">Soups</option>
@@ -557,7 +557,7 @@ export default function AdminMenusPage() {
                   key={dish.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, dish.id)}
-                  className="p-3 bg-gray-50 border border-black/10 rounded-lg cursor-move hover:bg-blue-50 hover:border-blue-400 hover:shadow-sm transition-all"
+                  className="p-3 bg-gray-50 border border-black/10 rounded-lg cursor-move hover:bg-slate-50 hover:border-slate-400 hover:shadow-sm transition-all"
                 >
                   <div className="font-medium text-sm text-gray-900">{dish.name}</div>
                 </div>
@@ -575,8 +575,8 @@ export default function AdminMenusPage() {
             {weeks.map((weekStart, weekIndex) => {
               const isCurrent = isCurrentWeek(weekStart);
               return (
-              <div key={weekIndex} className={`bg-white rounded-lg overflow-hidden ${isCurrent ? 'border-2 border-blue-500 shadow-lg' : 'border border-black/10'}`}>
-                <div className={`px-6 py-4 border-b ${isCurrent ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600' : 'bg-black/[0.02] border-black/5'}`}>
+              <div key={weekIndex} className={`bg-white rounded-lg overflow-hidden ${isCurrent ? 'border-2 border-slate-500 shadow-lg' : 'border border-black/10'}`}>
+                <div className={`px-6 py-4 border-b ${isCurrent ? 'bg-gradient-to-r from-slate-600 to-slate-700 border-slate-600' : 'bg-black/[0.02] border-black/5'}`}>
                   <h3 className={`text-lg font-semibold flex items-center gap-3 ${isCurrent ? 'text-white' : 'text-gray-900'}`}>
                     {isCurrent && <span className="px-3 py-1 bg-white/20 rounded-md text-xs font-medium">Current Week</span>}
                     Week {weekIndex + 1}: {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
@@ -614,7 +614,7 @@ export default function AdminMenusPage() {
                               onDragOver={handleDragOver}
                               className="px-2 py-3"
                             >
-                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center">
+                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center">
                                 {dish ? (
                                   <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
@@ -649,7 +649,7 @@ export default function AdminMenusPage() {
                               onDragOver={handleDragOver}
                               className="px-2 py-3"
                             >
-                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center">
+                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center">
                                 {dish ? (
                                   <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
@@ -684,7 +684,7 @@ export default function AdminMenusPage() {
                               onDragOver={handleDragOver}
                               className="px-2 py-3"
                             >
-                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center">
+                              <div className="h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center">
                                 {dish ? (
                                   <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
                                     <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
@@ -714,14 +714,14 @@ export default function AdminMenusPage() {
             <div className="flex justify-end items-center gap-3 mt-6">
               {saving && (
                 <div className="flex items-center gap-2 text-gray-600">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600"></div>
                   <span className="text-sm">Saving...</span>
                 </div>
               )}
               <button
                 onClick={saveMenuData}
                 disabled={saving}
-                className="px-8 py-3 bg-blue-700 text-white rounded-md hover:bg-blue-800 font-medium shadow-sm disabled:opacity-50 transition-colors"
+                className="px-8 py-3 bg-slate-600 text-white rounded-md hover:bg-slate-700 font-medium shadow-sm disabled:opacity-50 transition-colors"
               >
                 {saving ? 'Saving...' : 'Save 4-Week Menu'}
               </button>
