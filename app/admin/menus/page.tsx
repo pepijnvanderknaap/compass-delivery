@@ -727,9 +727,9 @@ export default function AdminMenusPage() {
                 <div className="h-4"></div>
               </div>
             );
-            })}
+          })}
 
-            {/* Auto-save status */}
+          {/* Auto-save status */}
             <div className="flex justify-end items-center gap-3 mt-6">
               {saving && (
                 <div className="flex items-center gap-2 text-gray-600">
@@ -746,7 +746,6 @@ export default function AdminMenusPage() {
               </button>
             </div>
           </div>
-        </div>
       </main>
     </div>
   );
