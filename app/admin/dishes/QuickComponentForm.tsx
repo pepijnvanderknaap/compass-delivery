@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface QuickComponentFormProps {
-  type: 'component' | 'warm_veggie' | 'salad';
+  type: 'component' | 'warm_veggie' | 'salad' | 'carb' | 'condiment';
   onClose: () => void;
   onCreated: (newComponent: { id: string; name: string }) => void;
 }
@@ -21,11 +21,15 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
   const getTitle = () => {
     switch (type) {
       case 'component':
-        return 'Quick Add Component';
+        return 'New Soup Topping';
+      case 'carb':
+        return 'New Carb';
       case 'warm_veggie':
-        return 'Quick Add Warm Veggie';
+        return 'New Warm Veggie';
       case 'salad':
-        return 'Quick Add Salad';
+        return 'New Salad';
+      case 'condiment':
+        return 'New Add-on';
     }
   };
 
@@ -33,10 +37,14 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
     switch (type) {
       case 'component':
         return 'topping';
+      case 'carb':
+        return 'carb';
       case 'warm_veggie':
         return 'warm_veggie';
       case 'salad':
         return 'salad';
+      case 'condiment':
+        return 'condiment';
     }
   };
 

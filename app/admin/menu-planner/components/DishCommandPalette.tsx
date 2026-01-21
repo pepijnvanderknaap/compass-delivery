@@ -170,9 +170,17 @@ export default function DishCommandPalette({
               />
             </svg>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Use ↑↓ to navigate, Enter to select, Esc to close
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-gray-500">
+              Use ↑↓ to navigate, Enter to select, Esc to close
+            </p>
+            <button
+              onClick={onClose}
+              className="text-sm text-gray-600 hover:text-gray-800 px-3 py-1 border rounded hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
 
         {/* Results List */}

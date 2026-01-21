@@ -48,7 +48,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
   const [componentSearchTerms, setComponentSearchTerms] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [quickFormType, setQuickFormType] = useState<'component' | 'warm_veggie' | 'salad' | null>(null);
+  const [quickFormType, setQuickFormType] = useState<'component' | 'carb' | 'warm_veggie' | 'salad' | 'condiment' | null>(null);
 
   useEffect(() => {
     fetchComponents();
@@ -357,10 +357,14 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                             onClick={() => {
                               if (subcat.key === 'topping') {
                                 setQuickFormType('component');
+                              } else if (subcat.key === 'carb') {
+                                setQuickFormType('carb');
                               } else if (subcat.key === 'warm_veggie') {
                                 setQuickFormType('warm_veggie');
                               } else if (subcat.key === 'salad') {
                                 setQuickFormType('salad');
+                              } else if (subcat.key === 'condiment') {
+                                setQuickFormType('condiment');
                               }
                             }}
                             className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
