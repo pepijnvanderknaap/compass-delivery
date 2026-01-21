@@ -500,26 +500,17 @@ export default function AdminMenusPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Colored header banner */}
-      <div className="bg-gradient-to-r from-blue-800 to-blue-900 py-6">
+    <div className="min-h-screen bg-white font-apple">
+      {/* Clean Apple-style header */}
+      <nav className="bg-white border-b border-apple-gray5 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-            DELIVERY
-          </h1>
-        </div>
-      </div>
-
-      {/* White navigation bar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-light text-gray-700">
-              4-Week Menu Planner
-            </div>
+          <div className="flex justify-between items-center h-16">
+            <h1 className="text-apple-title-lg text-apple-gray1">
+              Menu Planner
+            </h1>
             <button
               onClick={() => router.push('/dark-kitchen')}
-              className="px-6 py-2 text-sm font-medium bg-blue-800 text-white rounded-md hover:bg-blue-900 transition-colors"
+              className="px-4 py-2 text-apple-subheadline font-medium text-apple-blue hover:text-apple-blue-hover transition-colors"
             >
               Back
             </button>
@@ -527,9 +518,9 @@ export default function AdminMenusPage() {
         </div>
       </nav>
 
-      <main className="max-w-full mx-auto px-6 lg:px-8 py-10">
+      <main className="max-w-full mx-auto px-6 lg:px-8 py-8">
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <div className={`mb-6 px-4 py-3 rounded-xl text-apple-subheadline ${message.type === 'success' ? 'bg-apple-green/10 text-apple-green border border-apple-green/20' : 'bg-apple-red/10 text-apple-red border border-apple-red/20'}`}>
             {message.text}
           </div>
         )}
@@ -549,59 +540,72 @@ export default function AdminMenusPage() {
             {weeks.map((weekStart, weekIndex) => {
               const isCurrent = isCurrentWeek(weekStart);
               return (
-              <div key={weekIndex} className={`bg-white rounded-lg ${isCurrent ? 'border-2 border-blue-600 shadow-lg' : 'border border-black/10'}`}>
-                <div className={`px-6 py-4 rounded-lg mt-4 mb-3 shadow-sm ${isCurrent ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-gray-600 to-gray-700'}`}>
-                  <h3 className="text-lg font-semibold flex items-center gap-3 text-white">
-                    {isCurrent && <span className="px-3 py-1 bg-white/20 rounded-md text-xs font-medium">Current Week</span>}
-                    Week {weekIndex + 1}: {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
-                  </h3>
+              <div key={weekIndex} className={`bg-white rounded-xl shadow-apple-sm ${isCurrent ? 'ring-2 ring-apple-blue' : 'border border-apple-gray5'}`}>
+                <div className="bg-apple-gray7 px-6 py-5 rounded-t-xl border-b border-apple-gray5">
+                  <div className="flex items-center gap-3">
+                    {isCurrent && (
+                      <span className="bg-apple-blue text-white text-apple-caption font-medium px-3 py-1 rounded-full">
+                        Current Week
+                      </span>
+                    )}
+                    <div>
+                      <div className="text-apple-footnote font-semibold text-apple-gray3 uppercase tracking-wide">
+                        Week {weekIndex + 1}
+                      </div>
+                      <h3 className="text-apple-headline text-apple-gray1">
+                        {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
+                      </h3>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto px-4">
+                <div className="overflow-x-auto">
                   <table className="w-full table-fixed">
-                    <thead className="bg-black/[0.02] border-b border-black/5">
-                      <tr>
-                        <th className="w-40 px-4 py-3 text-left text-xs font-semibold text-black/50 uppercase">Meal Type</th>
+                    <thead>
+                      <tr className="border-b border-apple-gray5">
+                        <th className="w-40 px-6 py-4 text-left text-apple-footnote font-semibold text-apple-gray3 uppercase tracking-wide">
+                          Meal Type
+                        </th>
                         {days.map((day, dayIndex) => (
-                          <th key={day} className="px-4 py-3 text-center">
-                            <div className="text-xs font-semibold text-black/90">{day}</div>
-                            <div className="text-xs text-black/40 font-normal mt-0.5">
+                          <th key={day} className="px-4 py-4 text-center">
+                            <div className="text-apple-footnote font-semibold text-apple-gray1">{day}</div>
+                            <div className="text-apple-caption text-apple-gray3 font-normal mt-0.5">
                               {format(addDays(weekStart, dayIndex), 'MMM d')}
                             </div>
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-black/5">
+                    <tbody className="divide-y divide-apple-gray5">
                       {/* Soup Row */}
                       <tr>
-                        <td className="px-4 py-3 text-sm font-medium text-black/70">Soup</td>
+                        <td className="px-6 py-4 text-apple-subheadline font-medium text-apple-gray1">Soup</td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
                           const dishId = menuData[dateKey]?.soup;
                           const dish = getDishById(dishId);
 
                           return (
-                            <td key={dayIndex} className="px-2 py-3">
+                            <td key={dayIndex} className="px-3 py-4">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'soup')}
-                                className="w-full h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"
+                                className="w-full h-20 border-2 border-dashed border-apple-gray4 rounded-lg p-2 hover:border-apple-blue hover:bg-apple-gray6 transition-all flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
-                                    <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full bg-white border border-apple-gray5 rounded-lg p-2 flex items-center justify-center">
+                                    <div className="text-apple-subheadline font-medium text-apple-gray1 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'soup');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                      className="absolute -top-2 -right-2 bg-apple-red hover:bg-[#FF453A] text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-apple-sm"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-black/30">Click to add</div>
+                                  <div className="text-apple-footnote text-apple-gray3">Click to add</div>
                                 )}
                               </button>
                             </td>
@@ -611,33 +615,33 @@ export default function AdminMenusPage() {
 
                       {/* Hot Dish Meat/Fish Row */}
                       <tr>
-                        <td className="px-4 py-3 text-sm font-medium text-black/70">Hot Dish Meat/Fish</td>
+                        <td className="px-6 py-4 text-apple-subheadline font-medium text-apple-gray1">Hot Dish Meat/Fish</td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
                           const dishId = menuData[dateKey]?.hot_meat;
                           const dish = getDishById(dishId);
 
                           return (
-                            <td key={dayIndex} className="px-2 py-3">
+                            <td key={dayIndex} className="px-3 py-4">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_meat')}
-                                className="w-full h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"
+                                className="w-full h-20 border-2 border-dashed border-apple-gray4 rounded-lg p-2 hover:border-apple-blue hover:bg-apple-gray6 transition-all flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
-                                    <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full bg-white border border-apple-gray5 rounded-lg p-2 flex items-center justify-center">
+                                    <div className="text-apple-subheadline font-medium text-apple-gray1 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'hot_meat');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                      className="absolute -top-2 -right-2 bg-apple-red hover:bg-[#FF453A] text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-apple-sm"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-black/30">Click to add</div>
+                                  <div className="text-apple-footnote text-apple-gray3">Click to add</div>
                                 )}
                               </button>
                             </td>
@@ -647,33 +651,33 @@ export default function AdminMenusPage() {
 
                       {/* Hot Dish Vegetarian Row */}
                       <tr>
-                        <td className="px-4 py-3 text-sm font-medium text-black/70">Hot Dish Vegetarian</td>
+                        <td className="px-6 py-4 text-apple-subheadline font-medium text-apple-gray1">Hot Dish Vegetarian</td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
                           const dishId = menuData[dateKey]?.hot_veg;
                           const dish = getDishById(dishId);
 
                           return (
-                            <td key={dayIndex} className="px-2 py-3">
+                            <td key={dayIndex} className="px-3 py-4">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_veg')}
-                                className="w-full h-[70px] border-2 border-dashed border-black/10 rounded-lg p-2 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center cursor-pointer"
+                                className="w-full h-20 border-2 border-dashed border-apple-gray4 rounded-lg p-2 hover:border-apple-blue hover:bg-apple-gray6 transition-all flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-white border border-black/10 rounded-lg p-2 flex items-center justify-center">
-                                    <div className="text-xs font-medium text-gray-900 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full bg-white border border-apple-gray5 rounded-lg p-2 flex items-center justify-center">
+                                    <div className="text-apple-subheadline font-medium text-apple-gray1 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'hot_veg');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                      className="absolute -top-2 -right-2 bg-apple-red hover:bg-[#FF453A] text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-apple-sm"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-black/30">Click to add</div>
+                                  <div className="text-apple-footnote text-apple-gray3">Click to add</div>
                                 )}
                               </button>
                             </td>

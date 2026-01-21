@@ -215,40 +215,40 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-apple">
       <div className="flex gap-0 max-h-[90vh]">
         {/* Main Form */}
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-6">
+        <div className="bg-white rounded-2xl shadow-apple-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-8">
+          <h2 className="text-apple-title-lg text-apple-gray1 mb-8">
             {dish ? 'Edit Main Dish' : 'Create Main Dish'}
           </h2>
 
           {message && (
-            <div className={`mb-4 p-3 rounded ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            <div className={`mb-6 px-4 py-3 rounded-xl text-apple-subheadline ${message.type === 'success' ? 'bg-apple-green/10 text-apple-green border border-apple-green/20' : 'bg-apple-red/10 text-apple-red border border-apple-red/20'}`}>
               {message.text}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2">Dish Name *</label>
+              <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Dish Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Dish Category</label>
+                <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Dish Category</label>
                 <select
                   value={formData.category === 'component' ? '' : formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as any, subcategory: null })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
                 >
                   <option value="">-- Select if Main Dish --</option>
                   <option value="soup">Soup</option>
@@ -258,7 +258,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Component Type</label>
+                <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Component Type</label>
                 <select
                   value={formData.subcategory || ''}
                   onChange={(e) => setFormData({
@@ -266,7 +266,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                     category: e.target.value ? 'component' : formData.category,
                     subcategory: e.target.value as DishSubcategory || null
                   })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
                 >
                   <option value="">-- Select if Component --</option>
                   <option value="topping">Soup Topping</option>
@@ -280,12 +280,12 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
 
             {formData.category !== 'component' && (
               <div>
-                <label className="block text-sm font-medium mb-2">Description</label>
+                <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all resize-none"
                 />
               </div>
             )}
@@ -293,28 +293,28 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             {/* Portion Size - Hidden for soups (managed by location settings) */}
             {formData.category !== 'soup' && (
               <div>
-                <h3 className="font-semibold mb-3">Portion Size</h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <h3 className="text-apple-headline text-apple-gray1 mb-3">Portion Size</h3>
+                <p className="text-apple-subheadline text-apple-gray2 mb-4">
                   Specify the size of one portion for production calculations
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Portion Size</label>
+                    <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Portion Size</label>
                     <input
                       type="number"
                       step="0.01"
                       value={formData.portion_size}
                       onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
                       placeholder="e.g., 150"
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Unit</label>
+                    <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Unit</label>
                     <select
                       value={formData.portion_unit}
                       onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
                     >
                       <option value="pieces">Pieces</option>
                       <option value="grams">Grams (g)</option>
@@ -331,8 +331,8 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             {/* Components Selection - Only show for soups and hot dishes */}
             {formData.category !== 'component' && (
               <div>
-                <h3 className="font-semibold mb-3">Linked Components</h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <h3 className="text-apple-headline text-apple-gray1 mb-3">Linked Components</h3>
+                <p className="text-apple-subheadline text-apple-gray2 mb-4">
                   {formData.category === 'soup'
                     ? 'Select toppings for this soup'
                     : 'Select components for this hot dish'}
@@ -344,11 +344,11 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                     const totalCount = allComponents.length;
 
                     return (
-                      <div key={subcat.key} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">
+                      <div key={subcat.key} className="border border-apple-gray5 rounded-xl p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-apple-subheadline font-medium text-apple-gray1">
                             {subcat.label}
-                            <span className="text-sm text-gray-500 ml-2">
+                            <span className="text-apple-footnote text-apple-gray3 ml-2 font-normal">
                               (Showing {components.length} of {totalCount})
                             </span>
                           </h4>
@@ -367,9 +367,9 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                                 setQuickFormType('condiment');
                               }
                             }}
-                            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                            className="text-apple-subheadline text-apple-blue hover:text-apple-blue-hover font-medium transition-colors"
                           >
-                            <span>+ New</span>
+                            + New
                           </button>
                         </div>
                         {totalCount > 10 && (
@@ -378,22 +378,22 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                             placeholder="Search..."
                             value={componentSearchTerms[subcat.key] || ''}
                             onChange={(e) => setComponentSearchTerms({ ...componentSearchTerms, [subcat.key]: e.target.value })}
-                            className="w-full px-3 py-2 text-sm border rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500"
+                            className="w-full px-4 py-3 text-apple-subheadline border border-apple-gray4 rounded-lg mb-3 focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
                           />
                         )}
                         {components.length === 0 ? (
-                          <p className="text-gray-400 text-sm text-center py-2">No components found</p>
+                          <p className="text-apple-gray3 text-apple-subheadline text-center py-2">No components found</p>
                         ) : (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-2 gap-3">
                             {components.map(component => (
-                              <label key={component.id} className="flex items-center space-x-2 cursor-pointer">
+                              <label key={component.id} className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={selectedComponents[subcat.key].includes(component.id)}
                                   onChange={() => toggleComponent(subcat.key, component.id)}
-                                  className="rounded"
+                                  className="w-5 h-5 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
                                 />
-                                <span className="text-sm">{component.name}</span>
+                                <span className="text-apple-subheadline text-apple-gray1">{component.name}</span>
                               </label>
                             ))}
                           </div>
@@ -407,7 +407,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
 
             {/* Allergens */}
             <div>
-              <h3 className="font-semibold mb-3">Allergens</h3>
+              <h3 className="text-apple-headline text-apple-gray1 mb-3">Allergens</h3>
               <div className="grid grid-cols-4 gap-3">
                 {[
                   { key: 'allergen_gluten', label: 'Gluten' },
@@ -419,31 +419,31 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                   { key: 'allergen_mustard', label: 'Mustard' },
                   { key: 'allergen_celery', label: 'Celery' },
                 ].map(allergen => (
-                  <label key={allergen.key} className="flex items-center space-x-2 cursor-pointer">
+                  <label key={allergen.key} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={(formData as any)[allergen.key]}
                       onChange={(e) => setFormData({ ...formData, [allergen.key]: e.target.checked })}
-                      className="rounded"
+                      className="w-5 h-5 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
                     />
-                    <span className="text-sm">{allergen.label}</span>
+                    <span className="text-apple-subheadline text-apple-gray1">{allergen.label}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t">
+            <div className="flex justify-end gap-3 pt-6 border-t border-apple-gray5">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                className="px-6 py-3 text-apple-subheadline font-medium text-apple-gray1 border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50"
+                className="px-6 py-3 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg disabled:opacity-40 transition-colors"
               >
                 {saving ? 'Saving...' : (dish ? 'Update' : 'Create')}
               </button>

@@ -82,30 +82,32 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
   };
 
   return (
-    <div className="w-80 bg-white border-l-2 border-blue-500 shadow-xl flex flex-col h-full">
+    <div className="w-80 bg-white border-l border-apple-gray5 shadow-apple-lg flex flex-col h-full font-apple">
       {/* Header */}
-      <div className="bg-blue-50 px-4 py-3 border-b flex items-center justify-between">
-        <h3 className="font-semibold text-blue-900">{getTitle()}</h3>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          ✕
-        </button>
+      <div className="bg-apple-gray7 px-6 py-4 border-b border-apple-gray5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-apple-headline text-apple-gray1">{getTitle()}</h3>
+          <button
+            onClick={onClose}
+            className="text-apple-gray3 hover:text-apple-gray1 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-4">
+      <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-6">
         <div className="space-y-4 flex-1">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-1">Name *</label>
+            <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Name *</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Croutons"
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
               required
               autoFocus
             />
@@ -113,7 +115,7 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
 
           {/* Portion Size */}
           <div>
-            <label className="block text-sm font-medium mb-1">Portion Size</label>
+            <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Portion Size</label>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
@@ -121,12 +123,12 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
                 value={formData.portion_size}
                 onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
                 placeholder="25"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
               />
               <select
                 value={formData.portion_unit}
                 onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
               >
                 <option value="grams">g</option>
                 <option value="pieces">pcs</option>
@@ -135,24 +137,24 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
           </div>
 
           {/* Info */}
-          <p className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
+          <p className="text-apple-footnote text-apple-gray2 bg-apple-gray6 p-3 rounded-lg">
             This component will be automatically selected in your main dish
           </p>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-4 border-t mt-4">
+        <div className="flex gap-3 pt-6 border-t border-apple-gray5 mt-6">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-3 text-apple-subheadline font-medium border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || !formData.name.trim()}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-4 py-3 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg disabled:opacity-40 transition-colors"
           >
             {saving ? 'Creating...' : 'Create'}
           </button>

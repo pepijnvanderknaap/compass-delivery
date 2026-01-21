@@ -138,15 +138,15 @@ export default function DishCommandPalette({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/30 backdrop-blur-sm font-apple"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[600px] flex flex-col"
+        className="bg-white rounded-2xl shadow-apple-xl border border-apple-gray5 w-full max-w-2xl max-h-[600px] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-5 border-b border-apple-gray5">
           <div className="relative">
             <input
               ref={searchInputRef}
@@ -154,10 +154,10 @@ export default function DishCommandPalette({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${getCategoryLabel()}...`}
-              className="w-full px-4 py-3 pl-10 text-lg border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 pl-10 text-apple-body border border-apple-gray4 rounded-lg focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
             />
             <svg
-              className="absolute left-3 top-4 w-5 h-5 text-gray-400"
+              className="absolute left-3 top-3.5 w-5 h-5 text-apple-gray3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -170,13 +170,13 @@ export default function DishCommandPalette({
               />
             </svg>
           </div>
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-xs text-gray-500">
+          <div className="flex items-center justify-between mt-3">
+            <p className="text-apple-footnote text-apple-gray3">
               Use ↑↓ to navigate, Enter to select, Esc to close
             </p>
             <button
               onClick={onClose}
-              className="text-sm text-gray-600 hover:text-gray-800 px-3 py-1 border rounded hover:bg-gray-50 transition-colors"
+              className="text-apple-subheadline font-medium text-apple-blue hover:text-apple-blue-hover transition-colors"
             >
               Cancel
             </button>
@@ -184,15 +184,15 @@ export default function DishCommandPalette({
         </div>
 
         {/* Results List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-2 py-2">
           {loadingDishes || loadingUsage ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center text-apple-gray3">Loading...</div>
           ) : dishes.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-apple-gray3">
               No {getCategoryLabel()} found
             </div>
           ) : (
-            <div className="py-2">
+            <div className="space-y-1">
               {dishes.map((dish, index) => {
                 const usage = usedDishes.get(dish.id);
                 const isSelected = index === selectedIndex;
@@ -202,22 +202,22 @@ export default function DishCommandPalette({
                     key={dish.id}
                     onClick={() => handleSelectDish(dish.id)}
                     onMouseEnter={() => setSelectedIndex(index)}
-                    className={`w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors ${
-                      isSelected ? 'bg-blue-50' : ''
+                    className={`w-full px-4 py-3 flex items-center justify-between rounded-lg transition-colors ${
+                      isSelected ? 'bg-[#E8F4FF]' : 'hover:bg-apple-gray6'
                     }`}
                   >
                     <div className="flex items-center gap-3 flex-1">
                       {/* Dish Name */}
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-apple-subheadline font-medium text-apple-gray1">
                         {dish.name}
                       </span>
 
                       {/* Duplicate Warning */}
                       {usage && (
-                        <div className="flex items-center gap-1 group relative">
-                          <span className="text-red-500 text-lg">⚠⚠</span>
+                        <div className="flex items-center gap-1 group/tooltip relative">
+                          <span className="text-apple-orange text-lg">⚠⚠</span>
                           {/* Tooltip - shows above the icons */}
-                          <div className="absolute left-0 bottom-full mb-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                          <div className="absolute left-0 bottom-full mb-1 hidden group-hover/tooltip:block z-10 bg-apple-gray1 text-white text-apple-caption px-3 py-1.5 rounded-lg shadow-apple-md whitespace-nowrap">
                             Used on {formatUsageDate(usage.lastUsed)}
                           </div>
                         </div>
@@ -225,7 +225,7 @@ export default function DishCommandPalette({
                     </div>
 
                     {/* Portion Size */}
-                    <span className="text-xs text-gray-500">
+                    <span className="text-apple-caption text-apple-gray3">
                       {dish.default_portion_size_ml
                         ? `[${dish.default_portion_size_ml}ml]`
                         : dish.default_portion_size_g
@@ -240,8 +240,8 @@ export default function DishCommandPalette({
               <button
                 onClick={handleCreateNewDish}
                 onMouseEnter={() => setSelectedIndex(dishes.length)}
-                className={`w-full px-4 py-3 flex items-center gap-2 text-blue-600 hover:bg-blue-50 transition-colors border-t border-gray-200 mt-2 ${
-                  selectedIndex === dishes.length ? 'bg-blue-50' : ''
+                className={`w-full px-4 py-3 flex items-center gap-2 text-apple-blue rounded-lg transition-colors border-t border-apple-gray5 mt-2 pt-4 ${
+                  selectedIndex === dishes.length ? 'bg-[#E8F4FF]' : 'hover:bg-apple-gray6'
                 }`}
               >
                 <svg
@@ -257,7 +257,7 @@ export default function DishCommandPalette({
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                <span className="text-sm font-medium">
+                <span className="text-apple-subheadline font-medium">
                   Create new {category === 'soup' ? 'soup' : 'dish'}
                 </span>
               </button>
