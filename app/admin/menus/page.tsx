@@ -500,17 +500,23 @@ export default function AdminMenusPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-apple">
-      {/* Clean Apple-style header */}
-      <nav className="bg-white border-b border-apple-gray5 sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 font-apple">
+      {/* Sophisticated Apple-style header with glass effect */}
+      <nav className="bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-apple-title-lg text-apple-gray1">
-              Menu Planner
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="text-apple-title font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                DELIVERY
+              </div>
+              <div className="h-6 w-px bg-apple-gray5"></div>
+              <h1 className="text-apple-body text-apple-gray2">
+                Menu Planner
+              </h1>
+            </div>
             <button
               onClick={() => router.push('/dark-kitchen')}
-              className="px-4 py-2 text-apple-subheadline font-medium text-apple-blue hover:text-apple-blue-hover transition-colors"
+              className="px-5 py-2 text-apple-subheadline font-semibold text-white bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-full shadow-md hover:shadow-lg transition-all duration-200"
             >
               Back
             </button>
@@ -518,7 +524,7 @@ export default function AdminMenusPage() {
         </div>
       </nav>
 
-      <main className="max-w-full mx-auto px-6 lg:px-8 py-8">
+      <main className="max-w-full mx-auto px-6 lg:px-8 py-10">
         {message && (
           <div className={`mb-6 px-4 py-3 rounded-xl text-apple-subheadline ${message.type === 'success' ? 'bg-apple-green/10 text-apple-green border border-apple-green/20' : 'bg-apple-red/10 text-apple-red border border-apple-red/20'}`}>
             {message.text}
@@ -540,19 +546,19 @@ export default function AdminMenusPage() {
             {weeks.map((weekStart, weekIndex) => {
               const isCurrent = isCurrentWeek(weekStart);
               return (
-              <div key={weekIndex} className={`bg-white rounded-xl shadow-apple-sm ${isCurrent ? 'ring-2 ring-apple-blue' : 'border border-apple-gray5'}`}>
-                <div className="bg-apple-gray7 px-6 py-5 rounded-t-xl border-b border-apple-gray5">
+              <div key={weekIndex} className={`bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ${isCurrent ? 'ring-2 ring-blue-500 shadow-blue-100' : 'border border-white/60'}`}>
+                <div className={`px-6 py-5 ${isCurrent ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gradient-to-r from-slate-100 to-slate-50'} border-b ${isCurrent ? 'border-blue-400/30' : 'border-slate-200'}`}>
                   <div className="flex items-center gap-3">
                     {isCurrent && (
-                      <span className="bg-apple-blue text-white text-apple-caption font-medium px-3 py-1 rounded-full">
+                      <span className="bg-white/20 backdrop-blur-sm text-white text-apple-caption font-semibold px-3 py-1 rounded-full shadow-sm">
                         Current Week
                       </span>
                     )}
                     <div>
-                      <div className="text-apple-footnote font-semibold text-apple-gray3 uppercase tracking-wide">
+                      <div className={`text-apple-footnote font-semibold uppercase tracking-wider ${isCurrent ? 'text-blue-100' : 'text-slate-500'}`}>
                         Week {weekIndex + 1}
                       </div>
-                      <h3 className="text-apple-headline text-apple-gray1">
+                      <h3 className={`text-apple-headline font-semibold ${isCurrent ? 'text-white' : 'text-slate-800'}`}>
                         {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
                       </h3>
                     </div>
@@ -589,23 +595,23 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-3 py-4">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'soup')}
-                                className="w-full h-20 border-2 border-dashed border-apple-gray4 rounded-lg p-2 hover:border-apple-blue hover:bg-apple-gray6 transition-all flex items-center justify-center cursor-pointer"
+                                className="w-full h-20 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl p-2 hover:border-blue-400 hover:shadow-md hover:scale-[1.02] transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-white border border-apple-gray5 rounded-lg p-2 flex items-center justify-center">
-                                    <div className="text-apple-subheadline font-medium text-apple-gray1 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full bg-gradient-to-br from-white to-blue-50/30 border border-blue-200/50 rounded-lg p-2 flex items-center justify-center shadow-sm">
+                                    <div className="text-apple-subheadline font-semibold text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'soup');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-apple-red hover:bg-[#FF453A] text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-apple-sm"
+                                      className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-footnote text-apple-gray3">Click to add</div>
+                                  <div className="text-apple-subheadline text-slate-400 font-medium">+ Add dish</div>
                                 )}
                               </button>
                             </td>
@@ -625,23 +631,23 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-3 py-4">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_meat')}
-                                className="w-full h-20 border-2 border-dashed border-apple-gray4 rounded-lg p-2 hover:border-apple-blue hover:bg-apple-gray6 transition-all flex items-center justify-center cursor-pointer"
+                                className="w-full h-20 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl p-2 hover:border-blue-400 hover:shadow-md hover:scale-[1.02] transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-white border border-apple-gray5 rounded-lg p-2 flex items-center justify-center">
-                                    <div className="text-apple-subheadline font-medium text-apple-gray1 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full bg-gradient-to-br from-white to-blue-50/30 border border-blue-200/50 rounded-lg p-2 flex items-center justify-center shadow-sm">
+                                    <div className="text-apple-subheadline font-semibold text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'hot_meat');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-apple-red hover:bg-[#FF453A] text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-apple-sm"
+                                      className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-footnote text-apple-gray3">Click to add</div>
+                                  <div className="text-apple-subheadline text-slate-400 font-medium">+ Add dish</div>
                                 )}
                               </button>
                             </td>
@@ -661,23 +667,23 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-3 py-4">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_veg')}
-                                className="w-full h-20 border-2 border-dashed border-apple-gray4 rounded-lg p-2 hover:border-apple-blue hover:bg-apple-gray6 transition-all flex items-center justify-center cursor-pointer"
+                                className="w-full h-20 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl p-2 hover:border-blue-400 hover:shadow-md hover:scale-[1.02] transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-white border border-apple-gray5 rounded-lg p-2 flex items-center justify-center">
-                                    <div className="text-apple-subheadline font-medium text-apple-gray1 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full bg-gradient-to-br from-white to-blue-50/30 border border-blue-200/50 rounded-lg p-2 flex items-center justify-center shadow-sm">
+                                    <div className="text-apple-subheadline font-semibold text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'hot_veg');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-apple-red hover:bg-[#FF453A] text-white rounded-md w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-apple-sm"
+                                      className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-footnote text-apple-gray3">Click to add</div>
+                                  <div className="text-apple-subheadline text-slate-400 font-medium">+ Add dish</div>
                                 )}
                               </button>
                             </td>
