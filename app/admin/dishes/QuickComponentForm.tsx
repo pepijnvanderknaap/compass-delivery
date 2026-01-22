@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface QuickComponentFormProps {
-  type: 'component' | 'warm_veggie' | 'salad' | 'carb' | 'condiment';
+  type: 'component' | 'warm_veggie' | 'carb' | 'condiment';
   onClose: () => void;
   onCreated: (newComponent: { id: string; name: string }) => void;
 }
@@ -26,8 +26,6 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         return 'New Carb';
       case 'warm_veggie':
         return 'New Warm Veggie';
-      case 'salad':
-        return 'New Salad';
       case 'condiment':
         return 'New Add-on';
     }
@@ -41,8 +39,6 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         return 'carb';
       case 'warm_veggie':
         return 'warm_veggie';
-      case 'salad':
-        return 'salad';
       case 'condiment':
         return 'condiment';
     }
@@ -54,10 +50,29 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
 
     setSaving(true);
     try {
+      const trimmedName = formData.name.trim();
+      const subcategory = getSubcategory();
+
+      // Check if component already exists with this name and subcategory
+      const { data: existingComponent } = await supabase
+        .from('dishes')
+        .select('*')
+        .eq('category', 'component')
+        .eq('subcategory', subcategory)
+        .ilike('name', trimmedName)
+        .single();
+
+      if (existingComponent) {
+        // Component already exists - just use it
+        onCreated({ id: existingComponent.id, name: existingComponent.name });
+        return;
+      }
+
+      // Component doesn't exist - create it
       const dataToSave = {
-        name: formData.name.trim(),
+        name: trimmedName,
         category: 'component',
-        subcategory: getSubcategory(),
+        subcategory: subcategory,
         portion_size: formData.portion_size ? parseFloat(formData.portion_size) : null,
         portion_unit: formData.portion_unit,
         is_active: true,
@@ -82,9 +97,9 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
   };
 
   return (
-    <div className="w-80 bg-white border-l border-apple-gray5 shadow-apple-lg flex flex-col h-full font-apple">
+    <div className="w-80 bg-white rounded-2xl flex flex-col h-full font-apple">
       {/* Header */}
-      <div className="bg-apple-gray7 px-6 py-4 border-b border-apple-gray5">
+      <div className="bg-apple-gray7 px-6 py-4 rounded-t-2xl">
         <div className="flex items-center justify-between">
           <h3 className="text-apple-headline text-apple-gray1">{getTitle()}</h3>
           <button
@@ -119,7 +134,7 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
-                step="0.01"
+                step="1"
                 value={formData.portion_size}
                 onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
                 placeholder="25"
@@ -143,20 +158,20 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 pt-6 border-t border-apple-gray5 mt-6">
+        <div className="flex gap-3 pt-6 mt-6">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-3 text-apple-subheadline font-medium border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
+            className="flex-1 px-6 py-3 text-apple-subheadline font-medium text-apple-gray1 border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || !formData.name.trim()}
-            className="flex-1 px-4 py-3 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg disabled:opacity-40 transition-colors"
+            className="flex-1 px-6 py-3 text-apple-subheadline font-semibold text-[#1D1D1F] bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors"
           >
-            {saving ? 'Creating...' : 'Create'}
+            {saving ? 'Adding...' : 'Add'}
           </button>
         </div>
       </form>

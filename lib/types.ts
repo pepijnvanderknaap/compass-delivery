@@ -51,6 +51,32 @@ export interface DishComponent {
   updated_at: string;
 }
 
+export interface SaladComponent {
+  id: string;
+  main_dish_id: string;
+  component_dish_id: string;
+  percentage: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SaladComponentWithDish extends SaladComponent {
+  component_dish: Dish;
+}
+
+export interface WarmVeggieComponent {
+  id: string;
+  main_dish_id: string;
+  component_dish_id: string;
+  percentage: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WarmVeggieComponentWithDish extends WarmVeggieComponent {
+  component_dish: Dish;
+}
+
 export interface DishWithComponents extends Dish {
   components?: {
     topping?: Dish[];
@@ -59,6 +85,14 @@ export interface DishWithComponents extends Dish {
     salad?: Dish[];
     condiment?: Dish[];
   };
+}
+
+export interface DishWithSaladComponents extends Dish {
+  salad_components?: SaladComponentWithDish[];
+}
+
+export interface DishWithWarmVeggieComponents extends Dish {
+  warm_veggie_components?: WarmVeggieComponentWithDish[];
 }
 
 export interface LocationDishPricing {

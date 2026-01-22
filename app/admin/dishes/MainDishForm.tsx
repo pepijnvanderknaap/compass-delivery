@@ -8,7 +8,7 @@ import QuickComponentForm from './QuickComponentForm';
 interface MainDishFormProps {
   dish: DishWithComponents | null;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (dishId?: string) => void;
 }
 
 export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProps) {
@@ -44,14 +44,43 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     condiment: [],
   });
 
+  // Salad components with percentages
+  interface SaladComponentRow {
+    tempId: string;
+    component_dish_id: string | null;
+    component_name: string;
+    percentage: string;
+  }
+  const [saladComponents, setSaladComponents] = useState<SaladComponentRow[]>([
+    { tempId: '1', component_dish_id: null, component_name: '', percentage: '' }
+  ]);
+
+  // Warm veggie components with percentages
+  interface WarmVeggieComponentRow {
+    tempId: string;
+    component_dish_id: string | null;
+    component_name: string;
+    percentage: string;
+  }
+  const [warmVeggieComponents, setWarmVeggieComponents] = useState<WarmVeggieComponentRow[]>([
+    { tempId: '1', component_dish_id: null, component_name: '', percentage: '' }
+  ]);
+
   const [availableComponents, setAvailableComponents] = useState<Dish[]>([]);
+  const [componentUsageCounts, setComponentUsageCounts] = useState<Record<string, number>>({});
   const [componentSearchTerms, setComponentSearchTerms] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [quickFormType, setQuickFormType] = useState<'component' | 'carb' | 'warm_veggie' | 'salad' | 'condiment' | null>(null);
+  const [quickFormType, setQuickFormType] = useState<'component' | 'carb' | 'warm_veggie' | 'condiment' | null>(null);
+
+  // Copy components modal state
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [copySearchTerm, setCopySearchTerm] = useState('');
+  const [availableHotDishes, setAvailableHotDishes] = useState<Dish[]>([]);
 
   useEffect(() => {
     fetchComponents();
+    fetchHotDishes();
     if (dish) {
       setFormData({
         name: dish.name,
@@ -70,18 +99,100 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
         allergen_celery: dish.allergen_celery || false,
       });
 
-      // Set selected components
+      // Set selected components (excluding salad - salad is handled separately)
       if (dish.components) {
         setSelectedComponents({
           topping: dish.components.topping?.map(c => c.id) || [],
           carb: dish.components.carb?.map(c => c.id) || [],
           warm_veggie: dish.components.warm_veggie?.map(c => c.id) || [],
-          salad: dish.components.salad?.map(c => c.id) || [],
+          salad: [], // Salad no longer uses checkboxes
           condiment: dish.components.condiment?.map(c => c.id) || [],
         });
       }
+
+      // Load salad components with percentages
+      loadSaladComponents(dish.id);
+      // Load warm veggie components with percentages
+      loadWarmVeggieComponents(dish.id);
+    } else {
+      // Reset form for creating a new dish
+      setFormData({
+        name: '',
+        description: '',
+        category: 'soup',
+        subcategory: null,
+        portion_size: '150',
+        portion_unit: 'milliliters',
+        allergen_gluten: false,
+        allergen_soy: false,
+        allergen_lactose: false,
+        allergen_sesame: false,
+        allergen_sulphites: false,
+        allergen_egg: false,
+        allergen_mustard: false,
+        allergen_celery: false,
+      });
+
+      // Reset selected components
+      setSelectedComponents({
+        topping: [],
+        carb: [],
+        warm_veggie: [],
+        salad: [],
+        condiment: [],
+      });
+
+      // Reset salad and warm veggie components to empty
+      setSaladComponents([
+        { tempId: '1', component_dish_id: null, component_name: '', percentage: '' }
+      ]);
+      setWarmVeggieComponents([
+        { tempId: '1', component_dish_id: null, component_name: '', percentage: '' }
+      ]);
     }
   }, [dish]);
+
+  const loadSaladComponents = async (dishId: string) => {
+    const { data } = await supabase
+      .from('salad_components')
+      .select('*, component_dish:dishes!component_dish_id(*)')
+      .eq('main_dish_id', dishId);
+
+    if (data && data.length > 0) {
+      setSaladComponents(data.map((sc, index) => ({
+        tempId: `existing-${index}`,
+        component_dish_id: sc.component_dish_id,
+        component_name: sc.component_dish?.name || '',
+        percentage: String(sc.percentage),
+      })));
+    } else {
+      // Reset to default empty row
+      setSaladComponents([
+        { tempId: '1', component_dish_id: null, component_name: '', percentage: '' }
+      ]);
+    }
+  };
+
+  const loadWarmVeggieComponents = async (dishId: string) => {
+    const { data } = await supabase
+      .from('warm_veggie_components')
+      .select('*, component_dish:dishes!component_dish_id(*)')
+      .eq('main_dish_id', dishId);
+
+    if (data && data.length > 0) {
+      setWarmVeggieComponents(data.map((wv, index) => ({
+        tempId: `existing-${index}`,
+        component_dish_id: wv.component_dish_id,
+        component_name: wv.component_dish?.name || '',
+        percentage: String(wv.percentage),
+      })));
+    } else {
+      // Reset to default empty row
+      setWarmVeggieComponents([
+        { tempId: '1', component_dish_id: null, component_name: '', percentage: '' }
+      ]);
+    }
+  };
 
   const fetchComponents = async () => {
     const { data } = await supabase
@@ -90,7 +201,179 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
       .not('subcategory', 'is', null)
       .order('name');
 
-    if (data) setAvailableComponents(data);
+    if (data) {
+      setAvailableComponents(data);
+
+      // Fetch usage counts for popularity sorting
+      fetchComponentUsageCounts(data.map(d => d.id));
+    }
+  };
+
+  const fetchComponentUsageCounts = async (componentIds: string[]) => {
+    // Count how many times each component is used in dish_components
+    const { data } = await supabase
+      .from('dish_components')
+      .select('component_dish_id');
+
+    if (data) {
+      const counts: Record<string, number> = {};
+      data.forEach(dc => {
+        counts[dc.component_dish_id] = (counts[dc.component_dish_id] || 0) + 1;
+      });
+      setComponentUsageCounts(counts);
+    }
+  };
+
+  const fetchHotDishes = async () => {
+    const { data } = await supabase
+      .from('dishes')
+      .select('*')
+      .in('category', ['hot_dish_meat', 'hot_dish_fish', 'hot_dish_veg'])
+      .order('name');
+
+    if (data) setAvailableHotDishes(data);
+  };
+
+  // Salad component management functions
+  const addSaladRow = () => {
+    setSaladComponents(prevComponents => [
+      ...prevComponents,
+      { tempId: Date.now().toString(), component_dish_id: null, component_name: '', percentage: '' }
+    ]);
+  };
+
+  const removeSaladRow = (tempId: string) => {
+    setSaladComponents(prevComponents => {
+      if (prevComponents.length > 1) {
+        return prevComponents.filter(sc => sc.tempId !== tempId);
+      }
+      return prevComponents;
+    });
+  };
+
+  const updateSaladRow = (tempId: string, field: keyof SaladComponentRow, value: string) => {
+    setSaladComponents(prevComponents => prevComponents.map(sc =>
+      sc.tempId === tempId ? { ...sc, [field]: value } : sc
+    ));
+  };
+
+  const getTotalSaladPercentage = () => {
+    return saladComponents.reduce((sum, sc) => {
+      const percentage = parseFloat(sc.percentage) || 0;
+      return sum + percentage;
+    }, 0);
+  };
+
+  // Warm veggie component management functions
+  const addWarmVeggieRow = () => {
+    setWarmVeggieComponents(prevComponents => [
+      ...prevComponents,
+      { tempId: Date.now().toString(), component_dish_id: null, component_name: '', percentage: '' }
+    ]);
+  };
+
+  const removeWarmVeggieRow = (tempId: string) => {
+    setWarmVeggieComponents(prevComponents => {
+      if (prevComponents.length > 1) {
+        return prevComponents.filter(wv => wv.tempId !== tempId);
+      }
+      return prevComponents;
+    });
+  };
+
+  const updateWarmVeggieRow = (tempId: string, field: keyof WarmVeggieComponentRow, value: string) => {
+    setWarmVeggieComponents(prevComponents => prevComponents.map(wv =>
+      wv.tempId === tempId ? { ...wv, [field]: value } : wv
+    ));
+  };
+
+  const getTotalWarmVeggiePercentage = () => {
+    return warmVeggieComponents.reduce((sum, wv) => {
+      const percentage = parseFloat(wv.percentage) || 0;
+      return sum + percentage;
+    }, 0);
+  };
+
+  // Copy components from another dish
+  const copyComponentsFromDish = async (sourceDishId: string) => {
+    try {
+      // Fetch salad components from source dish
+      const { data: saladData } = await supabase
+        .from('salad_components')
+        .select('*, component_dish:dishes!component_dish_id(*)')
+        .eq('main_dish_id', sourceDishId);
+
+      if (saladData && saladData.length > 0) {
+        setSaladComponents(saladData.map((sc, index) => ({
+          tempId: `copied-salad-${index}`,
+          component_dish_id: sc.component_dish_id,
+          component_name: sc.component_dish?.name || '',
+          percentage: String(sc.percentage),
+        })));
+      }
+
+      // Fetch warm veggie components from source dish
+      const { data: warmVeggieData } = await supabase
+        .from('warm_veggie_components')
+        .select('*, component_dish:dishes!component_dish_id(*)')
+        .eq('main_dish_id', sourceDishId);
+
+      if (warmVeggieData && warmVeggieData.length > 0) {
+        setWarmVeggieComponents(warmVeggieData.map((wv, index) => ({
+          tempId: `copied-veggie-${index}`,
+          component_dish_id: wv.component_dish_id,
+          component_name: wv.component_dish?.name || '',
+          percentage: String(wv.percentage),
+        })));
+      }
+
+      // Close modal and reset search
+      setShowCopyModal(false);
+      setCopySearchTerm('');
+    } catch (error) {
+      console.error('Error copying components:', error);
+      alert('Failed to copy components. Please try again.');
+    }
+  };
+
+  // Create new component on the fly
+  const createNewComponent = async (name: string): Promise<string | null> => {
+    const trimmedName = name.trim();
+
+    // Check if component already exists with this name (for salad/warm veggie components)
+    const { data: existingComponent } = await supabase
+      .from('dishes')
+      .select('*')
+      .eq('category', 'component')
+      .ilike('name', trimmedName)
+      .maybeSingle();
+
+    if (existingComponent) {
+      // Component already exists - return its ID
+      return existingComponent.id;
+    }
+
+    // Component doesn't exist - create it
+    const { data, error } = await supabase
+      .from('dishes')
+      .insert([{
+        name: trimmedName,
+        category: 'component',
+        subcategory: null, // Components for salads don't need subcategory
+        is_active: true,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating component:', error);
+      return null;
+    }
+
+    // Refresh available components
+    await fetchComponents();
+
+    return data.id;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,16 +416,30 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
           .delete()
           .eq('main_dish_id', dishId);
 
-        // Insert new components
+        // Delete existing salad components
+        await supabase
+          .from('salad_components')
+          .delete()
+          .eq('main_dish_id', dishId);
+
+        // Delete existing warm veggie components
+        await supabase
+          .from('warm_veggie_components')
+          .delete()
+          .eq('main_dish_id', dishId);
+
+        // Insert new components (excluding salad and warm_veggie - handled separately)
         const componentsToInsert: any[] = [];
         Object.entries(selectedComponents).forEach(([type, ids]) => {
-          ids.forEach(id => {
-            componentsToInsert.push({
-              main_dish_id: dishId,
-              component_dish_id: id,
-              component_type: type,
+          if (type !== 'salad' && type !== 'warm_veggie') { // Salad and warm veggie components use different tables
+            ids.forEach(id => {
+              componentsToInsert.push({
+                main_dish_id: dishId,
+                component_dish_id: id,
+                component_type: type,
+              });
             });
-          });
+          }
         });
 
         if (componentsToInsert.length > 0) {
@@ -151,11 +448,67 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             .insert(componentsToInsert);
           if (error) throw error;
         }
+
+        // Insert salad components with percentages
+        const validSaladComponents = saladComponents.filter(
+          sc => sc.component_dish_id && sc.percentage
+        );
+
+        if (validSaladComponents.length > 0) {
+          // Validate total percentage
+          const totalPercentage = validSaladComponents.reduce((sum, sc) => {
+            return sum + parseFloat(sc.percentage);
+          }, 0);
+
+          if (Math.abs(totalPercentage - 100) > 0.01) {
+            throw new Error(`Salad percentages must total 100%. Current total: ${totalPercentage.toFixed(2)}%`);
+          }
+
+          const saladComponentsToInsert = validSaladComponents.map(sc => ({
+            main_dish_id: dishId,
+            component_dish_id: sc.component_dish_id,
+            percentage: parseFloat(sc.percentage),
+          }));
+
+          const { error: saladError } = await supabase
+            .from('salad_components')
+            .insert(saladComponentsToInsert);
+
+          if (saladError) throw saladError;
+        }
+
+        // Insert warm veggie components with percentages
+        const validWarmVeggieComponents = warmVeggieComponents.filter(
+          wv => wv.component_dish_id && wv.percentage
+        );
+
+        if (validWarmVeggieComponents.length > 0) {
+          // Validate total percentage
+          const totalPercentage = validWarmVeggieComponents.reduce((sum, wv) => {
+            return sum + parseFloat(wv.percentage);
+          }, 0);
+
+          if (Math.abs(totalPercentage - 100) > 0.01) {
+            throw new Error(`Warm veggie percentages must total 100%. Current total: ${totalPercentage.toFixed(2)}%`);
+          }
+
+          const warmVeggieComponentsToInsert = validWarmVeggieComponents.map(wv => ({
+            main_dish_id: dishId,
+            component_dish_id: wv.component_dish_id,
+            percentage: parseFloat(wv.percentage),
+          }));
+
+          const { error: warmVeggieError } = await supabase
+            .from('warm_veggie_components')
+            .insert(warmVeggieComponentsToInsert);
+
+          if (warmVeggieError) throw warmVeggieError;
+        }
       }
 
       setMessage({ type: 'success', text: dish ? 'Dish updated!' : 'Dish created!' });
       setTimeout(() => {
-        onSave();
+        onSave(dishId);
         onClose();
       }, 1000);
     } catch (err: any) {
@@ -171,7 +524,28 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     if (searchTerm) {
       filtered = filtered.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }
-    return filtered.slice(0, 10);
+
+    // Sort by: 1) Currently selected, 2) Most popular (usage count), 3) Alphabetically
+    filtered.sort((a, b) => {
+      const aSelected = selectedComponents[type]?.includes(a.id);
+      const bSelected = selectedComponents[type]?.includes(b.id);
+
+      // Selected items first
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+
+      // Then by popularity (usage count)
+      const aUsage = componentUsageCounts[a.id] || 0;
+      const bUsage = componentUsageCounts[b.id] || 0;
+      if (aUsage !== bUsage) {
+        return bUsage - aUsage; // Descending (most used first)
+      }
+
+      // Finally alphabetically
+      return a.name.localeCompare(b.name);
+    });
+
+    return filtered.slice(0, 12); // Show up to 12 items
   };
 
   const getVisibleSubcategories = () => {
@@ -188,12 +562,24 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
   };
 
   const toggleComponent = (type: DishSubcategory, id: string) => {
-    setSelectedComponents(prev => ({
-      ...prev,
-      [type]: prev[type].includes(id)
-        ? prev[type].filter(cid => cid !== id)
-        : [...prev[type], id]
-    }));
+    setSelectedComponents(prev => {
+      const isCurrentlySelected = prev[type].includes(id);
+
+      // If we're selecting (checking) a component, clear the search term to show full list
+      if (!isCurrentlySelected) {
+        setComponentSearchTerms(prevSearch => ({
+          ...prevSearch,
+          [type]: ''
+        }));
+      }
+
+      return {
+        ...prev,
+        [type]: isCurrentlySelected
+          ? prev[type].filter(cid => cid !== id)
+          : [...prev[type], id]
+      };
+    });
   };
 
   const handleQuickComponentCreated = async (newComponent: { id: string; name: string }) => {
@@ -207,6 +593,21 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
         ...prev,
         [categoryKey]: [...prev[categoryKey], newComponent.id]
       }));
+
+      // Set search term to show the newly created component
+      // This ensures it's visible even if there are more than 10 components
+      setComponentSearchTerms(prev => ({
+        ...prev,
+        [categoryKey]: newComponent.name
+      }));
+
+      // Clear the search after a short delay so user sees it was added
+      setTimeout(() => {
+        setComponentSearchTerms(prev => ({
+          ...prev,
+          [categoryKey]: ''
+        }));
+      }, 2000);
     }
 
     // Close the quick form
@@ -218,8 +619,8 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-apple">
       <div className="flex gap-0 max-h-[90vh]">
         {/* Main Form */}
-        <div className="bg-white rounded-2xl shadow-apple-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-8">
+        <div className="bg-white rounded-2xl max-w-4xl w-full flex flex-col max-h-[90vh]">
+        <div className="p-8 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 100px)' }}>
           <h2 className="text-apple-title-lg text-apple-gray1 mb-8">
             {dish ? 'Edit Main Dish' : 'Create Main Dish'}
           </h2>
@@ -230,7 +631,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form id="main-dish-form" onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Dish Name *</label>
               <input
@@ -302,7 +703,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                     <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Portion Size</label>
                     <input
                       type="number"
-                      step="0.01"
+                      step="1"
                       value={formData.portion_size}
                       onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
                       placeholder="e.g., 150"
@@ -343,6 +744,202 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                     const components = getComponentsByType(subcat.key);
                     const totalCount = allComponents.length;
 
+                    // Special rendering for Salad - inline editor with percentages
+                    if (subcat.key === 'salad') {
+                      return (
+                        <div key={subcat.key} className="border border-apple-gray5 rounded-xl p-5">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-apple-subheadline font-medium text-apple-gray1">
+                              {subcat.label}
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => setShowCopyModal(true)}
+                              className="text-apple-footnote text-apple-blue hover:text-apple-blue-hover font-medium transition-colors"
+                            >
+                              Copy from...
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            {saladComponents.map((sc, index) => (
+                              <div key={sc.tempId} className="flex gap-2 items-start">
+                                <div className="flex-1">
+                                  <input
+                                    type="text"
+                                    value={sc.component_name}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      updateSaladRow(sc.tempId, 'component_name', value);
+
+                                      // Check if this matches an existing component
+                                      const existingComponent = availableComponents.find(
+                                        c => c.name.toLowerCase() === value.toLowerCase()
+                                      );
+
+                                      if (existingComponent) {
+                                        updateSaladRow(sc.tempId, 'component_dish_id', existingComponent.id);
+                                      } else {
+                                        updateSaladRow(sc.tempId, 'component_dish_id', '');
+                                      }
+                                    }}
+                                    onBlur={async (e) => {
+                                      const value = e.target.value.trim();
+                                      if (value && !sc.component_dish_id) {
+                                        // Create new component
+                                        const newId = await createNewComponent(value);
+                                        if (newId) {
+                                          updateSaladRow(sc.tempId, 'component_dish_id', newId);
+                                        }
+                                      }
+                                    }}
+                                    placeholder="Type to search or create..."
+                                    className="w-full px-3 py-2 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                                  />
+                                </div>
+                                <div className="w-24">
+                                  <input
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    max="100"
+                                    value={sc.percentage}
+                                    onChange={(e) => updateSaladRow(sc.tempId, 'percentage', e.target.value)}
+                                    placeholder="%"
+                                    className="w-full px-2 py-2 border border-apple-gray4 rounded-lg text-apple-subheadline text-center focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                                  />
+                                </div>
+                                {saladComponents.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSaladRow(sc.tempId)}
+                                    className="text-apple-gray3 hover:text-apple-red transition-colors mt-2"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Add Row Button */}
+                          <button
+                            type="button"
+                            onClick={addSaladRow}
+                            className="mt-3 text-apple-subheadline text-apple-blue hover:text-apple-blue-hover font-medium transition-colors"
+                          >
+                            + Add Row
+                          </button>
+
+                          {/* Total Percentage */}
+                          <div className="mt-3 text-apple-footnote text-right">
+                            <span className={getTotalSaladPercentage() === 100 ? 'text-apple-green font-medium' : 'text-apple-orange font-medium'}>
+                              Total: {getTotalSaladPercentage().toFixed(2)}%
+                            </span>
+                          </div>
+
+                          <p className="text-apple-footnote text-apple-gray2 bg-apple-gray6 p-3 rounded-lg mt-3">
+                            Type to search existing components or create new ones. Percentages must total 100%.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    // Special rendering for Warm Veggies - inline editor with percentages
+                    if (subcat.key === 'warm_veggie') {
+                      return (
+                        <div key={subcat.key} className="border border-apple-gray5 rounded-xl p-5">
+                          <div className="mb-3">
+                            <h4 className="text-apple-subheadline font-medium text-apple-gray1">
+                              {subcat.label}
+                            </h4>
+                          </div>
+
+                          <div className="space-y-2">
+                            {warmVeggieComponents.map((wv, index) => (
+                              <div key={wv.tempId} className="flex gap-2 items-start">
+                                <div className="flex-1">
+                                  <input
+                                    type="text"
+                                    value={wv.component_name}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      updateWarmVeggieRow(wv.tempId, 'component_name', value);
+
+                                      // Check if this matches an existing component
+                                      const existingComponent = availableComponents.find(
+                                        c => c.name.toLowerCase() === value.toLowerCase()
+                                      );
+
+                                      if (existingComponent) {
+                                        updateWarmVeggieRow(wv.tempId, 'component_dish_id', existingComponent.id);
+                                      } else {
+                                        updateWarmVeggieRow(wv.tempId, 'component_dish_id', '');
+                                      }
+                                    }}
+                                    onBlur={async (e) => {
+                                      const value = e.target.value.trim();
+                                      if (value && !wv.component_dish_id) {
+                                        // Create new component
+                                        const newId = await createNewComponent(value);
+                                        if (newId) {
+                                          updateWarmVeggieRow(wv.tempId, 'component_dish_id', newId);
+                                        }
+                                      }
+                                    }}
+                                    placeholder="Type to search or create..."
+                                    className="w-full px-3 py-2 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                                  />
+                                </div>
+                                <div className="w-24">
+                                  <input
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    max="100"
+                                    value={wv.percentage}
+                                    onChange={(e) => updateWarmVeggieRow(wv.tempId, 'percentage', e.target.value)}
+                                    placeholder="%"
+                                    className="w-full px-2 py-2 border border-apple-gray4 rounded-lg text-apple-subheadline text-center focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                                  />
+                                </div>
+                                {warmVeggieComponents.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeWarmVeggieRow(wv.tempId)}
+                                    className="text-apple-gray3 hover:text-apple-red transition-colors mt-2"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Add Row Button */}
+                          <button
+                            type="button"
+                            onClick={addWarmVeggieRow}
+                            className="mt-3 text-apple-subheadline text-apple-blue hover:text-apple-blue-hover font-medium transition-colors"
+                          >
+                            + Add Row
+                          </button>
+
+                          {/* Total Percentage */}
+                          <div className="mt-3 text-apple-footnote text-right">
+                            <span className={getTotalWarmVeggiePercentage() === 100 ? 'text-apple-green font-medium' : 'text-apple-orange font-medium'}>
+                              Total: {getTotalWarmVeggiePercentage().toFixed(2)}%
+                            </span>
+                          </div>
+
+                          <p className="text-apple-footnote text-apple-gray2 bg-apple-gray6 p-3 rounded-lg mt-3">
+                            Type to search existing components or create new ones. Percentages must total 100%.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    // Regular component rendering for other types
                     return (
                       <div key={subcat.key} className="border border-apple-gray5 rounded-xl p-5">
                         <div className="flex items-center justify-between mb-3">
@@ -361,8 +958,6 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                                 setQuickFormType('carb');
                               } else if (subcat.key === 'warm_veggie') {
                                 setQuickFormType('warm_veggie');
-                              } else if (subcat.key === 'salad') {
-                                setQuickFormType('salad');
                               } else if (subcat.key === 'condiment') {
                                 setQuickFormType('condiment');
                               }
@@ -372,7 +967,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                             + New
                           </button>
                         </div>
-                        {totalCount > 10 && (
+                        {totalCount > 12 && (
                           <input
                             type="text"
                             placeholder="Search..."
@@ -432,23 +1027,30 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-apple-gray5">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-3 text-apple-subheadline font-medium text-apple-gray1 border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-6 py-3 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg disabled:opacity-40 transition-colors"
-              >
-                {saving ? 'Saving...' : (dish ? 'Update' : 'Create')}
-              </button>
-            </div>
           </form>
+        </div>
+
+        {/* Sticky Footer with Buttons - Always Visible */}
+        <div className="flex justify-end gap-3 px-8 py-6 bg-white rounded-b-2xl">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-3 text-apple-subheadline font-medium text-apple-gray1 border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              const form = document.getElementById('main-dish-form') as HTMLFormElement;
+              if (form) form.requestSubmit();
+            }}
+            disabled={saving}
+            className="px-6 py-3 text-apple-subheadline font-semibold text-[#1D1D1F] bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors"
+          >
+            {saving ? 'Saving...' : (dish ? 'Update' : 'Create')}
+          </button>
         </div>
       </div>
 
@@ -460,7 +1062,73 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
           onCreated={handleQuickComponentCreated}
         />
       )}
-    </div>
+      </div>
+
+      {/* Copy Components Modal */}
+      {showCopyModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-2xl shadow-2xl border border-apple-gray5 w-full max-w-md">
+            <div className="px-6 py-5 border-b border-apple-gray5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-apple-headline text-apple-gray1">Copy Salad & Warm Veggies From...</h3>
+                <button
+                  onClick={() => {
+                    setShowCopyModal(false);
+                    setCopySearchTerm('');
+                  }}
+                  className="text-apple-gray3 hover:text-apple-gray1 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Search Input */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={copySearchTerm}
+                  onChange={(e) => setCopySearchTerm(e.target.value)}
+                  placeholder="Search hot dishes..."
+                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                  autoFocus
+                />
+              </div>
+
+              {/* Dish List */}
+              <div className="max-h-[400px] overflow-y-auto space-y-2">
+                {availableHotDishes
+                  .filter(d => d.name.toLowerCase().includes(copySearchTerm.toLowerCase()))
+                  .map(hotDish => (
+                    <button
+                      key={hotDish.id}
+                      type="button"
+                      onClick={() => copyComponentsFromDish(hotDish.id)}
+                      className="w-full px-4 py-3 text-left border border-apple-gray5 rounded-lg hover:bg-apple-gray6 hover:border-apple-blue transition-all"
+                    >
+                      <div className="text-apple-subheadline font-medium text-apple-gray1">{hotDish.name}</div>
+                      <div className="text-apple-footnote text-apple-gray3 mt-1">
+                        {hotDish.category === 'hot_dish_meat' && 'Hot Dish - Meat'}
+                        {hotDish.category === 'hot_dish_fish' && 'Hot Dish - Fish'}
+                        {hotDish.category === 'hot_dish_veg' && 'Hot Dish - Veg'}
+                      </div>
+                    </button>
+                  ))
+                }
+              </div>
+
+              {availableHotDishes.filter(d => d.name.toLowerCase().includes(copySearchTerm.toLowerCase())).length === 0 && (
+                <div className="text-center py-8 text-apple-gray3 text-apple-subheadline">
+                  No dishes found
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
