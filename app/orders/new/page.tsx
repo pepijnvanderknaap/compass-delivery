@@ -9,9 +9,9 @@ import type { UserProfile } from '@/lib/types';
 
 interface WeeklyOrderData {
   soup: number[];
-  salad_bar: number[];
+  hot_dish_fish: number[];
   hot_dish_meat: number[];
-  hot_dish_vegetarian: number[];
+  hot_dish_veg: number[];
   off_menu: number[];
 }
 
@@ -27,9 +27,9 @@ export default function NewOrderPage() {
   const [selectedWeek, setSelectedWeek] = useState<Date>(addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1));
   const [orderData, setOrderData] = useState<WeeklyOrderData>({
     soup: [0, 0, 0, 0, 0],
-    salad_bar: [0, 0, 0, 0, 0],
+    hot_dish_fish: [0, 0, 0, 0, 0],
     hot_dish_meat: [0, 0, 0, 0, 0],
-    hot_dish_vegetarian: [0, 0, 0, 0, 0],
+    hot_dish_veg: [0, 0, 0, 0, 0],
     off_menu: [0, 0, 0, 0, 0],
   });
   const [offMenuItems, setOffMenuItems] = useState<OffMenuItem[]>([]);
@@ -42,9 +42,9 @@ export default function NewOrderPage() {
   const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const dishCategories = [
     { key: 'soup' as const, label: 'Soup', unit: 'portions' },
-    { key: 'salad_bar' as const, label: 'Salad Bar', unit: 'portions' },
+    { key: 'hot_dish_fish' as const, label: 'Salad Bar', unit: 'portions' },
     { key: 'hot_dish_meat' as const, label: 'Hot Dish Meat/Fish', unit: 'portions' },
-    { key: 'hot_dish_vegetarian' as const, label: 'Hot Dish Vegetarian', unit: 'portions' },
+    { key: 'hot_dish_veg' as const, label: 'Hot Dish Vegetarian', unit: 'portions' },
   ];
 
   const addOffMenuItem = () => {

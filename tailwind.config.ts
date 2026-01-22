@@ -23,17 +23,39 @@ const config: Config = {
           red: '#FF3B30',
           orange: '#FF9500',
         },
+        // Section-specific colors
+        dk: {
+          amber: '#f59e0b',
+          'amber-hover': '#d97706',
+        },
+        lm: {
+          teal: '#0d9488',
+          'teal-hover': '#0f766e',
+        },
+        rm: {
+          purple: '#7c3aed',
+          'purple-hover': '#6d28d9',
+        },
       },
       fontSize: {
-        'apple-display': ['32px', { lineHeight: '1.125', fontWeight: '600', letterSpacing: '-0.5px' }],
-        'apple-title-lg': ['28px', { lineHeight: '1.15', fontWeight: '600' }],
-        'apple-title': ['22px', { lineHeight: '1.2', fontWeight: '600' }],
-        'apple-headline': ['17px', { lineHeight: '1.3', fontWeight: '600' }],
-        'apple-body': ['17px', { lineHeight: '1.4', fontWeight: '400' }],
-        'apple-callout': ['16px', { lineHeight: '1.35', fontWeight: '400' }],
-        'apple-subheadline': ['15px', { lineHeight: '1.35', fontWeight: '400' }],
-        'apple-footnote': ['13px', { lineHeight: '1.4', fontWeight: '400' }],
-        'apple-caption': ['12px', { lineHeight: '1.35', fontWeight: '400' }],
+        // Large display text - medium weight for impact
+        'apple-display': ['32px', { lineHeight: '1.125', fontWeight: '500', letterSpacing: '-0.5px' }],
+        // Page titles - medium weight
+        'apple-title-lg': ['28px', { lineHeight: '1.15', fontWeight: '500' }],
+        // Section titles - regular weight
+        'apple-title': ['22px', { lineHeight: '1.2', fontWeight: '400', letterSpacing: '-0.3px' }],
+        // Subsection headers - regular weight
+        'apple-headline': ['17px', { lineHeight: '1.3', fontWeight: '400', letterSpacing: '-0.2px' }],
+        // Body text - light weight (main text style)
+        'apple-body': ['17px', { lineHeight: '1.4', fontWeight: '300', letterSpacing: '-0.1px' }],
+        // Callout text - light weight
+        'apple-callout': ['16px', { lineHeight: '1.35', fontWeight: '300' }],
+        // Subheadline - light weight
+        'apple-subheadline': ['15px', { lineHeight: '1.35', fontWeight: '300' }],
+        // Footnote - light weight
+        'apple-footnote': ['13px', { lineHeight: '1.4', fontWeight: '300' }],
+        // Caption - light weight
+        'apple-caption': ['12px', { lineHeight: '1.35', fontWeight: '300' }],
       },
       boxShadow: {
         'apple-sm': '0 1px 2px rgba(0,0,0,0.04)',

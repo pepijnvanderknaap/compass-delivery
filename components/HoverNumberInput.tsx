@@ -17,11 +17,11 @@ export default function HoverNumberInput({
   max = 9999,
   className = ''
 }: HoverNumberInputProps) {
-  const [inputValue, setInputValue] = useState(String(value));
+  const [inputValue, setInputValue] = useState(value === 0 ? '' : String(value));
 
   // Sync inputValue with value prop when it changes
   useEffect(() => {
-    setInputValue(String(value));
+    setInputValue(value === 0 ? '' : String(value));
   }, [value]);
 
   const handleIncrement = () => {
@@ -40,45 +40,32 @@ export default function HoverNumberInput({
     const val = e.target.value;
     setInputValue(val);
 
-    const numValue = parseInt(val);
-    if (!isNaN(numValue)) {
-      const boundedValue = Math.max(min, Math.min(max, numValue));
-      onChange(boundedValue);
+    // If empty, set to 0
+    if (val === '') {
+      onChange(0);
+    } else {
+      const numValue = parseInt(val);
+      if (!isNaN(numValue)) {
+        const boundedValue = Math.max(min, Math.min(max, numValue));
+        onChange(boundedValue);
+      }
     }
   };
 
   const handleBlur = () => {
-    // Ensure the input shows the actual bounded value
-    setInputValue(String(value));
+    // Ensure the input shows the actual bounded value (empty if 0)
+    setInputValue(value === 0 ? '' : String(value));
   };
 
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
-      <button
-        type="button"
-        onClick={handleDecrement}
-        disabled={value <= min}
-        className="w-7 h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded text-gray-700 font-bold transition-colors"
-      >
-        −
-      </button>
-      <input
-        type="number"
-        value={inputValue}
-        onChange={handleInputChange}
-        onBlur={handleBlur}
-        min={min}
-        max={max}
-        className="w-16 px-2 py-1.5 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-      />
-      <button
-        type="button"
-        onClick={handleIncrement}
-        disabled={value >= max}
-        className="w-7 h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded text-gray-700 font-bold transition-colors"
-      >
-        +
-      </button>
-    </div>
+    <input
+      type="number"
+      value={inputValue}
+      onChange={handleInputChange}
+      onBlur={handleBlur}
+      min={min}
+      max={max}
+      className={`w-16 px-2 py-1.5 text-center text-apple-subheadline font-medium border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white text-slate-700 ${className}`}
+    />
   );
 }

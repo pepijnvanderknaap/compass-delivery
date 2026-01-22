@@ -58,7 +58,7 @@ export default function FixOrdersPage() {
         'JAA Training': 30
       };
 
-      const categories = ['soup', 'salad_bar', 'hot_dish_meat', 'hot_dish_vegetarian'];
+      const categories = ['soup', 'hot_dish_meat', 'hot_dish_fish', 'hot_dish_veg'];
       const resultsList = [];
 
       for (const order of orders || []) {

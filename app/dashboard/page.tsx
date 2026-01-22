@@ -10,7 +10,7 @@ function DashboardContent() {
       title: 'Dark Kitchen',
       href: '/login/dark-kitchen',
       description: 'Manage dishes, menus, recipes, and production',
-      gradient: 'from-slate-700 via-slate-800 to-slate-900',
+      gradient: 'from-[#5A8DC8] via-[#4A7DB5] to-[#3A6DA2]',
       icon: (
         <svg className="w-20 h-20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -49,7 +49,7 @@ function DashboardContent() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <main className="flex-1 max-w-6xl mx-auto px-8 pt-32 pb-16 w-full">
-        <div className="mb-16 text-center">
+        <div className="mb-32 text-center">
           <h2 className="text-5xl font-bold text-black mb-3 tracking-tight">
             Welcome to Compass Delivery
           </h2>
@@ -90,7 +90,7 @@ function DashboardContent() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 py-8">
+      <footer className="border-t border-gray-200 py-8 mt-16">
         <div className="max-w-6xl mx-auto px-8">
           <div className="flex items-center justify-center gap-6">
             <p className="text-lg text-gray-700">

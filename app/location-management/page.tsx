@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
+import UniversalHeader from '@/components/UniversalHeader';
 
 export default function LocationManagementPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -111,55 +112,30 @@ export default function LocationManagementPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Colored header banner */}
-      <div className="bg-gradient-to-r from-teal-600 to-teal-700 py-6">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-            DELIVERY
-          </h1>
-        </div>
-      </div>
+      <UniversalHeader
+        title="Location Management"
+        backPath="/dashboard"
+        actions={
+          <>
+            <span className="text-apple-subheadline text-slate-700">{profile.full_name}</span>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg transition-colors"
+            >
+              Sign Out
+            </button>
+          </>
+        }
+      />
 
-      {/* White navigation bar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-light text-gray-700">
-              Location Management
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="text-sm text-teal-600 hover:text-teal-800"
-              >
-                ← Back
-              </button>
-              <span className="text-sm text-gray-700">{profile.full_name}</span>
-              <button
-                onClick={handleSignOut}
-                className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto px-8 py-16">
-        <div className="mb-12">
-          <p className="text-lg text-gray-600">
-            Manage menus, orders, and feedback for your location
-          </p>
-        </div>
-
+      <main className="max-w-6xl mx-auto px-8 py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sections.map((section) => (
             section.available ? (
               <Link
                 key={section.href}
                 href={section.href}
-                className="group relative overflow-hidden bg-white border border-teal-200 rounded-2xl p-8 hover:border-teal-600 hover:shadow-lg transition-all duration-300"
+                className="group relative overflow-hidden bg-white border border-teal-200 rounded-lg p-8 hover:border-teal-600 hover:shadow-lg transition-all duration-300"
               >
                 <div className="text-teal-600 mb-6 group-hover:text-teal-700 group-hover:scale-110 transition-all duration-300">
                   {section.icon}
@@ -172,7 +148,7 @@ export default function LocationManagementPage() {
             ) : (
               <div
                 key={section.title}
-                className="relative overflow-hidden bg-white border border-gray-100 rounded-2xl p-8 opacity-50 cursor-not-allowed"
+                className="relative overflow-hidden bg-white border border-gray-100 rounded-lg p-8 opacity-50 cursor-not-allowed"
               >
                 <div className="text-gray-400 mb-6">
                   {section.icon}

@@ -154,7 +154,7 @@ export default function ComponentForm({ component, onClose, onSave }: ComponentF
                   <label className="block text-sm font-medium mb-2">Portion Size</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="1"
                     value={formData.portion_size}
                     onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
                     placeholder="e.g., 220"

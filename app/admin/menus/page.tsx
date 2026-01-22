@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { format, startOfWeek, addDays, addWeeks } from 'date-fns';
-import type { Dish, UserProfile } from '@/lib/types';
+import { format, startOfWeek, addDays, addWeeks, getWeek } from 'date-fns';
+import type { Dish, UserProfile, DishWithComponents } from '@/lib/types';
 import DishCommandPalette from '../menu-planner/components/DishCommandPalette';
+import DishDetailModal from '../menu-planner/components/DishDetailModal';
+import MainDishForm from '../dishes/MainDishForm';
+import UniversalHeader from '@/components/UniversalHeader';
 
 export default function AdminMenusPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -16,6 +19,22 @@ export default function AdminMenusPage() {
   const [saving, setSaving] = useState(false);
   const [paletteState, setPaletteState] = useState<{
     isOpen: boolean;
+    category: string;
+    weekIndex: number;
+    dayIndex: number;
+    slot: string;
+  } | null>(null);
+  const [dishDetailState, setDishDetailState] = useState<{
+    isOpen: boolean;
+    dishId: string;
+    category: string;
+    weekIndex: number;
+    dayIndex: number;
+    slot: string;
+  } | null>(null);
+  const [editDishState, setEditDishState] = useState<{
+    isOpen: boolean;
+    dish: DishWithComponents | null;
     category: string;
     weekIndex: number;
     dayIndex: number;
@@ -72,7 +91,6 @@ export default function AdminMenusPage() {
       .from('dishes')
       .select('*')
       .eq('is_active', true)
-      .neq('category', 'salad_bar')
       .neq('category', 'component')
       .order('name');
 
@@ -457,20 +475,40 @@ export default function AdminMenusPage() {
 
   // Open command palette for a specific slot
   const openPalette = (weekIndex: number, dayIndex: number, slot: string) => {
-    setPaletteState({
-      isOpen: true,
-      category: getSlotCategory(slot),
-      weekIndex,
-      dayIndex,
-      slot,
-    });
+    // Check if there's already a dish in this slot
+    const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
+    const existingDishId = menuData[dateKey]?.[slot];
+
+    if (existingDishId) {
+      // Show detail modal for existing dish
+      setDishDetailState({
+        isOpen: true,
+        dishId: existingDishId,
+        category: getSlotCategory(slot),
+        weekIndex,
+        dayIndex,
+        slot,
+      });
+    } else {
+      // Show command palette for empty slot
+      setPaletteState({
+        isOpen: true,
+        category: getSlotCategory(slot),
+        weekIndex,
+        dayIndex,
+        slot,
+      });
+    }
   };
 
   // Handle dish selection from palette
   const handleDishSelect = (dishId: string) => {
-    if (!paletteState) return;
+    if (!paletteState && !dishDetailState) return;
 
-    const { weekIndex, dayIndex, slot } = paletteState;
+    const state = paletteState || dishDetailState;
+    if (!state) return;
+
+    const { weekIndex, dayIndex, slot } = state;
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
 
     // Update state and trigger auto-save
@@ -491,6 +529,45 @@ export default function AdminMenusPage() {
     fetchDishes();
   };
 
+  // Handle edit dish from detail modal
+  const handleEditDish = (dish: DishWithComponents) => {
+    if (!dishDetailState) return;
+
+    // Close detail modal and open edit form
+    setEditDishState({
+      isOpen: true,
+      dish,
+      category: dishDetailState.category,
+      weekIndex: dishDetailState.weekIndex,
+      dayIndex: dishDetailState.dayIndex,
+      slot: dishDetailState.slot,
+    });
+    setDishDetailState(null);
+  };
+
+  // Handle replace dish from detail modal
+  const handleReplaceDish = () => {
+    if (!dishDetailState) return;
+
+    // Close detail modal and open command palette
+    setPaletteState({
+      isOpen: true,
+      category: dishDetailState.category,
+      weekIndex: dishDetailState.weekIndex,
+      dayIndex: dishDetailState.dayIndex,
+      slot: dishDetailState.slot,
+    });
+    setDishDetailState(null);
+  };
+
+  // Handle save from edit form
+  const handleSaveEdit = () => {
+    // Close edit form and refetch dishes
+    setEditDishState(null);
+    fetchDishes();
+    loadMenuData();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -500,33 +577,35 @@ export default function AdminMenusPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 font-apple">
-      {/* Sophisticated Apple-style header with glass effect */}
-      <nav className="bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="text-apple-title font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                DELIVERY
-              </div>
-              <div className="h-6 w-px bg-apple-gray5"></div>
-              <h1 className="text-apple-body text-apple-gray2">
-                Menu Planner
-              </h1>
-            </div>
-            <button
-              onClick={() => router.push('/dark-kitchen')}
-              className="px-5 py-2 text-apple-subheadline font-semibold text-white bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-full shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              Back
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-white font-apple">
+      {/* Print styles */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: landscape;
+            margin: 1cm;
+          }
+          nav, .no-print {
+            display: none !important;
+          }
+          .print-page-break {
+            page-break-after: always;
+          }
+          body {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+        }
+      `}</style>
 
-      <main className="max-w-full mx-auto px-6 lg:px-8 py-10">
+      <UniversalHeader
+        title="Menu Planner"
+        backPath="/dark-kitchen"
+      />
+
+      <main className="max-w-7xl mx-auto py-24">
         {message && (
-          <div className={`mb-6 px-4 py-3 rounded-xl text-apple-subheadline ${message.type === 'success' ? 'bg-apple-green/10 text-apple-green border border-apple-green/20' : 'bg-apple-red/10 text-apple-red border border-apple-red/20'}`}>
+          <div className={`mb-6 mx-8 lg:mx-12 px-4 py-3 rounded-xl text-apple-subheadline ${message.type === 'success' ? 'bg-apple-green/10 text-apple-green border border-apple-green/20' : 'bg-apple-red/10 text-apple-red border border-apple-red/20'}`}>
             {message.text}
           </div>
         )}
@@ -541,77 +620,124 @@ export default function AdminMenusPage() {
           />
         )}
 
-        {/* 4-week calendar grid - now full width */}
-        <div className="space-y-6">
+        {/* Dish Detail Modal */}
+        {dishDetailState && (
+          <DishDetailModal
+            dishId={dishDetailState.dishId}
+            isOpen={dishDetailState.isOpen}
+            onClose={() => setDishDetailState(null)}
+            onEdit={handleEditDish}
+            onReplace={handleReplaceDish}
+          />
+        )}
+
+        {/* Edit Dish Form */}
+        {editDishState && (
+          <MainDishForm
+            dish={editDishState.dish}
+            onClose={() => setEditDishState(null)}
+            onSave={handleSaveEdit}
+          />
+        )}
+
+        {/* 4-week calendar grid - refined and constrained */}
+        <div className="space-y-8 px-8 lg:px-12 -ml-[15px] -mr-[15px]">
             {weeks.map((weekStart, weekIndex) => {
               const isCurrent = isCurrentWeek(weekStart);
               return (
-              <div key={weekIndex} className={`bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ${isCurrent ? 'ring-2 ring-blue-500 shadow-blue-100' : 'border border-white/60'}`}>
-                <div className={`px-6 py-5 ${isCurrent ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gradient-to-r from-slate-100 to-slate-50'} border-b ${isCurrent ? 'border-blue-400/30' : 'border-slate-200'}`}>
+              <div key={weekIndex} className={weekIndex % 2 === 1 ? 'print-page-break' : ''}>
+                {/* Floating header text above the box */}
+                <div className="px-5 py-2">
                   <div className="flex items-center gap-3">
-                    {isCurrent && (
-                      <span className="bg-white/20 backdrop-blur-sm text-white text-apple-caption font-semibold px-3 py-1 rounded-full shadow-sm">
-                        Current Week
-                      </span>
-                    )}
-                    <div>
-                      <div className={`text-apple-footnote font-semibold uppercase tracking-wider ${isCurrent ? 'text-blue-100' : 'text-slate-500'}`}>
-                        Week {weekIndex + 1}
-                      </div>
-                      <h3 className={`text-apple-headline font-semibold ${isCurrent ? 'text-white' : 'text-slate-800'}`}>
-                        {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 4), 'MMM d, yyyy')}
-                      </h3>
-                    </div>
+                    <h3 className="text-apple-headline font-medium italic text-slate-700">
+                      {format(weekStart, 'd MMM')} - {format(addDays(weekStart, 4), 'd MMM yyyy')}
+                    </h3>
+                    <span className="text-apple-footnote font-medium italic tracking-wider text-slate-500">
+                      (Week {getWeek(weekStart, { weekStartsOn: 1 })})
+                    </span>
+                    <button
+                      onClick={() => window.print()}
+                      className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors ml-auto no-print"
+                    >
+                      Print
+                    </button>
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full table-fixed">
-                    <thead>
-                      <tr className="border-b border-apple-gray5">
-                        <th className="w-40 px-6 py-4 text-left text-apple-footnote font-semibold text-apple-gray3 uppercase tracking-wide">
-                          Meal Type
-                        </th>
-                        {days.map((day, dayIndex) => (
-                          <th key={day} className="px-4 py-4 text-center">
-                            <div className="text-apple-footnote font-semibold text-apple-gray1">{day}</div>
-                            <div className="text-apple-caption text-apple-gray3 font-normal mt-0.5">
-                              {format(addDays(weekStart, dayIndex), 'MMM d')}
-                            </div>
-                          </th>
+                {/* Container for amber header and data table with tiny gap */}
+                <div className="space-y-2">
+                  {/* Amber header box - separate and detached */}
+                  <div className={`border border-slate-300 rounded-lg overflow-hidden ${isCurrent ? "bg-[#4A7DB5]" : "bg-slate-200"}`}>
+                    <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
+                      <colgroup>
+                        <col className="w-40" />
+                        <col className="w-8" />
+                        {days.map((day) => (
+                          <col key={day} className="w-48" />
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-apple-gray5">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th className={`px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide ${isCurrent ? 'text-white' : 'text-slate-500'}`}>
+                            Meal
+                          </th>
+                          <th></th>
+                          {days.map((day, dayIndex) => (
+                            <th key={day} className="py-4">
+                              <div className={`flex items-baseline justify-center gap-1 ${isCurrent ? 'text-white' : 'text-slate-700'}`}>
+                                <span className="text-apple-footnote font-medium uppercase tracking-wide">{day.substring(0, 3).toUpperCase()}</span>
+                                <span className={`text-apple-caption font-light ${isCurrent ? 'text-white/70' : 'text-slate-400'}`}>
+                                  {format(addDays(weekStart, dayIndex), 'd MMM')}
+                                </span>
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                    </table>
+                  </div>
+
+                  {/* Data table box - separate with tiny gap */}
+                  <div className="overflow-hidden bg-slate-100 pb-4 border border-slate-300 rounded-xl">
+                    <table className="w-full bg-slate-100 border-separate" style={{borderSpacing: '0 0'}}>
+                      <colgroup>
+                        <col className="w-40" />
+                        <col className="w-8" />
+                        {days.map((day) => (
+                          <col key={day} className="w-48" />
+                        ))}
+                      </colgroup>
+                    <tbody className="divide-y divide-slate-100">
                       {/* Soup Row */}
                       <tr>
-                        <td className="px-6 py-4 text-apple-subheadline font-medium text-apple-gray1">Soup</td>
+                        <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700">Soup</td>
+                        <td></td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
                           const dishId = menuData[dateKey]?.soup;
                           const dish = getDishById(dishId);
 
                           return (
-                            <td key={dayIndex} className="px-3 py-4">
+                            <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'soup')}
-                                className="w-full h-20 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl p-2 hover:border-blue-400 hover:shadow-md hover:scale-[1.02] transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 border border-slate-300/50 rounded-lg p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-gradient-to-br from-white to-blue-50/30 border border-blue-200/50 rounded-lg p-2 flex items-center justify-center shadow-sm">
-                                    <div className="text-apple-subheadline font-semibold text-slate-800 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
+                                    <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'soup');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                                      className="absolute -top-1.5 -right-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all duration-200"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-slate-400 font-medium">+ Add dish</div>
+                                  <div className="text-apple-subheadline text-slate-400">+ Add</div>
                                 )}
                               </button>
                             </td>
@@ -621,33 +747,34 @@ export default function AdminMenusPage() {
 
                       {/* Hot Dish Meat/Fish Row */}
                       <tr>
-                        <td className="px-6 py-4 text-apple-subheadline font-medium text-apple-gray1">Hot Dish Meat/Fish</td>
+                        <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700">Hot Dish Meat/Fish</td>
+                        <td></td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
                           const dishId = menuData[dateKey]?.hot_meat;
                           const dish = getDishById(dishId);
 
                           return (
-                            <td key={dayIndex} className="px-3 py-4">
+                            <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_meat')}
-                                className="w-full h-20 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl p-2 hover:border-blue-400 hover:shadow-md hover:scale-[1.02] transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 border border-slate-300/50 rounded-lg p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-gradient-to-br from-white to-blue-50/30 border border-blue-200/50 rounded-lg p-2 flex items-center justify-center shadow-sm">
-                                    <div className="text-apple-subheadline font-semibold text-slate-800 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
+                                    <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'hot_meat');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                                      className="absolute -top-1.5 -right-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all duration-200"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-slate-400 font-medium">+ Add dish</div>
+                                  <div className="text-apple-subheadline text-slate-400">+ Add</div>
                                 )}
                               </button>
                             </td>
@@ -657,63 +784,48 @@ export default function AdminMenusPage() {
 
                       {/* Hot Dish Vegetarian Row */}
                       <tr>
-                        <td className="px-6 py-4 text-apple-subheadline font-medium text-apple-gray1">Hot Dish Vegetarian</td>
+                        <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700">Hot Dish Vegetarian</td>
+                        <td></td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
                           const dishId = menuData[dateKey]?.hot_veg;
                           const dish = getDishById(dishId);
 
                           return (
-                            <td key={dayIndex} className="px-3 py-4">
+                            <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_veg')}
-                                className="w-full h-20 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl p-2 hover:border-blue-400 hover:shadow-md hover:scale-[1.02] transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 border border-slate-300/50 rounded-lg p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full bg-gradient-to-br from-white to-blue-50/30 border border-blue-200/50 rounded-lg p-2 flex items-center justify-center shadow-sm">
-                                    <div className="text-apple-subheadline font-semibold text-slate-800 text-center line-clamp-2">{dish.name}</div>
+                                  <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
+                                    <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         clearSlot(weekIndex, dayIndex, 'hot_veg');
                                       }}
-                                      className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                                      className="absolute -top-1.5 -right-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all duration-200"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-slate-400 font-medium">+ Add dish</div>
+                                  <div className="text-apple-subheadline text-slate-400">+ Add</div>
                                 )}
                               </button>
                             </td>
                           );
                         })}
                       </tr>
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="h-4"></div>
               </div>
             );
           })}
 
-          {/* Auto-save status */}
-            <div className="flex justify-end items-center gap-3 mt-6">
-              {saving && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800"></div>
-                  <span className="text-sm">Saving...</span>
-                </div>
-              )}
-              <button
-                onClick={saveMenuData}
-                disabled={saving}
-                className="px-8 py-3 bg-blue-800 text-white rounded-md hover:bg-blue-900 font-medium shadow-sm disabled:opacity-50 transition-colors"
-              >
-                {saving ? 'Saving...' : 'Save 4-Week Menu'}
-              </button>
-            </div>
           </div>
       </main>
     </div>
