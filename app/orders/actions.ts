@@ -8,6 +8,7 @@ export async function createOrderItem(data: {
   dish_id: string;
   delivery_date: string;
   portions: number;
+  meal_type?: string;
 }) {
   // First verify the user has permission using the authenticated client
   const supabase = await createClient();
@@ -54,6 +55,21 @@ export async function createOrderItem(data: {
     }
   );
 
+  // CRITICAL: Check if this exact order_item already exists to prevent duplicates
+  const { data: existingItem } = await serviceClient
+    .from('order_items')
+    .select('id')
+    .eq('order_id', data.order_id)
+    .eq('dish_id', data.dish_id)
+    .eq('delivery_date', data.delivery_date)
+    .eq('meal_type', data.meal_type || null)
+    .maybeSingle();
+
+  if (existingItem) {
+    console.log(`Order item already exists, skipping insert: ${data.order_id}-${data.dish_id}-${data.delivery_date}-${data.meal_type}`);
+    return { data: existingItem };
+  }
+
   const { data: orderItem, error } = await serviceClient
     .from('order_items')
     .insert(data)
@@ -73,6 +89,7 @@ export async function createOrderItemsBatch(items: Array<{
   dish_id: string;
   delivery_date: string;
   portions: number;
+  meal_type?: string;
 }>) {
   if (items.length === 0) {
     return { data: [] };
@@ -122,9 +139,36 @@ export async function createOrderItemsBatch(items: Array<{
     }
   );
 
+  // CRITICAL: Check for existing order_items to prevent duplicates
+  // Query all existing items for this order
+  const { data: existingItems } = await serviceClient
+    .from('order_items')
+    .select('order_id, dish_id, delivery_date, meal_type')
+    .eq('order_id', items[0].order_id);
+
+  // Create a Set of existing item keys for fast lookup
+  const existingKeys = new Set(
+    (existingItems || []).map(item =>
+      `${item.order_id}-${item.dish_id}-${item.delivery_date}-${item.meal_type || 'null'}`
+    )
+  );
+
+  // Filter out items that already exist
+  const itemsToInsert = items.filter(item => {
+    const key = `${item.order_id}-${item.dish_id}-${item.delivery_date}-${item.meal_type || 'null'}`;
+    return !existingKeys.has(key);
+  });
+
+  if (itemsToInsert.length === 0) {
+    console.log('No new items to insert - all items already exist');
+    return { data: [] };
+  }
+
+  console.log(`Inserting ${itemsToInsert.length} new items (filtered out ${items.length - itemsToInsert.length} duplicates)`);
+
   const { data: orderItems, error } = await serviceClient
     .from('order_items')
-    .insert(items)
+    .insert(itemsToInsert)
     .select();
 
   if (error) {
@@ -332,13 +376,14 @@ export async function ensureFourWeeksAhead(locationId: string, weekDates: string
             const deliveryDateStr = deliveryDate.toISOString().split('T')[0];
 
             // Create order items for each category with default values
-            // Note: hot_dish_meat_fish creates MEAT by default (manager can change to fish if needed)
+            // Note: hot_dish_meat_fish creates hot_meat meal_type (covers both meat and fish)
             if (template.soup > 0 && dishByCategory['soup']) {
               orderItemsToCreate.push({
                 order_id: order.id,
                 dish_id: dishByCategory['soup'],
                 delivery_date: deliveryDateStr,
-                portions: template.soup
+                portions: template.soup,
+                meal_type: 'soup'
               });
             }
 
@@ -347,7 +392,8 @@ export async function ensureFourWeeksAhead(locationId: string, weekDates: string
                 order_id: order.id,
                 dish_id: dishByCategory['hot_dish_meat'],
                 delivery_date: deliveryDateStr,
-                portions: template.hot_dish_meat_fish
+                portions: template.hot_dish_meat_fish,
+                meal_type: 'hot_meat'
               });
             }
 
@@ -356,7 +402,8 @@ export async function ensureFourWeeksAhead(locationId: string, weekDates: string
                 order_id: order.id,
                 dish_id: dishByCategory['hot_dish_veg'],
                 delivery_date: deliveryDateStr,
-                portions: template.hot_dish_veg
+                portions: template.hot_dish_veg,
+                meal_type: 'hot_veg'
               });
             }
           }
