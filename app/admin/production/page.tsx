@@ -20,6 +20,10 @@ interface ProductionRow {
   componentType?: string;
   isSubHeader?: boolean;
   subHeaderLabel?: string;
+  isTotalRow?: boolean; // For salad/warm veggie total rows
+  percentage?: number; // Component percentage (0-100)
+  mainDishTotalPortionG?: number; // Total portion size from main dish
+  mainDishIds?: string[]; // Track which main dishes contribute to this component
 }
 
 export default function ProductionSheetsPage() {
@@ -69,8 +73,8 @@ export default function ProductionSheetsPage() {
           return acc;
         }, []) || [];
 
-        // Custom sort order
-        const sortOrder = ['SnapChat 119', 'SnapChat 165', 'Symphonys', 'Atlasian', 'Snowflake', 'JAA Training'];
+        // Custom sort order (matching Excel sheet order)
+        const sortOrder = ['SnapChat 119', 'SnapChat 165', 'Symphony', 'Atlassian', 'Snowflake', 'JAA Training'];
         uniqueLocations.sort((a, b) => {
           const indexA = sortOrder.findIndex(name => a.name.includes(name.split(' ')[0]));
           const indexB = sortOrder.findIndex(name => b.name.includes(name.split(' ')[0]));
@@ -134,71 +138,99 @@ export default function ProductionSheetsPage() {
       }
     });
 
-    // Get menu for the week
+    // Get menu for the week (optional - will fallback to order items if no menu)
     const { data: weeklyMenu } = await supabase
       .from('weekly_menus')
       .select('id')
       .eq('week_start_date', weekStart)
       .single();
 
+    // NEW LOGIC: Get dishes from MENU, match with order portions by meal_type
+    console.log('Fetching menu for date:', dateStr);
+
     if (!weeklyMenu) {
+      console.log('No menu found for this week');
       setProductionRows([]);
       return;
     }
 
-    // Get menu items for this date
-    const dayOfWeek = (date.getDay() + 6) % 7;
+    const dayOfWeek = (date.getDay() + 6) % 7; // Convert to Monday=0
     const { data: menuItems } = await supabase
       .from('menu_items')
       .select('dish_id, meal_type')
       .eq('menu_id', weeklyMenu.id)
       .eq('day_of_week', dayOfWeek);
 
+    console.log('Menu items for this day:', menuItems?.length);
+
     if (!menuItems || menuItems.length === 0) {
+      console.log('No menu items found for this day');
       setProductionRows([]);
       return;
     }
 
     const dishIds = menuItems.map(item => item.dish_id);
 
-    // Get main dishes with components
+    // Get main dishes with salad/warm veggie total portion sizes
     const { data: dishes } = await supabase
       .from('dishes')
-      .select('*')
+      .select('*, salad_total_portion_g, warm_veggie_total_portion_g')
       .in('id', dishIds);
 
-    // Get components for each main dish
+    console.log('Fetched dishes:', dishes?.length);
+
+    // Get components for each main dish with percentage data
     const { data: dishComponents } = await supabase
       .from('dish_components')
       .select('*, component_dish:dishes!component_dish_id(*)')
       .in('main_dish_id', dishIds);
 
-    // Get orders for this date
+    // Get orders for this date (all order items, we'll match by meal_type)
     const { data: orderItems } = await supabase
       .from('order_items')
-      .select('dish_id, portions, orders(location_id)')
-      .eq('delivery_date', dateStr)
-      .in('dish_id', dishIds);
+      .select('meal_type, portions, orders(location_id)')
+      .eq('delivery_date', dateStr);
+
+    console.log('Fetched order items:', orderItems?.length);
+    console.log('Locations being displayed:', locs.map(l => l.name));
 
     // Build production rows with aggregated components
     const rows: ProductionRow[] = [];
+    console.log('Building rows for', dishes?.length, 'dishes');
     const componentAggregation: Record<string, {
       dish: Dish;
       locationOrders: LocationOrders;
       totalPortions: number;
       componentType: string;
       mealType?: string;
+      percentage?: number;
+      mainDishTotalPortionG?: number;
+      mainDishIds: Set<string>;
+    }> = {};
+
+    // Track total rows for salads and warm veggies
+    const totalAggregation: Record<string, {
+      locationOrders: LocationOrders;
+      totalPortions: number;
+      componentType: 'salad' | 'warm_veggie';
+      mealType: string;
+      mainDishTotalPortionG: number;
     }> = {};
 
     dishes?.forEach(mainDish => {
       // Get meal type for this dish from menu items
       const mealType = menuItems?.find(item => item.dish_id === mainDish.id)?.meal_type;
 
-      // Get orders for this main dish grouped by deduplicated location
+      if (!mealType) {
+        console.warn('No meal_type found for dish:', mainDish.name);
+        return; // Skip dishes without meal_type in menu
+      }
+
+      // Get orders for this meal_type grouped by deduplicated location
       const locationOrders: LocationOrders = {};
       let totalPortions = 0;
 
-      const dishOrderItems = orderItems?.filter(item => item.dish_id === mainDish.id) || [];
+      const dishOrderItems = orderItems?.filter((item: any) => item.meal_type === mealType) || [];
       dishOrderItems.forEach((item: any) => {
         if (item.orders?.location_id) {
           // Map to deduplicated location ID
@@ -221,7 +253,9 @@ export default function ProductionSheetsPage() {
       const components = dishComponents?.filter(dc => dc.main_dish_id === mainDish.id) || [];
       components.forEach((comp: any) => {
         if (comp.component_dish) {
-          const key = `${comp.component_dish.id}-${comp.component_type}-${mealType}`;
+          // Aggregate all components by component dish + type only (no meal type)
+          // This ensures same component used in multiple dishes appears once
+          const key = `${comp.component_dish.id}-${comp.component_type}`;
 
           if (!componentAggregation[key]) {
             componentAggregation[key] = {
@@ -229,9 +263,14 @@ export default function ProductionSheetsPage() {
               locationOrders: {},
               totalPortions: 0,
               componentType: comp.component_type,
-              mealType
+              mealType,
+              percentage: comp.percentage,
+              mainDishIds: new Set()
             };
           }
+
+          // Track which main dishes use this component
+          componentAggregation[key].mainDishIds.add(mainDish.id);
 
           // Add to aggregated component
           Object.keys(locationOrders).forEach(locId => {
@@ -239,22 +278,87 @@ export default function ProductionSheetsPage() {
               (componentAggregation[key].locationOrders[locId] || 0) + locationOrders[locId];
           });
           componentAggregation[key].totalPortions += totalPortions;
+
+          // Track total rows for salad and warm_veggie types
+          if (comp.component_type === 'salad' || comp.component_type === 'warm_veggie') {
+            // Aggregate totals by component type only (no meal type)
+            const totalKey = comp.component_type;
+            const mainDishTotalField = comp.component_type === 'salad'
+              ? (mainDish as any).salad_total_portion_g
+              : (mainDish as any).warm_veggie_total_portion_g;
+
+            if (mainDishTotalField) {
+              if (!totalAggregation[totalKey]) {
+                totalAggregation[totalKey] = {
+                  locationOrders: {},
+                  totalPortions: 0,
+                  componentType: comp.component_type,
+                  mealType,
+                  mainDishTotalPortionG: mainDishTotalField
+                };
+              }
+
+              // Add to total aggregation
+              Object.keys(locationOrders).forEach(locId => {
+                totalAggregation[totalKey].locationOrders[locId] =
+                  (totalAggregation[totalKey].locationOrders[locId] || 0) + locationOrders[locId];
+              });
+              totalAggregation[totalKey].totalPortions += totalPortions;
+
+              // Store the total portion size for weight calculation
+              componentAggregation[key].mainDishTotalPortionG = mainDishTotalField;
+            }
+          }
         }
       });
     });
 
-    // Add aggregated components to rows, grouped by meal type and component type
+    // Add aggregated components to rows, grouped by component type only
+    // For salads and warm veggies, add total row first, then component rows
+    const componentsByType: Record<string, typeof componentAggregation[string][]> = {};
+
     Object.values(componentAggregation).forEach(comp => {
-      rows.push({
-        dish: comp.dish,
-        isComponent: true,
-        locationOrders: comp.locationOrders,
-        totalPortions: comp.totalPortions,
-        mealType: comp.mealType,
-        componentType: comp.componentType
+      const typeKey = comp.componentType; // Group by type only, not meal type
+      if (!componentsByType[typeKey]) {
+        componentsByType[typeKey] = [];
+      }
+      componentsByType[typeKey].push(comp);
+    });
+
+    // Add rows in order: main dishes, then for each component type (total first if applicable)
+    Object.entries(componentsByType).forEach(([componentType, components]) => {
+      // For salad and warm_veggie, add total row first
+      if ((componentType === 'salad' || componentType === 'warm_veggie') && totalAggregation[componentType]) {
+        const total = totalAggregation[componentType];
+        rows.push({
+          dish: { name: `Total ${componentType === 'salad' ? 'Salad' : 'Warm Veggies'}` } as Dish,
+          isComponent: true,
+          isTotalRow: true,
+          locationOrders: total.locationOrders,
+          totalPortions: total.totalPortions,
+          mealType: total.mealType,
+          componentType: total.componentType,
+          mainDishTotalPortionG: total.mainDishTotalPortionG
+        });
+      }
+
+      // Then add individual component rows
+      components.forEach(comp => {
+        rows.push({
+          dish: comp.dish,
+          isComponent: true,
+          locationOrders: comp.locationOrders,
+          totalPortions: comp.totalPortions,
+          mealType: comp.mealType,
+          componentType: comp.componentType,
+          percentage: comp.percentage,
+          mainDishTotalPortionG: comp.mainDishTotalPortionG
+        });
       });
     });
 
+    console.log('Total production rows built:', rows.length);
+    console.log('Sample row:', rows[0]);
     setProductionRows(rows);
   };
 
@@ -299,7 +403,45 @@ export default function ProductionSheetsPage() {
       }
       return `${Math.round(grams)}g`;
     }
+
+    // Fallback to portion_size field (legacy field)
+    if (dish.portion_size) {
+      const grams = portions * dish.portion_size;
+      if (grams >= 1000) {
+        const kg = grams / 1000;
+        return `${Math.round(kg * 10) / 10}kg`;
+      }
+      return `${Math.round(grams)}g`;
+    }
+
     return `${portions} portions`;
+  };
+
+  // Calculate weight for a production row (handles percentage-based components)
+  const calculateRowWeight = (portions: number, row: ProductionRow, locationId?: string) => {
+    // For total rows (salad/warm veggie totals), calculate from mainDishTotalPortionG
+    if (row.isTotalRow && row.mainDishTotalPortionG) {
+      const grams = portions * row.mainDishTotalPortionG;
+      if (grams >= 1000) {
+        const kg = grams / 1000;
+        return `${Math.round(kg * 10) / 10}kg`;
+      }
+      return `${Math.round(grams)}g`;
+    }
+
+    // For percentage-based components (salad/warm veggie components)
+    if (row.percentage && row.mainDishTotalPortionG) {
+      const componentGrams = (row.mainDishTotalPortionG * row.percentage) / 100;
+      const totalGrams = portions * componentGrams;
+      if (totalGrams >= 1000) {
+        const kg = totalGrams / 1000;
+        return `${Math.round(kg * 10) / 10}kg`;
+      }
+      return `${Math.round(totalGrams)}g`;
+    }
+
+    // Otherwise use the regular calculateWeight function
+    return calculateWeight(portions, row.dish, locationId);
   };
 
   if (loading) {
@@ -309,6 +451,8 @@ export default function ProductionSheetsPage() {
       </div>
     );
   }
+
+  console.log('[RENDER] productionRows state:', productionRows.length, 'rows');
 
   // Show date selector if no date is selected
   if (!selectedDate) {
@@ -517,26 +661,30 @@ export default function ProductionSheetsPage() {
                             </tr>
                             {filtered.map((row, idx) => {
                               const globalIdx = startIdx + idx + 1;
+                              // Total rows get special styling (bold, slightly darker background)
+                              const isTotalRow = row.isTotalRow;
                               return (
                                 <tr
                                   key={`${type}-${idx}`}
                                   className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
-                                    globalIdx % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                                    isTotalRow
+                                      ? 'bg-blue-50 font-semibold'
+                                      : globalIdx % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                                   }`}
                                 >
-                                  <td className="px-10 py-3 text-sm font-medium text-gray-900">
+                                  <td className={`px-10 py-3 text-sm ${isTotalRow ? 'font-bold text-blue-900' : 'font-medium text-gray-900'}`}>
                                     {row.dish.name}
                                   </td>
                                   {locations.map(location => {
                                     const portions = row.locationOrders[location.id] || 0;
                                     return (
-                                      <td key={location.id} className="px-4 py-3 text-sm text-center text-gray-700 font-medium">
-                                        {portions > 0 ? calculateWeight(portions, row.dish, location.id) : '-'}
+                                      <td key={location.id} className={`px-4 py-3 text-sm text-center ${isTotalRow ? 'font-bold text-blue-900' : 'text-gray-700 font-medium'}`}>
+                                        {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                       </td>
                                     );
                                   })}
-                                  <td className="px-4 py-3 text-sm text-center font-bold text-gray-900">
-                                    {calculateWeight(row.totalPortions, row.dish)}
+                                  <td className={`px-4 py-3 text-sm text-center font-bold ${isTotalRow ? 'text-blue-900' : 'text-gray-900'}`}>
+                                    {calculateRowWeight(row.totalPortions, row)}
                                   </td>
                                 </tr>
                               );
@@ -575,12 +723,12 @@ export default function ProductionSheetsPage() {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
                                         <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                          {portions > 0 ? calculateWeight(portions, row.dish, location.id) : '-'}
+                                          {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
                                     <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
-                                      {calculateWeight(row.totalPortions, row.dish)}
+                                      {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
                                 );
@@ -618,12 +766,12 @@ export default function ProductionSheetsPage() {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
                                         <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                          {portions > 0 ? calculateWeight(portions, row.dish, location.id) : '-'}
+                                          {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
                                     <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
-                                      {calculateWeight(row.totalPortions, row.dish)}
+                                      {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
                                 );
@@ -645,12 +793,12 @@ export default function ProductionSheetsPage() {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
                                         <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
-                                          {portions > 0 ? calculateWeight(portions, row.dish, location.id) : '-'}
+                                          {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
                                     <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
-                                      {calculateWeight(row.totalPortions, row.dish)}
+                                      {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
                                 );
