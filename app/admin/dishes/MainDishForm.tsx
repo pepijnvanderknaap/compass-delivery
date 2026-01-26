@@ -153,11 +153,11 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
           initialCategory = 'soup';
           initialPortionSize = '150';
           initialPortionUnit = 'milliliters';
-        } else if (contextCategory === 'hot_meat') {
+        } else if (contextCategory === 'hot_dish_meat') {
           initialCategory = 'hot_dish_meat';
           initialPortionSize = '200';
           initialPortionUnit = 'grams';
-        } else if (contextCategory === 'hot_veg') {
+        } else if (contextCategory === 'hot_dish_veg') {
           initialCategory = 'hot_dish_veg';
           initialPortionSize = '200';
           initialPortionUnit = 'grams';
@@ -700,7 +700,7 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
                   <div className="w-full px-4 py-3 bg-apple-gray6 border border-apple-gray4 rounded-lg text-apple-subheadline text-apple-gray2">
                     Soup
                   </div>
-                ) : contextCategory === 'hot_meat' ? (
+                ) : contextCategory === 'hot_dish_meat' ? (
                   // Hot meat/fish context - show dropdown with only meat and fish
                   <select
                     value={formData.category === 'component' ? '' : formData.category}
@@ -710,7 +710,7 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
                     <option value="hot_dish_meat">Hot Dish - Meat</option>
                     <option value="hot_dish_fish">Hot Dish - Fish</option>
                   </select>
-                ) : contextCategory === 'hot_veg' ? (
+                ) : contextCategory === 'hot_dish_veg' ? (
                   // Hot veg context - show as read-only text
                   <div className="w-full px-4 py-3 bg-apple-gray6 border border-apple-gray4 rounded-lg text-apple-subheadline text-apple-gray2">
                     Hot Dish - Veg

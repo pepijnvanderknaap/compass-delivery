@@ -1,11 +1,67 @@
 # Compass Delivery - Project Status & Progress Summary
 
-**Last Updated:** January 20, 2026
-**Session Progress:** HUGE achievements! Menu system fully operational.
+**Last Updated:** January 21, 2026
+**Session Progress:** Apple-inspired design system implementation
 
 ---
 
-## 🎯 Recent Accomplishments (This Session)
+## 🎯 Current Session - Design System Overhaul (Jan 21, 2026)
+
+### Apple Design System Implementation ✅
+**Goal:** Apply Apple-level polish and professionalism across all pages
+
+#### Universal Branding Changes:
+1. **Universal Header Component** (`/components/UniversalHeader.tsx`)
+   - Slate grey (#475569) DELIVERY logo across all pages
+   - Dynamic page titles
+   - Back button navigation
+   - Optional actions prop (Sign Out buttons)
+
+2. **Section-Specific Colors:**
+   - Dark Kitchen: Cobalt blue (#4A7DB5) - muted grey-toned blue
+   - Location Management: Teal (#0d9488)
+   - Regional Management: Purple (#7c3aed)
+
+3. **Homepage Spacing:**
+   - Increased header-to-cards spacing (mb-32)
+   - Footer adjusted (mt-16) to prevent falling off page
+
+4. **Dark Kitchen Dashboard:**
+   - Removed "manage dishes, menus..." description text
+   - Increased padding (py-24) to maintain icon position
+   - Cleaner, more minimalist appearance
+
+#### Design Tokens in Tailwind:
+```typescript
+// Apple color palette
+apple: {
+  gray1-gray7: Neutral grays
+  blue: #0071E3
+  green, red, orange: System colors
+}
+
+// Section-specific
+dk: { amber variants }
+lm: { teal variants }
+rm: { purple variants }
+
+// Typography scale
+apple-display, title-lg, title, headline, body, callout, subheadline, footnote, caption
+```
+
+#### Files Modified This Session:
+- `/components/UniversalHeader.tsx` - Created
+- `/app/dashboard/page.tsx` - Spacing adjustments
+- `/app/dark-kitchen/page.tsx` - Header, description removal
+- `/app/admin/menus/page.tsx` - UniversalHeader, cobalt blue
+- `/app/orders/page.tsx` - UniversalHeader
+- `/app/admin/dishes/page.tsx` - UniversalHeader
+- `/app/location-management/page.tsx` - UniversalHeader
+- `/tailwind.config.ts` - Apple design tokens
+
+---
+
+## 🎯 Previous Session (Jan 20, 2026) - Menu System
 
 ### 1. Portion Tracking System ✅
 - Added `portion_unit` (enum) and `portion_size` (decimal) fields to dishes table
@@ -265,6 +321,12 @@ category: 'soup' as 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' 
 
 ## 🔮 Next Session Priorities
 
+### Design System (Ongoing):
+1. **Continue Apple polish** - Apply design system to remaining pages
+2. **Production Sheets page** - New page needs design treatment
+3. **Location Settings page** - Needs UniversalHeader
+
+### Menu System:
 1. **Continue populating menus** - Add Tuesday, Wednesday, Thursday
 2. **Add portion sizes** - Edit dishes in Dashboard to add measurements
 3. **Link components** - Attach veggies/carbs to main dishes
