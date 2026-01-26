@@ -130,7 +130,7 @@ export default function ComponentForm({ component, onClose, onSave }: ComponentF
                 >
                   <option value="topping">Topping</option>
                   <option value="carb">Carb</option>
-                  <option value="warm_veggie">Warm Veggie</option>
+                  <option value="warm_veggie">Warm Vegetables</option>
                   <option value="salad">Salad</option>
                   <option value="condiment">Condiment</option>
                 </select>

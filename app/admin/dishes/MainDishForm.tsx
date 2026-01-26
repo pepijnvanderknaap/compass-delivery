@@ -751,7 +751,7 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
                   <option value="">-- Select if Component --</option>
                   <option value="topping">Soup Topping</option>
                   <option value="carb">Carb</option>
-                  <option value="warm_veggie">Warm Veggie</option>
+                  <option value="warm_veggie">Warm Vegetables</option>
                   <option value="salad">Salad</option>
                   <option value="condiment">Condiment</option>
                 </select>

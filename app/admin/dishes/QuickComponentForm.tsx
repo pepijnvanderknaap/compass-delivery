@@ -35,7 +35,7 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
       case 'carb':
         return 'New Carb';
       case 'warm_veggie':
-        return 'New Warm Veggie';
+        return 'New Warm Vegetables';
       case 'condiment':
         return 'New Add-on';
     }
