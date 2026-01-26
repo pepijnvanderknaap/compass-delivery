@@ -115,6 +115,8 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
         allergen_egg: dish.allergen_egg || false,
         allergen_mustard: dish.allergen_mustard || false,
         allergen_celery: dish.allergen_celery || false,
+        allergen_fish: (dish as any).allergen_fish || false,
+        allergen_shellfish: (dish as any).allergen_shellfish || false,
         contains_pork: dish.contains_pork || false,
         contains_beef: dish.contains_beef || false,
         contains_lamb: dish.contains_lamb || false,
