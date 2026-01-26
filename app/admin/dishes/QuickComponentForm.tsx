@@ -16,6 +16,14 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
     name: '',
     portion_size: '',
     portion_unit: 'grams' as 'grams' | 'pieces',
+    allergen_gluten: false,
+    allergen_soy: false,
+    allergen_lactose: false,
+    allergen_sesame: false,
+    allergen_sulphites: false,
+    allergen_egg: false,
+    allergen_mustard: false,
+    allergen_celery: false,
   });
 
   const getTitle = () => {
@@ -76,6 +84,14 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         portion_size: formData.portion_size ? parseFloat(formData.portion_size) : null,
         portion_unit: formData.portion_unit,
         is_active: true,
+        allergen_gluten: formData.allergen_gluten,
+        allergen_soy: formData.allergen_soy,
+        allergen_lactose: formData.allergen_lactose,
+        allergen_sesame: formData.allergen_sesame,
+        allergen_sulphites: formData.allergen_sulphites,
+        allergen_egg: formData.allergen_egg,
+        allergen_mustard: formData.allergen_mustard,
+        allergen_celery: formData.allergen_celery,
       };
 
       const { data: newComponent, error } = await supabase
@@ -155,6 +171,85 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
               </div>
             </div>
           )}
+
+          {/* Allergens */}
+          <div>
+            <label className="block text-apple-footnote font-medium text-apple-gray3 mb-3">Allergens</label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_gluten}
+                  onChange={(e) => setFormData({ ...formData, allergen_gluten: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Gluten</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_soy}
+                  onChange={(e) => setFormData({ ...formData, allergen_soy: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Soy</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_lactose}
+                  onChange={(e) => setFormData({ ...formData, allergen_lactose: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Lactose</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_sesame}
+                  onChange={(e) => setFormData({ ...formData, allergen_sesame: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Sesame</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_sulphites}
+                  onChange={(e) => setFormData({ ...formData, allergen_sulphites: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Sulphites</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_egg}
+                  onChange={(e) => setFormData({ ...formData, allergen_egg: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Egg</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_mustard}
+                  onChange={(e) => setFormData({ ...formData, allergen_mustard: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Mustard</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_celery}
+                  onChange={(e) => setFormData({ ...formData, allergen_celery: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Celery</span>
+              </label>
+            </div>
+          </div>
 
           {/* Info */}
           <p className="text-apple-footnote text-apple-gray2 bg-apple-gray6 p-3 rounded-lg">

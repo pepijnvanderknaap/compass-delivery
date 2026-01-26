@@ -9,9 +9,10 @@ interface MainDishFormProps {
   dish: DishWithComponents | null;
   onClose: () => void;
   onSave: (dishId?: string) => void;
+  contextCategory?: string; // Category from menu planner context (soup, hot_meat, hot_veg)
 }
 
-export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProps) {
+export default function MainDishForm({ dish, onClose, onSave, contextCategory }: MainDishFormProps) {
   const supabase = createClient();
   const [formData, setFormData] = useState({
     name: '',
@@ -142,13 +143,34 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
       loadWarmVeggieComponents(dish.id);
     } else {
       // Reset form for creating a new dish
+      // Use contextCategory to pre-select the appropriate category
+      let initialCategory: 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'component' | 'off_menu' = 'soup';
+      let initialPortionSize = '150';
+      let initialPortionUnit: 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays' = 'milliliters';
+
+      if (contextCategory) {
+        if (contextCategory === 'soup') {
+          initialCategory = 'soup';
+          initialPortionSize = '150';
+          initialPortionUnit = 'milliliters';
+        } else if (contextCategory === 'hot_meat') {
+          initialCategory = 'hot_dish_meat';
+          initialPortionSize = '200';
+          initialPortionUnit = 'grams';
+        } else if (contextCategory === 'hot_veg') {
+          initialCategory = 'hot_dish_veg';
+          initialPortionSize = '200';
+          initialPortionUnit = 'grams';
+        }
+      }
+
       setFormData({
         name: '',
         description: '',
-        category: 'soup',
+        category: initialCategory,
         subcategory: null,
-        portion_size: '150',
-        portion_unit: 'milliliters',
+        portion_size: initialPortionSize,
+        portion_unit: initialPortionUnit,
         allergen_gluten: false,
         allergen_soy: false,
         allergen_lactose: false,
@@ -673,17 +695,41 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Dish Category</label>
-                <select
-                  value={formData.category === 'component' ? '' : formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as any, subcategory: null })}
-                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
-                >
-                  <option value="">-- Select if Main Dish --</option>
-                  <option value="soup">Soup</option>
-                  <option value="hot_dish_meat">Hot Dish - Meat</option>
-                  <option value="hot_dish_fish">Hot Dish - Fish</option>
-                  <option value="hot_dish_veg">Hot Dish - Veg</option>
-                </select>
+                {contextCategory === 'soup' ? (
+                  // Soup context - show as read-only text
+                  <div className="w-full px-4 py-3 bg-apple-gray6 border border-apple-gray4 rounded-lg text-apple-subheadline text-apple-gray2">
+                    Soup
+                  </div>
+                ) : contextCategory === 'hot_meat' ? (
+                  // Hot meat/fish context - show dropdown with only meat and fish
+                  <select
+                    value={formData.category === 'component' ? '' : formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any, subcategory: null })}
+                    className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                  >
+                    <option value="hot_dish_meat">Hot Dish - Meat</option>
+                    <option value="hot_dish_fish">Hot Dish - Fish</option>
+                  </select>
+                ) : contextCategory === 'hot_veg' ? (
+                  // Hot veg context - show as read-only text
+                  <div className="w-full px-4 py-3 bg-apple-gray6 border border-apple-gray4 rounded-lg text-apple-subheadline text-apple-gray2">
+                    Hot Dish - Veg
+                  </div>
+                ) : (
+                  // No context (dishes page) - show all options
+                  <select
+                    value={formData.category === 'component' ? '' : formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any, subcategory: null })}
+                    className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                  >
+                    <option value="">-- Select if Main Dish --</option>
+                    <option value="soup">Soup</option>
+                    <option value="hot_dish_meat">Hot Dish - Meat</option>
+                    <option value="hot_dish_fish">Hot Dish - Fish</option>
+                    <option value="hot_dish_veg">Hot Dish - Veg</option>
+                    <option value="off_menu">Off-Menu</option>
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Component Type</label>
@@ -755,6 +801,38 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                       <option value="trays">Trays</option>
                     </select>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Allergens - For main dish */}
+            {formData.category !== 'component' && (
+              <div>
+                <h3 className="text-apple-headline text-apple-gray1 mb-3">Allergens</h3>
+                <p className="text-apple-subheadline text-apple-gray2 mb-4">
+                  Select allergens present in this {formData.category === 'soup' ? 'soup' : 'main dish'} only (not components)
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { key: 'allergen_gluten', label: 'Gluten' },
+                    { key: 'allergen_soy', label: 'Soy' },
+                    { key: 'allergen_lactose', label: 'Lactose' },
+                    { key: 'allergen_sesame', label: 'Sesame' },
+                    { key: 'allergen_sulphites', label: 'Sulphites' },
+                    { key: 'allergen_egg', label: 'Egg' },
+                    { key: 'allergen_mustard', label: 'Mustard' },
+                    { key: 'allergen_celery', label: 'Celery' },
+                  ].map(allergen => (
+                    <label key={allergen.key} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(formData as any)[allergen.key]}
+                        onChange={(e) => setFormData({ ...formData, [allergen.key]: e.target.checked })}
+                        className="w-5 h-5 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                      />
+                      <span className="text-apple-subheadline text-apple-gray1">{allergen.label}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
             )}
@@ -1070,41 +1148,11 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
               </div>
             )}
 
-            {/* Allergens & Dietary Information */}
-            <div>
-              <h3 className="text-apple-headline text-apple-gray1 mb-3">Allergens & Dietary Information</h3>
-
-              {/* Allergens Section */}
-              <div className="mb-4">
-                <h4 className="text-apple-subheadline font-medium text-apple-gray2 mb-2">Allergens</h4>
-                <div className="grid grid-cols-4 gap-3">
-                  {[
-                    { key: 'allergen_gluten', label: 'Gluten' },
-                    { key: 'allergen_soy', label: 'Soy' },
-                    { key: 'allergen_lactose', label: 'Lactose' },
-                    { key: 'allergen_sesame', label: 'Sesame' },
-                    { key: 'allergen_sulphites', label: 'Sulphites' },
-                    { key: 'allergen_egg', label: 'Egg' },
-                    { key: 'allergen_mustard', label: 'Mustard' },
-                    { key: 'allergen_celery', label: 'Celery' },
-                  ].map(allergen => (
-                    <label key={allergen.key} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(formData as any)[allergen.key]}
-                        onChange={(e) => setFormData({ ...formData, [allergen.key]: e.target.checked })}
-                        className="w-5 h-5 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
-                      />
-                      <span className="text-apple-subheadline text-apple-gray1">{allergen.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Dietary/Protein Categories Section */}
+            {/* Dietary/Protein Categories Section - Keep at bottom */}
+            {formData.category !== 'component' && (
               <div>
-                <h4 className="text-apple-subheadline font-medium text-apple-gray2 mb-2">Dietary & Protein Categories</h4>
-                <div className="grid grid-cols-4 gap-3">
+                <h3 className="text-apple-headline text-apple-gray1 mb-3">Dietary & Protein Categories</h3>
+                <div className="grid grid-cols-5 gap-3">
                   {[
                     { key: 'contains_pork', label: 'Pork' },
                     { key: 'contains_beef', label: 'Beef' },
@@ -1124,7 +1172,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                   ))}
                 </div>
               </div>
-            </div>
+            )}
 
           </form>
         </div>

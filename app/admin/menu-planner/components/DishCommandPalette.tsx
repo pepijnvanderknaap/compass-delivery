@@ -123,6 +123,7 @@ export default function DishCommandPalette({
         dish={null}
         onClose={() => setShowCreateForm(false)}
         onSave={handleDishCreated}
+        contextCategory={category}
       />
     );
   }
