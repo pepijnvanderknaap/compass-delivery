@@ -186,6 +186,22 @@ export default function ProductionSheetsPage() {
       .select('*, component_dish:dishes!component_dish_id(*)')
       .in('main_dish_id', dishIds);
 
+    // Get salad components with percentages
+    const { data: saladComponents } = await supabase
+      .from('salad_components')
+      .select('*, component_dish:dishes!component_dish_id(*)')
+      .in('main_dish_id', dishIds);
+
+    // Get warm veggie components with percentages
+    const { data: warmVeggieComponents } = await supabase
+      .from('warm_veggie_components')
+      .select('*, component_dish:dishes!component_dish_id(*)')
+      .in('main_dish_id', dishIds);
+
+    console.log('Fetched dish components:', dishComponents?.length);
+    console.log('Fetched salad components:', saladComponents?.length);
+    console.log('Fetched warm veggie components:', warmVeggieComponents?.length);
+
     // Get orders for this date (all order items, we'll match by meal_type)
     const { data: orderItems } = await supabase
       .from('order_items')
@@ -251,12 +267,22 @@ export default function ProductionSheetsPage() {
         mealType
       });
 
-      // Aggregate components by dish name and type
+      // Aggregate NON-salad/NON-warm-veggie components from dish_components table
+      // (e.g., carbs, toppings, condiments - things that don't use percentage breakdown)
       const components = dishComponents?.filter(dc => dc.main_dish_id === mainDish.id) || [];
       components.forEach((comp: any) => {
         if (comp.component_dish) {
-          // Aggregate all components by component dish + type only (no meal type)
-          // This ensures same component used in multiple dishes appears once
+          // SKIP salad and warm_veggie types - these MUST come from dedicated tables with percentages
+          if (comp.component_type === 'salad' || comp.component_type === 'warm_veggie') {
+            console.warn(
+              `⚠️  WARNING: Found ${comp.component_type} in dish_components table for dish "${mainDish.name}".`,
+              `This is the OLD way. Please migrate to ${comp.component_type}_components table with percentages.`,
+              `Skipping this component to enforce new percentage-based system.`
+            );
+            return; // Skip - enforce new way only
+          }
+
+          // Process other component types (carb, topping, condiment, etc.)
           const key = `${comp.component_dish.id}-${comp.component_type}`;
 
           if (!componentAggregation[key]) {
@@ -271,72 +297,160 @@ export default function ProductionSheetsPage() {
             };
           }
 
-          // Track which main dishes use this component
           componentAggregation[key].mainDishIds.add(mainDish.id);
 
-          // Add to aggregated component
+          Object.keys(locationOrders).forEach(locId => {
+            componentAggregation[key].locationOrders[locId] =
+              (componentAggregation[key].locationOrders[locId] || 0) + locationOrders[locId];
+          });
+          componentAggregation[key].totalPortions += totalPortions;
+        }
+      });
+
+      // Process salad components with percentages
+      const saladComps = saladComponents?.filter(sc => sc.main_dish_id === mainDish.id) || [];
+      saladComps.forEach((comp: any) => {
+        if (comp.component_dish) {
+          const key = `${comp.component_dish.id}-salad`;
+
+          if (!componentAggregation[key]) {
+            componentAggregation[key] = {
+              dish: comp.component_dish,
+              locationOrders: {},
+              totalPortions: 0,
+              componentType: 'salad',
+              mealType,
+              percentage: comp.percentage,
+              mainDishIds: new Set()
+            };
+          }
+
+          componentAggregation[key].mainDishIds.add(mainDish.id);
+
           Object.keys(locationOrders).forEach(locId => {
             componentAggregation[key].locationOrders[locId] =
               (componentAggregation[key].locationOrders[locId] || 0) + locationOrders[locId];
           });
           componentAggregation[key].totalPortions += totalPortions;
 
-          // Track total rows for salad and warm_veggie types
-          if (comp.component_type === 'salad' || comp.component_type === 'warm_veggie') {
-            // Aggregate totals by component type only (no meal type)
-            const totalKey = comp.component_type;
-            const mainDishTotalField = comp.component_type === 'salad'
-              ? (mainDish as any).salad_total_portion_g
-              : (mainDish as any).warm_veggie_total_portion_g;
+          // Track total salad aggregation
+          const mainDishTotalField = (mainDish as any).salad_total_portion_g;
 
-            console.log(`[SALAD DEBUG] Processing ${mainDish.name} (${mealType}):`, {
-              dishId: mainDish.id,
-              componentType: comp.component_type,
-              portionSize: mainDishTotalField,
-              totalPortionsForThisDish: totalPortions
-            });
+          console.log(`[SALAD DEBUG] Processing salad component from ${mainDish.name} (${mealType}):`, {
+            dishId: mainDish.id,
+            componentName: comp.component_dish.name,
+            percentage: comp.percentage,
+            portionSize: mainDishTotalField,
+            totalPortionsForThisDish: totalPortions
+          });
 
-            if (mainDishTotalField) {
-              if (!totalAggregation[totalKey]) {
-                console.log(`[SALAD DEBUG] Creating new total aggregation for ${totalKey}, initial portion size: ${mainDishTotalField}g`);
-                totalAggregation[totalKey] = {
-                  locationOrders: {},
-                  totalPortions: 0,
-                  componentType: comp.component_type,
-                  mealType,
-                  mainDishTotalPortionG: mainDishTotalField,
-                  dishPortionSizes: new Set([mainDishTotalField])
-                };
-              } else {
-                console.log(`[SALAD DEBUG] Adding to existing ${totalKey} aggregation. Current portion sizes:`, Array.from(totalAggregation[totalKey].dishPortionSizes), `Adding: ${mainDishTotalField}g`);
+          if (mainDishTotalField) {
+            if (!totalAggregation['salad']) {
+              console.log(`[SALAD DEBUG] Creating new total aggregation for salad, initial portion size: ${mainDishTotalField}g`);
+              totalAggregation['salad'] = {
+                locationOrders: {},
+                totalPortions: 0,
+                componentType: 'salad',
+                mealType,
+                mainDishTotalPortionG: mainDishTotalField,
+                dishPortionSizes: new Set([mainDishTotalField])
+              };
+            } else {
+              console.log(`[SALAD DEBUG] Adding to existing salad aggregation. Current portion sizes:`, Array.from(totalAggregation['salad'].dishPortionSizes), `Adding: ${mainDishTotalField}g`);
 
-                // Add this dish's portion size to the set
-                totalAggregation[totalKey].dishPortionSizes.add(mainDishTotalField);
+              totalAggregation['salad'].dishPortionSizes.add(mainDishTotalField);
 
-                // CRITICAL: Validate that all dishes have the same portion size
-                if (totalAggregation[totalKey].dishPortionSizes.size > 1) {
-                  console.warn(
-                    `WARNING: Multiple portion sizes detected for ${totalKey}:`,
-                    Array.from(totalAggregation[totalKey].dishPortionSizes),
-                    `Dishes involved: Check console logs above. Using smallest value: ${Math.min(...Array.from(totalAggregation[totalKey].dishPortionSizes))}g`
-                  );
-                  // Use the smallest portion size to be conservative
-                  totalAggregation[totalKey].mainDishTotalPortionG = Math.min(...Array.from(totalAggregation[totalKey].dishPortionSizes));
-                } else {
-                  console.log(`[SALAD DEBUG] All dishes have matching portion size: ${mainDishTotalField}g`);
-                }
+              if (totalAggregation['salad'].dishPortionSizes.size > 1) {
+                console.warn(
+                  `WARNING: Multiple portion sizes detected for salad:`,
+                  Array.from(totalAggregation['salad'].dishPortionSizes),
+                  `Using smallest value: ${Math.min(...Array.from(totalAggregation['salad'].dishPortionSizes))}g`
+                );
+                totalAggregation['salad'].mainDishTotalPortionG = Math.min(...Array.from(totalAggregation['salad'].dishPortionSizes));
               }
-
-              // Add to total aggregation
-              Object.keys(locationOrders).forEach(locId => {
-                totalAggregation[totalKey].locationOrders[locId] =
-                  (totalAggregation[totalKey].locationOrders[locId] || 0) + locationOrders[locId];
-              });
-              totalAggregation[totalKey].totalPortions += totalPortions;
-
-              // Store the total portion size for weight calculation
-              componentAggregation[key].mainDishTotalPortionG = mainDishTotalField;
             }
+
+            Object.keys(locationOrders).forEach(locId => {
+              totalAggregation['salad'].locationOrders[locId] =
+                (totalAggregation['salad'].locationOrders[locId] || 0) + locationOrders[locId];
+            });
+            totalAggregation['salad'].totalPortions += totalPortions;
+
+            componentAggregation[key].mainDishTotalPortionG = mainDishTotalField;
+          }
+        }
+      });
+
+      // Process warm veggie components with percentages
+      const warmVeggieComps = warmVeggieComponents?.filter(wv => wv.main_dish_id === mainDish.id) || [];
+      warmVeggieComps.forEach((comp: any) => {
+        if (comp.component_dish) {
+          const key = `${comp.component_dish.id}-warm_veggie`;
+
+          if (!componentAggregation[key]) {
+            componentAggregation[key] = {
+              dish: comp.component_dish,
+              locationOrders: {},
+              totalPortions: 0,
+              componentType: 'warm_veggie',
+              mealType,
+              percentage: comp.percentage,
+              mainDishIds: new Set()
+            };
+          }
+
+          componentAggregation[key].mainDishIds.add(mainDish.id);
+
+          Object.keys(locationOrders).forEach(locId => {
+            componentAggregation[key].locationOrders[locId] =
+              (componentAggregation[key].locationOrders[locId] || 0) + locationOrders[locId];
+          });
+          componentAggregation[key].totalPortions += totalPortions;
+
+          // Track total warm veggie aggregation
+          const mainDishTotalField = (mainDish as any).warm_veggie_total_portion_g;
+
+          console.log(`[WARM VEGGIE DEBUG] Processing warm veggie component from ${mainDish.name} (${mealType}):`, {
+            dishId: mainDish.id,
+            componentName: comp.component_dish.name,
+            percentage: comp.percentage,
+            portionSize: mainDishTotalField,
+            totalPortionsForThisDish: totalPortions
+          });
+
+          if (mainDishTotalField) {
+            if (!totalAggregation['warm_veggie']) {
+              console.log(`[WARM VEGGIE DEBUG] Creating new total aggregation for warm_veggie, initial portion size: ${mainDishTotalField}g`);
+              totalAggregation['warm_veggie'] = {
+                locationOrders: {},
+                totalPortions: 0,
+                componentType: 'warm_veggie',
+                mealType,
+                mainDishTotalPortionG: mainDishTotalField,
+                dishPortionSizes: new Set([mainDishTotalField])
+              };
+            } else {
+              console.log(`[WARM VEGGIE DEBUG] Adding to existing warm_veggie aggregation. Current portion sizes:`, Array.from(totalAggregation['warm_veggie'].dishPortionSizes), `Adding: ${mainDishTotalField}g`);
+
+              totalAggregation['warm_veggie'].dishPortionSizes.add(mainDishTotalField);
+
+              if (totalAggregation['warm_veggie'].dishPortionSizes.size > 1) {
+                console.warn(
+                  `WARNING: Multiple portion sizes detected for warm_veggie:`,
+                  Array.from(totalAggregation['warm_veggie'].dishPortionSizes),
+                  `Using smallest value: ${Math.min(...Array.from(totalAggregation['warm_veggie'].dishPortionSizes))}g`
+                );
+                totalAggregation['warm_veggie'].mainDishTotalPortionG = Math.min(...Array.from(totalAggregation['warm_veggie'].dishPortionSizes));
+              }
+            }
+
+            Object.keys(locationOrders).forEach(locId => {
+              totalAggregation['warm_veggie'].locationOrders[locId] =
+                (totalAggregation['warm_veggie'].locationOrders[locId] || 0) + locationOrders[locId];
+            });
+            totalAggregation['warm_veggie'].totalPortions += totalPortions;
+
+            componentAggregation[key].mainDishTotalPortionG = mainDishTotalField;
           }
         }
       });
