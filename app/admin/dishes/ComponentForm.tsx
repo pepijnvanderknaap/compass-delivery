@@ -26,6 +26,8 @@ export default function ComponentForm({ component, onClose, onSave }: ComponentF
     allergen_egg: false,
     allergen_mustard: false,
     allergen_celery: false,
+    allergen_fish: false,
+    allergen_shellfish: false,
   });
 
   const [saving, setSaving] = useState(false);
@@ -47,6 +49,8 @@ export default function ComponentForm({ component, onClose, onSave }: ComponentF
         allergen_egg: component.allergen_egg || false,
         allergen_mustard: component.allergen_mustard || false,
         allergen_celery: component.allergen_celery || false,
+        allergen_fish: (component as any).allergen_fish || false,
+        allergen_shellfish: (component as any).allergen_shellfish || false,
       });
     }
   }, [component]);
@@ -207,6 +211,8 @@ export default function ComponentForm({ component, onClose, onSave }: ComponentF
                   { key: 'allergen_egg', label: 'Egg' },
                   { key: 'allergen_mustard', label: 'Mustard' },
                   { key: 'allergen_celery', label: 'Celery' },
+                  { key: 'allergen_fish', label: 'Fish' },
+                  { key: 'allergen_shellfish', label: 'Shellfish' },
                 ].map(allergen => (
                   <label key={allergen.key} className="flex items-center space-x-2 cursor-pointer">
                     <input
