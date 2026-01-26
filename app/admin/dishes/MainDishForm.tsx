@@ -439,6 +439,8 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[MainDishForm] handleSubmit called');
+    console.log('[MainDishForm] formData:', formData);
     setSaving(true);
     setMessage(null);
 
@@ -1191,11 +1193,19 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
             type="button"
             onClick={(e) => {
               e.preventDefault();
+              console.log('[MainDishForm] Create button clicked');
+              console.log('[MainDishForm] saving state:', saving);
               const form = document.getElementById('main-dish-form') as HTMLFormElement;
-              if (form) form.requestSubmit();
+              console.log('[MainDishForm] form element:', form);
+              if (form) {
+                console.log('[MainDishForm] Calling form.requestSubmit()');
+                form.requestSubmit();
+              } else {
+                console.error('[MainDishForm] Form element not found!');
+              }
             }}
             disabled={saving}
-            className="px-6 py-3 text-apple-subheadline font-semibold text-[#1D1D1F] bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors"
+            className="px-6 py-3 text-apple-subheadline font-semibold text-[#1D1D1F] bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : (dish ? 'Update' : 'Create')}
           </button>
