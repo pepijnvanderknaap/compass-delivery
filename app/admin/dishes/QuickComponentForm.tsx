@@ -24,6 +24,8 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
     allergen_egg: false,
     allergen_mustard: false,
     allergen_celery: false,
+    allergen_fish: false,
+    allergen_shellfish: false,
   });
 
   const getTitle = () => {
@@ -92,6 +94,8 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         allergen_egg: formData.allergen_egg,
         allergen_mustard: formData.allergen_mustard,
         allergen_celery: formData.allergen_celery,
+        allergen_fish: formData.allergen_fish,
+        allergen_shellfish: formData.allergen_shellfish,
       };
 
       const { data: newComponent, error } = await supabase
@@ -247,6 +251,24 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
                   className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
                 />
                 <span className="text-apple-footnote text-apple-gray1">Celery</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_fish}
+                  onChange={(e) => setFormData({ ...formData, allergen_fish: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Fish</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.allergen_shellfish}
+                  onChange={(e) => setFormData({ ...formData, allergen_shellfish: e.target.checked })}
+                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                />
+                <span className="text-apple-footnote text-apple-gray1">Shellfish</span>
               </label>
             </div>
           </div>
