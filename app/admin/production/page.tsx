@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format, addDays, startOfWeek } from 'date-fns';
 import type { UserProfile, Dish, Location, DishWithComponents } from '@/lib/types';
+import UniversalHeader from '@/components/UniversalHeader';
 
 interface LocationOrders {
   [locationId: string]: number; // portions
@@ -215,6 +216,7 @@ export default function ProductionSheetsPage() {
       componentType: 'salad' | 'warm_veggie';
       mealType: string;
       mainDishTotalPortionG: number;
+      dishPortionSizes: Set<number>; // Track all unique portion sizes from contributing dishes
     }> = {};
 
     dishes?.forEach(mainDish => {
@@ -287,15 +289,42 @@ export default function ProductionSheetsPage() {
               ? (mainDish as any).salad_total_portion_g
               : (mainDish as any).warm_veggie_total_portion_g;
 
+            console.log(`[SALAD DEBUG] Processing ${mainDish.name} (${mealType}):`, {
+              dishId: mainDish.id,
+              componentType: comp.component_type,
+              portionSize: mainDishTotalField,
+              totalPortionsForThisDish: totalPortions
+            });
+
             if (mainDishTotalField) {
               if (!totalAggregation[totalKey]) {
+                console.log(`[SALAD DEBUG] Creating new total aggregation for ${totalKey}, initial portion size: ${mainDishTotalField}g`);
                 totalAggregation[totalKey] = {
                   locationOrders: {},
                   totalPortions: 0,
                   componentType: comp.component_type,
                   mealType,
-                  mainDishTotalPortionG: mainDishTotalField
+                  mainDishTotalPortionG: mainDishTotalField,
+                  dishPortionSizes: new Set([mainDishTotalField])
                 };
+              } else {
+                console.log(`[SALAD DEBUG] Adding to existing ${totalKey} aggregation. Current portion sizes:`, Array.from(totalAggregation[totalKey].dishPortionSizes), `Adding: ${mainDishTotalField}g`);
+
+                // Add this dish's portion size to the set
+                totalAggregation[totalKey].dishPortionSizes.add(mainDishTotalField);
+
+                // CRITICAL: Validate that all dishes have the same portion size
+                if (totalAggregation[totalKey].dishPortionSizes.size > 1) {
+                  console.warn(
+                    `WARNING: Multiple portion sizes detected for ${totalKey}:`,
+                    Array.from(totalAggregation[totalKey].dishPortionSizes),
+                    `Dishes involved: Check console logs above. Using smallest value: ${Math.min(...Array.from(totalAggregation[totalKey].dishPortionSizes))}g`
+                  );
+                  // Use the smallest portion size to be conservative
+                  totalAggregation[totalKey].mainDishTotalPortionG = Math.min(...Array.from(totalAggregation[totalKey].dishPortionSizes));
+                } else {
+                  console.log(`[SALAD DEBUG] All dishes have matching portion size: ${mainDishTotalField}g`);
+                }
               }
 
               // Add to total aggregation
@@ -359,6 +388,16 @@ export default function ProductionSheetsPage() {
 
     console.log('Total production rows built:', rows.length);
     console.log('Sample row:', rows[0]);
+
+    // Log final total aggregation values
+    console.log('[SALAD DEBUG] Final total aggregation:', Object.keys(totalAggregation).map(key => ({
+      type: key,
+      totalPortions: totalAggregation[key].totalPortions,
+      mainDishTotalPortionG: totalAggregation[key].mainDishTotalPortionG,
+      allPortionSizes: Array.from(totalAggregation[key].dishPortionSizes),
+      calculatedWeight: `${(totalAggregation[key].totalPortions * totalAggregation[key].mainDishTotalPortionG) / 1000}kg`
+    })));
+
     setProductionRows(rows);
   };
 
@@ -419,14 +458,29 @@ export default function ProductionSheetsPage() {
 
   // Calculate weight for a production row (handles percentage-based components)
   const calculateRowWeight = (portions: number, row: ProductionRow, locationId?: string) => {
-    // For total rows (salad/warm veggie totals), calculate from mainDishTotalPortionG
-    if (row.isTotalRow && row.mainDishTotalPortionG) {
-      const grams = portions * row.mainDishTotalPortionG;
-      if (grams >= 1000) {
-        const kg = grams / 1000;
+    // For total rows (salad/warm veggie totals), sum individual component weights
+    // WORKAROUND: Don't use mainDishTotalPortionG as it may have cached wrong values
+    // Instead, find all components of this type and sum their weights
+    if (row.isTotalRow && row.componentType) {
+      const componentType = row.componentType;
+      const relevantComponents = productionRows.filter(
+        r => r.isComponent && !r.isTotalRow && r.componentType === componentType
+      );
+
+      let totalGrams = 0;
+      relevantComponents.forEach(comp => {
+        if (comp.percentage && comp.mainDishTotalPortionG) {
+          const componentPortions = locationId ? (comp.locationOrders[locationId] || 0) : comp.totalPortions;
+          const componentGramsPerPortion = (comp.mainDishTotalPortionG * comp.percentage) / 100;
+          totalGrams += componentPortions * componentGramsPerPortion;
+        }
+      });
+
+      if (totalGrams >= 1000) {
+        const kg = totalGrams / 1000;
         return `${Math.round(kg * 10) / 10}kg`;
       }
-      return `${Math.round(grams)}g`;
+      return `${Math.round(totalGrams)}g`;
     }
 
     // For percentage-based components (salad/warm veggie components)
@@ -465,31 +519,10 @@ export default function ProductionSheetsPage() {
 
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-800 to-blue-900 py-6">
-          <div className="max-w-full mx-auto px-6 lg:px-8">
-            <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-              DELIVERY
-            </h1>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-          <div className="max-w-full mx-auto px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="text-2xl font-light text-gray-700">
-                Production Sheets
-              </div>
-              <button
-                onClick={() => router.push('/dark-kitchen')}
-                className="px-6 py-2 text-sm font-medium bg-blue-800 text-white rounded-md hover:bg-blue-900 transition-colors"
-              >
-                Back
-              </button>
-            </div>
-          </div>
-        </nav>
+        <UniversalHeader
+          title="Production Sheets"
+          backPath="/dark-kitchen"
+        />
 
         <main className="max-w-4xl mx-auto px-6 lg:px-8 py-10">
           <div className="text-center mb-8">
@@ -542,48 +575,27 @@ export default function ProductionSheetsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-800 to-blue-900 py-6">
-        <div className="max-w-full mx-auto px-6 lg:px-8">
-          <h1 className="text-5xl font-extralight text-white tracking-[0.3em] uppercase" style={{ fontFamily: "'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-            DELIVERY
-          </h1>
-        </div>
-      </div>
+      <UniversalHeader
+        title="Production Sheets"
+        backPath="/dark-kitchen"
+      />
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-full mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-light text-gray-700">
-              Production Sheets
-            </div>
-            <button
-              onClick={() => router.push('/dark-kitchen')}
-              className="px-6 py-2 text-sm font-medium bg-blue-800 text-white rounded-md hover:bg-blue-900 transition-colors"
-            >
-              Back
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-full mx-auto px-6 lg:px-8 py-10">
+      <main className="max-w-7xl mx-auto px-8 lg:px-12 py-8">
         {/* Date and Actions */}
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-3xl font-extralight text-gray-800 tracking-wide">
+          <h2 className="text-2xl font-extralight text-gray-800 tracking-wide">
             Production for {format(selectedDate!, 'EEEE, MMMM d, yyyy')}
           </h2>
           <div className="flex gap-3">
             <button
               onClick={() => setSelectedDate(null)}
-              className="px-6 py-2 bg-gray-600 text-white hover:bg-gray-700 transition-colors"
+              className="px-5 py-2 text-sm bg-slate-200 text-[#1D1D1F] hover:bg-slate-300 transition-colors rounded-lg font-semibold"
             >
               Change Date
             </button>
             <button
               onClick={() => window.print()}
-              className="px-6 py-2 bg-blue-800 text-white hover:bg-blue-900 transition-colors"
+              className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-lg font-semibold"
             >
               Print
             </button>
@@ -591,27 +603,49 @@ export default function ProductionSheetsPage() {
         </div>
 
         {/* Production Table */}
-        <div className="mb-6">
-          <div className="bg-white border border-black/10 overflow-hidden shadow-sm">
-            {productionRows.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-gray-500">No production scheduled for this date</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-gray-700 to-gray-800 border-b-2 border-gray-900">
+        <div className="mb-6 space-y-2">
+          {productionRows.length === 0 ? (
+            <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
+              <p className="text-gray-500">No production scheduled for this date</p>
+            </div>
+          ) : (
+            <>
+              {/* Detached Header */}
+              <div className="bg-[#4A7DB5] border border-slate-700 rounded-lg overflow-hidden">
+                <table className="w-full text-sm table-fixed">
+                  <colgroup>
+                    <col style={{width: '30%'}} />
+                    {locations.map(location => (
+                      <col key={location.id} style={{width: `${70 / (locations.length + 1)}%`}} />
+                    ))}
+                    <col style={{width: `${70 / (locations.length + 1)}%`}} />
+                  </colgroup>
+                  <thead>
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
+                      <th className="px-5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
                       {locations.map(location => (
-                        <th key={location.id} className="px-4 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
+                        <th key={location.id} className="px-3 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">
                           {location.name}
                         </th>
                       ))}
-                      <th className="px-4 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Total</th>
+                      <th className="px-3 py-3 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
                     </tr>
                   </thead>
-                  <tbody>
+                </table>
+              </div>
+
+              {/* Data Table - Separate Box */}
+              <div className="bg-white border border-black/10 overflow-hidden shadow-sm rounded-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm table-fixed">
+                    <colgroup>
+                      <col style={{width: '30%'}} />
+                      {locations.map(location => (
+                        <col key={location.id} style={{width: `${70 / (locations.length + 1)}%`}} />
+                      ))}
+                      <col style={{width: `${70 / (locations.length + 1)}%`}} />
+                    </colgroup>
+                    <tbody>
                     {(() => {
                       const soupRows = productionRows.filter(row => row.mealType === 'soup' && !row.isComponent);
                       const soupComponents = productionRows.filter(row => row.mealType === 'soup' && row.isComponent);
@@ -654,37 +688,44 @@ export default function ProductionSheetsPage() {
 
                         const rows = (
                           <>
-                            <tr className="bg-gray-200/80">
-                              <td colSpan={locations.length + 2} className="px-8 py-2">
-                                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{label}</h4>
+                            <tr className="bg-gray-200/60 border-b border-gray-400">
+                              <td colSpan={locations.length + 2} className="px-7 py-1.5 border-r border-gray-400">
+                                <h4 className="text-[11px] italic font-semibold text-blue-700 uppercase tracking-wide">{label}</h4>
                               </td>
                             </tr>
                             {filtered.map((row, idx) => {
                               const globalIdx = startIdx + idx + 1;
                               // Total rows get special styling (bold, slightly darker background)
                               const isTotalRow = row.isTotalRow;
+
+                              // Calculate weight for each cell (handles both total and component rows)
+                              const calculateCellWeight = (locationId?: string) => {
+                                const portions = locationId ? (row.locationOrders[locationId] || 0) : row.totalPortions;
+                                if (portions === 0) return '-';
+                                return calculateRowWeight(portions, row, locationId);
+                              };
+
                               return (
                                 <tr
                                   key={`${type}-${idx}`}
-                                  className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
+                                  className={`border-b border-gray-400 transition-colors hover:bg-gray-100 ${
                                     isTotalRow
                                       ? 'bg-blue-50 font-semibold'
                                       : globalIdx % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                                   }`}
                                 >
-                                  <td className={`px-10 py-3 text-sm ${isTotalRow ? 'font-bold text-blue-900' : 'font-medium text-gray-900'}`}>
+                                  <td className={`px-8 py-2 text-sm border-r border-gray-400 ${isTotalRow ? 'font-bold text-blue-900 bg-blue-50' : 'font-medium text-gray-900 bg-stone-200'}`}>
                                     {row.dish.name}
                                   </td>
                                   {locations.map(location => {
-                                    const portions = row.locationOrders[location.id] || 0;
                                     return (
-                                      <td key={location.id} className={`px-4 py-3 text-sm text-center ${isTotalRow ? 'font-bold text-blue-900' : 'text-gray-700 font-medium'}`}>
-                                        {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
+                                      <td key={location.id} className={`px-3 py-2 text-sm text-center border-r border-gray-400 ${isTotalRow ? 'font-bold text-blue-900' : 'text-gray-700 font-medium'}`}>
+                                        {calculateCellWeight(location.id)}
                                       </td>
                                     );
                                   })}
-                                  <td className={`px-4 py-3 text-sm text-center font-bold ${isTotalRow ? 'text-blue-900' : 'text-gray-900'}`}>
-                                    {calculateRowWeight(row.totalPortions, row)}
+                                  <td className={`px-3 py-2 text-sm text-center font-bold bg-amber-100 ${isTotalRow ? 'text-blue-900' : 'text-gray-900'}`}>
+                                    {calculateCellWeight()}
                                   </td>
                                 </tr>
                               );
@@ -702,8 +743,8 @@ export default function ProductionSheetsPage() {
                           {/* Soup Section */}
                           {soupRows.length > 0 && (
                             <>
-                              <tr className="bg-gradient-to-r from-slate-200 to-slate-100">
-                                <td colSpan={locations.length + 2} className="px-6 py-3">
+                              <tr className="bg-slate-200 border-b border-gray-400">
+                                <td colSpan={locations.length + 2} className="px-6 py-3 border-r border-gray-400">
                                   <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Soup</h3>
                                 </td>
                               </tr>
@@ -712,22 +753,20 @@ export default function ProductionSheetsPage() {
                                 return (
                                   <tr
                                     key={`soup-main-${idx}`}
-                                    className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
-                                      rowCounter % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                                    }`}
+                                    className="border-b border-gray-400"
                                   >
-                                    <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
+                                    <td className="px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-gray-400 bg-stone-200">
                                       {row.dish.name}
                                     </td>
                                     {locations.map(location => {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
-                                        <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                        <td key={location.id} className="px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-gray-400">
                                           {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
-                                    <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
+                                    <td className="px-3 py-2.5 text-sm text-center font-bold text-gray-900 bg-amber-100">
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
@@ -744,8 +783,8 @@ export default function ProductionSheetsPage() {
                           {/* Hot Dish Section - Combined */}
                           {(hotMeatRows.length > 0 || hotVegRows.length > 0) && (
                             <>
-                              <tr className="bg-gradient-to-r from-slate-200 to-slate-100">
-                                <td colSpan={locations.length + 2} className="px-6 py-3">
+                              <tr className="bg-slate-200 border-b border-gray-400">
+                                <td colSpan={locations.length + 2} className="px-6 py-3 border-r border-gray-400">
                                   <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Hot Dish</h3>
                                 </td>
                               </tr>
@@ -755,22 +794,20 @@ export default function ProductionSheetsPage() {
                                 return (
                                   <tr
                                     key={`hot-meat-main-${idx}`}
-                                    className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
-                                      rowCounter % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                                    }`}
+                                    className="border-b border-gray-400"
                                   >
-                                    <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
+                                    <td className="px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-gray-400 bg-stone-200">
                                       {row.dish.name}
                                     </td>
                                     {locations.map(location => {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
-                                        <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                        <td key={location.id} className="px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-gray-400">
                                           {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
-                                    <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
+                                    <td className="px-3 py-2.5 text-sm text-center font-bold text-gray-900 bg-amber-100">
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
@@ -782,22 +819,20 @@ export default function ProductionSheetsPage() {
                                 return (
                                   <tr
                                     key={`hot-veg-main-${idx}`}
-                                    className={`border-b border-gray-200 transition-colors hover:bg-gray-100 ${
-                                      rowCounter % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                                    }`}
+                                    className="border-b border-gray-400"
                                   >
-                                    <td className="px-6 py-3.5 text-sm font-medium text-gray-900">
+                                    <td className="px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-gray-400 bg-stone-200">
                                       {row.dish.name}
                                     </td>
                                     {locations.map(location => {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
-                                        <td key={location.id} className="px-4 py-3.5 text-sm text-center text-gray-700 font-medium">
+                                        <td key={location.id} className="px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-gray-400">
                                           {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
-                                    <td className="px-4 py-3.5 text-sm text-center font-bold text-gray-900">
+                                    <td className="px-3 py-2.5 text-sm text-center font-bold text-gray-900 bg-amber-100">
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
@@ -829,11 +864,12 @@ export default function ProductionSheetsPage() {
                         </>
                       );
                     })()}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </main>
     </div>
