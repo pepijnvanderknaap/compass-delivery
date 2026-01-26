@@ -429,8 +429,13 @@ export default function LocationSettingsPage() {
                               />
                               <button
                                 onClick={() => handleDeleteStaff(member.id)}
-                                className="px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                                className="px-3 py-2 text-sm font-medium text-red-600 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                                
                               >
+                                {/* ACSS: Global "delete" button
+                                    LOCKED: button-style (border with rounded corners), size (px-3 py-2 text-sm), text-size/weight (scales with button)
+                                    EDITABLE via CSS: background-color, border-color, text-color
+                                */}
                                 Remove
                               </button>
                             </div>
@@ -741,8 +746,12 @@ export default function LocationSettingsPage() {
                           />
                           <button
                             onClick={() => handleDeleteStaff(member.id)}
-                            className="px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                            className="px-3 py-2 text-sm font-medium text-red-600 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
                           >
+                            {/* ACSS: Global "delete" button
+                                LOCKED: button-style (border with rounded corners), size (px-3 py-2 text-sm), text-size/weight (scales with button)
+                                EDITABLE via CSS: background-color, border-color, text-color
+                            */}
                             Remove
                           </button>
                         </div>

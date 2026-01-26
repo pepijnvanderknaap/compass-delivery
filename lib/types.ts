@@ -38,6 +38,17 @@ export interface Dish {
   allergen_egg?: boolean;
   allergen_mustard?: boolean;
   allergen_celery?: boolean;
+  contains_pork?: boolean;
+  contains_beef?: boolean;
+  contains_lamb?: boolean;
+  is_vegetarian?: boolean;
+  is_vegan?: boolean;
+  portion_display?: string | null;
+  calories_display?: string | null;
+  origin_display?: string | null;
+  cooking_method?: string | null;
+  prep_time?: string | null;
+  chef_note?: string | null;
   created_at: string;
   updated_at: string;
 }

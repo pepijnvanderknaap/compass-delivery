@@ -141,7 +141,8 @@ export default function DishCommandPalette({
           <div className="flex justify-end mb-4">
             <button
               onClick={onClose}
-              className="px-6 py-2 text-apple-subheadline font-medium text-apple-gray1 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              className="px-6 py-2 text-apple-subheadline font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              
             >
               Cancel
             </button>

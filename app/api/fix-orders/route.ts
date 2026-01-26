@@ -47,7 +47,7 @@ export async function POST() {
     'JAA Training': 30
   };
 
-  const categories = ['soup', 'salad_bar', 'hot_dish_meat', 'hot_dish_vegetarian'];
+  const categories = ['soup', 'hot_dish_meat', 'hot_dish_fish', 'hot_dish_veg'];
   const results = [];
 
   for (const order of orders || []) {

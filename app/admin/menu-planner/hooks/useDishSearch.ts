@@ -53,7 +53,12 @@ export function useDishSearch({ category, usedDishes }: UseDishSearchOptions) {
         }
       }
 
-      const { data } = await query.order('name');
+      const { data, error } = await query.order('name');
+
+      console.log('[useDishSearch] Fetched dishes:', data?.length, 'dishes');
+      console.log('[useDishSearch] Category filter:', category);
+      console.log('[useDishSearch] Error:', error);
+      console.log('[useDishSearch] First 5 dishes:', data?.slice(0, 5).map(d => d.name));
 
       setDishes(data || []);
       setLoading(false);

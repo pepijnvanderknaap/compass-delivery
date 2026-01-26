@@ -20,6 +20,8 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     subcategory: null as DishSubcategory | null,
     portion_size: '150', // Default to 150ml for soups
     portion_unit: 'milliliters' as 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays',
+    salad_total_portion_g: '',
+    warm_veggie_total_portion_g: '',
     allergen_gluten: false,
     allergen_soy: false,
     allergen_lactose: false,
@@ -28,6 +30,17 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
     allergen_egg: false,
     allergen_mustard: false,
     allergen_celery: false,
+    contains_pork: false,
+    contains_beef: false,
+    contains_lamb: false,
+    is_vegetarian: false,
+    is_vegan: false,
+    portion_display: '',
+    calories_display: '',
+    origin_display: '',
+    cooking_method: '',
+    prep_time: '',
+    chef_note: '',
   });
 
   const [selectedComponents, setSelectedComponents] = useState<{
@@ -89,6 +102,8 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
         subcategory: dish.subcategory || null,
         portion_size: dish.portion_size ? String(dish.portion_size) : '',
         portion_unit: (dish.portion_unit || 'milliliters') as any,
+        salad_total_portion_g: (dish as any).salad_total_portion_g ? String((dish as any).salad_total_portion_g) : '',
+        warm_veggie_total_portion_g: (dish as any).warm_veggie_total_portion_g ? String((dish as any).warm_veggie_total_portion_g) : '',
         allergen_gluten: dish.allergen_gluten || false,
         allergen_soy: dish.allergen_soy || false,
         allergen_lactose: dish.allergen_lactose || false,
@@ -97,6 +112,17 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
         allergen_egg: dish.allergen_egg || false,
         allergen_mustard: dish.allergen_mustard || false,
         allergen_celery: dish.allergen_celery || false,
+        contains_pork: dish.contains_pork || false,
+        contains_beef: dish.contains_beef || false,
+        contains_lamb: dish.contains_lamb || false,
+        is_vegetarian: dish.is_vegetarian || false,
+        is_vegan: dish.is_vegan || false,
+        portion_display: dish.portion_display || '',
+        calories_display: dish.calories_display || '',
+        origin_display: dish.origin_display || '',
+        cooking_method: dish.cooking_method || '',
+        prep_time: dish.prep_time || '',
+        chef_note: dish.chef_note || '',
       });
 
       // Set selected components (excluding salad - salad is handled separately)
@@ -131,6 +157,19 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
         allergen_egg: false,
         allergen_mustard: false,
         allergen_celery: false,
+        contains_pork: false,
+        contains_beef: false,
+        contains_lamb: false,
+        is_vegetarian: false,
+        is_vegan: false,
+        portion_display: '',
+        calories_display: '',
+        origin_display: '',
+        cooking_method: '',
+        prep_time: '',
+        chef_note: '',
+        salad_total_portion_g: '',
+        warm_veggie_total_portion_g: '',
       });
 
       // Reset selected components
@@ -388,6 +427,8 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
       const dataToSave = {
         ...formData,
         portion_size: formData.portion_size ? parseFloat(formData.portion_size) : null,
+        salad_total_portion_g: formData.salad_total_portion_g ? parseInt(formData.salad_total_portion_g) : null,
+        warm_veggie_total_portion_g: formData.warm_veggie_total_portion_g ? parseInt(formData.warm_veggie_total_portion_g) : null,
       };
 
       if (dish) {
@@ -416,40 +457,24 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
           .delete()
           .eq('main_dish_id', dishId);
 
-        // Delete existing salad components
-        await supabase
-          .from('salad_components')
-          .delete()
-          .eq('main_dish_id', dishId);
-
-        // Delete existing warm veggie components
-        await supabase
-          .from('warm_veggie_components')
-          .delete()
-          .eq('main_dish_id', dishId);
-
-        // Insert new components (excluding salad and warm_veggie - handled separately)
+        // Prepare all components to insert into dish_components table
         const componentsToInsert: any[] = [];
+
+        // Add regular components (toppings, condiments, carbs, etc.)
         Object.entries(selectedComponents).forEach(([type, ids]) => {
-          if (type !== 'salad' && type !== 'warm_veggie') { // Salad and warm veggie components use different tables
+          if (type !== 'salad' && type !== 'warm_veggie') {
             ids.forEach(id => {
               componentsToInsert.push({
                 main_dish_id: dishId,
                 component_dish_id: id,
                 component_type: type,
+                percentage: null,
               });
             });
           }
         });
 
-        if (componentsToInsert.length > 0) {
-          const { error } = await supabase
-            .from('dish_components')
-            .insert(componentsToInsert);
-          if (error) throw error;
-        }
-
-        // Insert salad components with percentages
+        // Add salad components with percentages
         const validSaladComponents = saladComponents.filter(
           sc => sc.component_dish_id && sc.percentage
         );
@@ -464,20 +489,17 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             throw new Error(`Salad percentages must total 100%. Current total: ${totalPercentage.toFixed(2)}%`);
           }
 
-          const saladComponentsToInsert = validSaladComponents.map(sc => ({
-            main_dish_id: dishId,
-            component_dish_id: sc.component_dish_id,
-            percentage: parseFloat(sc.percentage),
-          }));
-
-          const { error: saladError } = await supabase
-            .from('salad_components')
-            .insert(saladComponentsToInsert);
-
-          if (saladError) throw saladError;
+          validSaladComponents.forEach(sc => {
+            componentsToInsert.push({
+              main_dish_id: dishId,
+              component_dish_id: sc.component_dish_id,
+              component_type: 'salad',
+              percentage: parseFloat(sc.percentage),
+            });
+          });
         }
 
-        // Insert warm veggie components with percentages
+        // Add warm veggie components with percentages
         const validWarmVeggieComponents = warmVeggieComponents.filter(
           wv => wv.component_dish_id && wv.percentage
         );
@@ -492,17 +514,22 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             throw new Error(`Warm veggie percentages must total 100%. Current total: ${totalPercentage.toFixed(2)}%`);
           }
 
-          const warmVeggieComponentsToInsert = validWarmVeggieComponents.map(wv => ({
-            main_dish_id: dishId,
-            component_dish_id: wv.component_dish_id,
-            percentage: parseFloat(wv.percentage),
-          }));
+          validWarmVeggieComponents.forEach(wv => {
+            componentsToInsert.push({
+              main_dish_id: dishId,
+              component_dish_id: wv.component_dish_id,
+              component_type: 'warm_veggie',
+              percentage: parseFloat(wv.percentage),
+            });
+          });
+        }
 
-          const { error: warmVeggieError } = await supabase
-            .from('warm_veggie_components')
-            .insert(warmVeggieComponentsToInsert);
-
-          if (warmVeggieError) throw warmVeggieError;
+        // Insert all components at once into dish_components table
+        if (componentsToInsert.length > 0) {
+          const { error } = await supabase
+            .from('dish_components')
+            .insert(componentsToInsert);
+          if (error) throw error;
         }
       }
 
@@ -694,13 +721,13 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
             {/* Portion Size - Hidden for soups (managed by location settings) */}
             {formData.category !== 'soup' && (
               <div>
-                <h3 className="text-apple-headline text-apple-gray1 mb-3">Portion Size</h3>
+                <h3 className="text-apple-headline text-apple-gray1 mb-3">Portion Size *</h3>
                 <p className="text-apple-subheadline text-apple-gray2 mb-4">
-                  Specify the size of one portion for production calculations
+                  Specify the size of one portion for production calculations (required)
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Portion Size</label>
+                    <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Portion Size *</label>
                     <input
                       type="number"
                       step="1"
@@ -708,14 +735,17 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                       onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
                       placeholder="e.g., 150"
                       className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                      required
+                      min="1"
                     />
                   </div>
                   <div>
-                    <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Unit</label>
+                    <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Unit *</label>
                     <select
                       value={formData.portion_unit}
                       onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
                       className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                      required
                     >
                       <option value="pieces">Pieces</option>
                       <option value="grams">Grams (g)</option>
@@ -759,6 +789,25 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                             >
                               Copy from...
                             </button>
+                          </div>
+
+                          {/* Total Salad Portion Size */}
+                          <div className="mb-4">
+                            <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">
+                              Total Salad Portion Size (grams)
+                            </label>
+                            <input
+                              type="number"
+                              step="1"
+                              value={formData.salad_total_portion_g}
+                              onChange={(e) => setFormData({ ...formData, salad_total_portion_g: e.target.value })}
+                              placeholder="e.g., 220"
+                              className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                              min="1"
+                            />
+                            <p className="text-apple-footnote text-apple-gray3 mt-1">
+                              Total weight for the entire salad combination (percentages below will be calculated from this)
+                            </p>
                           </div>
 
                           <div className="space-y-2">
@@ -805,6 +854,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                                     max="100"
                                     value={sc.percentage}
                                     onChange={(e) => updateSaladRow(sc.tempId, 'percentage', e.target.value)}
+                                    onWheel={(e) => e.preventDefault()}
                                     placeholder="%"
                                     className="w-full px-2 py-2 border border-apple-gray4 rounded-lg text-apple-subheadline text-center focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
                                   />
@@ -855,6 +905,25 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                             </h4>
                           </div>
 
+                          {/* Total Warm Veggie Portion Size */}
+                          <div className="mb-4">
+                            <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">
+                              Total Warm Veggie Portion Size (grams)
+                            </label>
+                            <input
+                              type="number"
+                              step="1"
+                              value={formData.warm_veggie_total_portion_g}
+                              onChange={(e) => setFormData({ ...formData, warm_veggie_total_portion_g: e.target.value })}
+                              placeholder="e.g., 180"
+                              className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                              min="1"
+                            />
+                            <p className="text-apple-footnote text-apple-gray3 mt-1">
+                              Total weight for the entire warm veggie combination (percentages below will be calculated from this)
+                            </p>
+                          </div>
+
                           <div className="space-y-2">
                             {warmVeggieComponents.map((wv, index) => (
                               <div key={wv.tempId} className="flex gap-2 items-start">
@@ -899,6 +968,7 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
                                     max="100"
                                     value={wv.percentage}
                                     onChange={(e) => updateWarmVeggieRow(wv.tempId, 'percentage', e.target.value)}
+                                    onWheel={(e) => e.preventDefault()}
                                     placeholder="%"
                                     className="w-full px-2 py-2 border border-apple-gray4 rounded-lg text-apple-subheadline text-center focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
                                   />
@@ -1000,30 +1070,59 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
               </div>
             )}
 
-            {/* Allergens */}
+            {/* Allergens & Dietary Information */}
             <div>
-              <h3 className="text-apple-headline text-apple-gray1 mb-3">Allergens</h3>
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { key: 'allergen_gluten', label: 'Gluten' },
-                  { key: 'allergen_soy', label: 'Soy' },
-                  { key: 'allergen_lactose', label: 'Lactose' },
-                  { key: 'allergen_sesame', label: 'Sesame' },
-                  { key: 'allergen_sulphites', label: 'Sulphites' },
-                  { key: 'allergen_egg', label: 'Egg' },
-                  { key: 'allergen_mustard', label: 'Mustard' },
-                  { key: 'allergen_celery', label: 'Celery' },
-                ].map(allergen => (
-                  <label key={allergen.key} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={(formData as any)[allergen.key]}
-                      onChange={(e) => setFormData({ ...formData, [allergen.key]: e.target.checked })}
-                      className="w-5 h-5 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
-                    />
-                    <span className="text-apple-subheadline text-apple-gray1">{allergen.label}</span>
-                  </label>
-                ))}
+              <h3 className="text-apple-headline text-apple-gray1 mb-3">Allergens & Dietary Information</h3>
+
+              {/* Allergens Section */}
+              <div className="mb-4">
+                <h4 className="text-apple-subheadline font-medium text-apple-gray2 mb-2">Allergens</h4>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { key: 'allergen_gluten', label: 'Gluten' },
+                    { key: 'allergen_soy', label: 'Soy' },
+                    { key: 'allergen_lactose', label: 'Lactose' },
+                    { key: 'allergen_sesame', label: 'Sesame' },
+                    { key: 'allergen_sulphites', label: 'Sulphites' },
+                    { key: 'allergen_egg', label: 'Egg' },
+                    { key: 'allergen_mustard', label: 'Mustard' },
+                    { key: 'allergen_celery', label: 'Celery' },
+                  ].map(allergen => (
+                    <label key={allergen.key} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(formData as any)[allergen.key]}
+                        onChange={(e) => setFormData({ ...formData, [allergen.key]: e.target.checked })}
+                        className="w-5 h-5 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                      />
+                      <span className="text-apple-subheadline text-apple-gray1">{allergen.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dietary/Protein Categories Section */}
+              <div>
+                <h4 className="text-apple-subheadline font-medium text-apple-gray2 mb-2">Dietary & Protein Categories</h4>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { key: 'contains_pork', label: 'Pork' },
+                    { key: 'contains_beef', label: 'Beef' },
+                    { key: 'contains_lamb', label: 'Lamb' },
+                    { key: 'is_vegetarian', label: 'Vegetarian' },
+                    { key: 'is_vegan', label: 'Vegan' },
+                  ].map(dietary => (
+                    <label key={dietary.key} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(formData as any)[dietary.key]}
+                        onChange={(e) => setFormData({ ...formData, [dietary.key]: e.target.checked })}
+                        className="w-5 h-5 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                      />
+                      <span className="text-apple-subheadline text-apple-gray1">{dietary.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1035,7 +1134,8 @@ export default function MainDishForm({ dish, onClose, onSave }: MainDishFormProp
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-3 text-apple-subheadline font-medium text-apple-gray1 border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
+            className="px-6 py-3 text-apple-subheadline font-medium border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
+            
           >
             Cancel
           </button>

@@ -132,12 +132,49 @@ export default function DarkKitchenPage() {
         </svg>
       )
     },
+    {
+      title: 'Dish Cards',
+      href: '/admin/dish-cards',
+      description: 'Create printable dish cards with photos and allergens',
+      available: true,
+      icon: (
+        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M3 9h18M9 3v18" stroke="currentColor" strokeWidth="1.5"/>
+        </svg>
+      )
+    },
+    {
+      title: 'Allergen Matrix',
+      href: '/admin/allergen-matrix',
+      description: 'View all dishes with allergen information',
+      available: true,
+      icon: (
+        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
+    },
+    {
+      title: 'Weekly Menu Preview',
+      href: '/admin/weekly-menu-preview',
+      description: 'Print-ready weekly menu for display',
+      available: true,
+      icon: (
+        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      )
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <UniversalHeader
-        title="Dark Kitchen"
+        title="Dashboard"
         backPath="/dashboard"
         actions={
           <>
@@ -152,35 +189,35 @@ export default function DarkKitchenPage() {
         }
       />
 
-      <main className="max-w-6xl mx-auto px-8 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <main className="max-w-6xl mx-auto px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {sections.map((section) => (
             section.available ? (
               <Link
                 key={section.href}
                 href={section.href}
-                className="group relative overflow-hidden bg-white border border-blue-200 rounded-lg p-8 hover:border-blue-800 hover:shadow-lg transition-all duration-300"
+                className="group relative overflow-hidden bg-white border border-blue-200 rounded-lg p-5 hover:border-blue-800 hover:shadow-lg transition-all duration-300"
               >
-                <div className="text-blue-800 mb-6 group-hover:text-blue-900 group-hover:scale-110 transition-all duration-300">
+                <div className="text-blue-800 mb-3 group-hover:text-blue-900 group-hover:scale-110 transition-all duration-300">
                   {section.icon}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
                   {section.title}
                 </h3>
-                <p className="text-sm text-gray-600">{section.description}</p>
+                <p className="text-xs text-gray-600">{section.description}</p>
               </Link>
             ) : (
               <div
                 key={section.title}
-                className="relative overflow-hidden bg-white border border-gray-100 rounded-lg p-8 opacity-50 cursor-not-allowed"
+                className="relative overflow-hidden bg-white border border-gray-100 rounded-lg p-5 opacity-50 cursor-not-allowed"
               >
-                <div className="text-gray-400 mb-6">
+                <div className="text-gray-400 mb-3">
                   {section.icon}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
                   {section.title}
                 </h3>
-                <p className="text-sm text-gray-600">{section.description}</p>
+                <p className="text-xs text-gray-600">{section.description}</p>
               </div>
             )
           ))}

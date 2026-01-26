@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import PreventNumberScrollChange from './PreventNumberScrollChange';
 
 export const metadata: Metadata = {
   title: 'Compass Kitchen Orders',
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <PreventNumberScrollChange />
+        {children}
+      </body>
     </html>
   );
 }

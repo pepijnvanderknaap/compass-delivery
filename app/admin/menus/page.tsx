@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format, startOfWeek, addDays, addWeeks, getWeek } from 'date-fns';
@@ -42,6 +42,8 @@ export default function AdminMenusPage() {
   } | null>(null);
   const router = useRouter();
   const supabase = createClient();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSavingRef = useRef(false);
 
   // Generate 4 weeks starting from current Monday
   const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -231,6 +233,13 @@ export default function AdminMenusPage() {
   };
 
   const autoSaveWithData = async (dataToSave: Record<string, Record<string, string | null>>) => {
+    // Prevent concurrent saves
+    if (isSavingRef.current) {
+      console.log('Save already in progress, skipping...');
+      return;
+    }
+
+    isSavingRef.current = true;
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -328,6 +337,7 @@ export default function AdminMenusPage() {
       console.error('Error saving menu:', err);
     } finally {
       setSaving(false);
+      isSavingRef.current = false;
     }
   };
 
@@ -448,7 +458,7 @@ export default function AdminMenusPage() {
   const clearSlot = async (weekIndex: number, dayIndex: number, slot: string) => {
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
 
-    // Update state and trigger auto-save with the new data
+    // Update state and trigger debounced auto-save
     setMenuData(prev => {
       const updated = {
         ...prev,
@@ -458,8 +468,15 @@ export default function AdminMenusPage() {
         }
       };
 
-      // Auto-save after a short delay with the updated data
-      setTimeout(() => autoSaveWithData(updated), 500);
+      // Clear any pending save
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Schedule new save
+      saveTimeoutRef.current = setTimeout(() => {
+        autoSaveWithData(updated);
+      }, 500);
 
       return updated;
     });
@@ -511,7 +528,7 @@ export default function AdminMenusPage() {
     const { weekIndex, dayIndex, slot } = state;
     const dateKey = format(addDays(weeks[weekIndex], dayIndex), 'yyyy-MM-dd');
 
-    // Update state and trigger auto-save
+    // Update state and trigger debounced auto-save
     setMenuData(prev => {
       const updated = {
         ...prev,
@@ -521,7 +538,16 @@ export default function AdminMenusPage() {
         }
       };
 
-      setTimeout(() => autoSaveWithData(updated), 500);
+      // Clear any pending save
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Schedule new save
+      saveTimeoutRef.current = setTimeout(() => {
+        autoSaveWithData(updated);
+      }, 500);
+
       return updated;
     });
 
@@ -649,10 +675,20 @@ export default function AdminMenusPage() {
                 {/* Floating header text above the box */}
                 <div className="px-5 py-2">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-apple-headline font-medium italic text-slate-700">
+                    <h3
+                      className="italic"
+                      
+                      
+                      
+                    >
                       {format(weekStart, 'd MMM')} - {format(addDays(weekStart, 4), 'd MMM yyyy')}
                     </h3>
-                    <span className="text-apple-footnote font-medium italic tracking-wider text-slate-500">
+                    <span
+                      className="italic tracking-wider"
+                      
+                      
+                      
+                    >
                       (Week {getWeek(weekStart, { weekStartsOn: 1 })})
                     </span>
                     <button
@@ -667,7 +703,10 @@ export default function AdminMenusPage() {
                 {/* Container for amber header and data table with tiny gap */}
                 <div className="space-y-2">
                   {/* Amber header box - separate and detached */}
-                  <div className={`border border-slate-300 rounded-lg overflow-hidden ${isCurrent ? "bg-[#4A7DB5]" : "bg-slate-200"}`}>
+                  <div
+                    className={`border border-slate-300 rounded-lg overflow-hidden ${isCurrent ? "bg-[#4A7DB5]" : "bg-slate-200"}`}
+                    
+                  >
                     <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                       <colgroup>
                         <col className="w-40" />
@@ -725,7 +764,14 @@ export default function AdminMenusPage() {
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
-                                    <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
+                                    <div
+                                      className="text-center line-clamp-2"
+                                      
+                                      
+                                      
+                                    >
+                                      {dish.name}
+                                    </div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -737,7 +783,14 @@ export default function AdminMenusPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-slate-400">+ Add</div>
+                                  <div
+                                    className="text-center"
+                                    
+                                    
+                                    
+                                  >
+                                    + Add
+                                  </div>
                                 )}
                               </button>
                             </td>
@@ -762,7 +815,14 @@ export default function AdminMenusPage() {
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
-                                    <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
+                                    <div
+                                      className="text-center line-clamp-2"
+                                      
+                                      
+                                      
+                                    >
+                                      {dish.name}
+                                    </div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -774,7 +834,14 @@ export default function AdminMenusPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-slate-400">+ Add</div>
+                                  <div
+                                    className="text-center"
+                                    
+                                    
+                                    
+                                  >
+                                    + Add
+                                  </div>
                                 )}
                               </button>
                             </td>
@@ -799,7 +866,14 @@ export default function AdminMenusPage() {
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
-                                    <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
+                                    <div
+                                      className="text-center line-clamp-2"
+                                      
+                                      
+                                      
+                                    >
+                                      {dish.name}
+                                    </div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -811,7 +885,14 @@ export default function AdminMenusPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-slate-400">+ Add</div>
+                                  <div
+                                    className="text-center"
+                                    
+                                    
+                                    
+                                  >
+                                    + Add
+                                  </div>
                                 )}
                               </button>
                             </td>

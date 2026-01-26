@@ -128,28 +128,33 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
             />
           </div>
 
-          {/* Portion Size */}
-          <div>
-            <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Portion Size</label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                step="1"
-                value={formData.portion_size}
-                onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
-                placeholder="25"
-                className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
-              />
-              <select
-                value={formData.portion_unit}
-                onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
-                className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
-              >
-                <option value="grams">g</option>
-                <option value="pieces">pcs</option>
-              </select>
+          {/* Portion Size - Only for toppings, carbs, and condiments */}
+          {type !== 'warm_veggie' && (
+            <div>
+              <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Portion Size *</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  step="1"
+                  value={formData.portion_size}
+                  onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
+                  placeholder="25"
+                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                  required
+                  min="1"
+                />
+                <select
+                  value={formData.portion_unit}
+                  onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
+                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                  required
+                >
+                  <option value="grams">g</option>
+                  <option value="pieces">pcs</option>
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Info */}
           <p className="text-apple-footnote text-apple-gray2 bg-apple-gray6 p-3 rounded-lg">
@@ -162,14 +167,15 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-6 py-3 text-apple-subheadline font-medium text-apple-gray1 border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
+            className="flex-1 px-6 py-3 text-apple-subheadline font-medium border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
+            
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={saving || !formData.name.trim()}
-            className="flex-1 px-6 py-3 text-apple-subheadline font-semibold text-[#1D1D1F] bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors"
+            disabled={saving || !formData.name.trim() || (type !== 'warm_veggie' && !formData.portion_size)}
+            className="flex-1 px-6 py-3 text-apple-subheadline font-semibold text-[#1D1D1F] bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Adding...' : 'Add'}
           </button>

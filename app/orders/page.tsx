@@ -19,6 +19,7 @@ interface OrderWithItems {
     id: string;
     delivery_date: string;
     portions: number;
+    meal_type?: string;
     dishes: {
       name: string;
       category: string;
@@ -62,6 +63,68 @@ export default function OrdersPage() {
     }
   };
 
+  const syncOrdersWithMenu = async (ordersData: any[]) => {
+    console.log('Auto-syncing orders with current menu...');
+
+    let syncCount = 0;
+
+    for (const order of ordersData) {
+      // Get menu for this week
+      const { data: menu } = await supabase
+        .from('weekly_menus')
+        .select('id')
+        .eq('week_start_date', order.week_start_date)
+        .single();
+
+      if (!menu) continue;
+
+      // Get menu items for the week
+      const { data: menuItems } = await supabase
+        .from('menu_items')
+        .select('day_of_week, meal_type, dish_id')
+        .eq('menu_id', menu.id);
+
+      if (!menuItems) continue;
+
+      // Build map of what dishes should be for each date+meal_type
+      const weekStart = new Date(order.week_start_date);
+      const expectedDishes: Record<string, string> = {};
+
+      menuItems.forEach(item => {
+        const date = new Date(weekStart);
+        date.setDate(date.getDate() + item.day_of_week);
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const key = `${dateStr}-${item.meal_type}`;
+        expectedDishes[key] = item.dish_id;
+      });
+
+      // Check each order_item and sync if needed
+      for (const orderItem of order.order_items) {
+        const key = `${orderItem.delivery_date}-${orderItem.meal_type}`;
+        const expectedDishId = expectedDishes[key];
+
+        if (expectedDishId && orderItem.dish_id !== expectedDishId) {
+          // Sync: update order_item to match menu
+          const { error } = await supabase
+            .from('order_items')
+            .update({ dish_id: expectedDishId })
+            .eq('id', orderItem.id);
+
+          if (!error) {
+            syncCount++;
+            console.log(`Synced order_item ${orderItem.id} to menu dish ${expectedDishId}`);
+          }
+        }
+      }
+    }
+
+    if (syncCount > 0) {
+      console.log(`✓ Auto-sync complete: ${syncCount} order items updated to match menu`);
+    } else {
+      console.log('✓ All orders already in sync with menu');
+    }
+  };
+
   const fetchOrders = async (locationId: string) => {
     console.log(`Fetching orders for location: ${locationId}`);
 
@@ -79,6 +142,8 @@ export default function OrdersPage() {
           id,
           delivery_date,
           portions,
+          meal_type,
+          dish_id,
           dishes (
             name,
             category
@@ -95,7 +160,32 @@ export default function OrdersPage() {
     }
 
     console.log(`Fetched ${ordersData?.length || 0} orders for location ${locationId}`);
-    setOrders(ordersData as any || []);
+
+    // Auto-sync orders with menu before displaying
+    await syncOrdersWithMenu(ordersData || []);
+
+    // Fetch again to get updated data
+    const { data: syncedOrders } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        week_start_date,
+        created_at,
+        order_items (
+          id,
+          delivery_date,
+          portions,
+          meal_type,
+          dishes (
+            name,
+            category
+          )
+        )
+      `)
+      .eq('location_id', locationId)
+      .order('week_start_date', { ascending: true });
+
+    setOrders(syncedOrders as any || []);
   };
 
   useEffect(() => {
@@ -179,8 +269,7 @@ export default function OrdersPage() {
       const dateStr = format(date, 'yyyy-MM-dd');
       portions[dateStr] = {
         soup: 0,
-        hot_dish_meat: 0,
-        hot_dish_fish: 0,
+        hot_dish_meat_fish: 0,  // Combined category for UI
         hot_dish_veg: 0
       };
     }
@@ -188,8 +277,12 @@ export default function OrdersPage() {
     // Fill in actual values from order items
     order.order_items.forEach((item) => {
       if (portions[item.delivery_date] && item.dishes.category !== 'off_menu') {
-        // Always use the existing value from the database
-        portions[item.delivery_date][item.dishes.category] = item.portions;
+        // Combine meat and fish into hot_dish_meat_fish for the UI
+        if (item.dishes.category === 'hot_dish_meat' || item.dishes.category === 'hot_dish_fish') {
+          portions[item.delivery_date]['hot_dish_meat_fish'] = item.portions;
+        } else {
+          portions[item.delivery_date][item.dishes.category] = item.portions;
+        }
       }
     });
 
@@ -212,17 +305,7 @@ export default function OrdersPage() {
       }
     }));
 
-    // Clear existing timeout
-    if (autoSaveTimeout) {
-      clearTimeout(autoSaveTimeout);
-    }
-
-    // Set new timeout for autosave (1.5 seconds after user stops typing)
-    const timeout = setTimeout(() => {
-      handleSave(orderId);
-    }, 1500);
-
-    setAutoSaveTimeout(timeout);
+    // No auto-save - user must click Done to save
   };
 
   const handleSave = async (orderId: string, shouldRefresh: boolean = false) => {
@@ -231,22 +314,41 @@ export default function OrdersPage() {
       const portions = editedPortions[orderId];
       console.log('Saving portions:', portions);
 
-      // Get all active dishes by category
-      const { data: dishes, error: dishesError } = await supabase
-        .from('dishes')
-        .select('id, category')
-        .eq('is_active', true);
+      // Get the order to find week_start_date
+      const order = orders.find(o => o.id === orderId);
+      if (!order) throw new Error('Order not found');
 
-      if (dishesError) throw dishesError;
+      // Get the menu for this week
+      const { data: menu, error: menuError } = await supabase
+        .from('weekly_menus')
+        .select('id')
+        .eq('week_start_date', order.week_start_date)
+        .single();
 
-      const dishByCategory: Record<string, string> = {};
-      dishes?.forEach(dish => {
-        if (!dishByCategory[dish.category]) {
-          dishByCategory[dish.category] = dish.id;
-        }
+      if (menuError) throw menuError;
+      if (!menu) throw new Error('No menu found for this week');
+
+      // Get all menu items for this week
+      const { data: menuItems, error: menuItemsError } = await supabase
+        .from('menu_items')
+        .select('day_of_week, meal_type, dish_id')
+        .eq('menu_id', menu.id);
+
+      if (menuItemsError) throw menuItemsError;
+
+      // Build a map of date+meal_type -> dish_id from the menu
+      const weekStart = new Date(order.week_start_date);
+      const dishByDateAndMealType: Record<string, string> = {};
+
+      menuItems?.forEach(item => {
+        const date = new Date(weekStart);
+        date.setDate(date.getDate() + item.day_of_week);
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const key = `${dateStr}-${item.meal_type}`;
+        dishByDateAndMealType[key] = item.dish_id;
       });
 
-      console.log('Available dishes by category:', dishByCategory);
+      console.log('Menu dishes by date and meal_type:', dishByDateAndMealType);
 
       // Collect all operations to batch them
       const updatePromises = [];
@@ -270,10 +372,20 @@ export default function OrdersPage() {
             actualCategory = existingMeat ? 'hot_dish_meat' : (existingFish ? 'hot_dish_fish' : 'hot_dish_meat');
           }
 
+          // Map category to meal_type for matching
+          let matchMealType = category;
+          if (category === 'hot_dish_meat_fish' || actualCategory === 'hot_dish_meat' || actualCategory === 'hot_dish_fish') {
+            matchMealType = 'hot_meat';
+          } else if (actualCategory === 'hot_dish_veg') {
+            matchMealType = 'hot_veg';
+          } else if (actualCategory === 'soup') {
+            matchMealType = 'soup';
+          }
+
           const orderItem = orders
             .find(o => o.id === orderId)
-            ?.order_items.find(item =>
-              item.delivery_date === date && item.dishes.category === actualCategory
+            ?.order_items.find((item: any) =>
+              item.delivery_date === date && item.meal_type === matchMealType
             );
 
           if (orderItem) {
@@ -286,19 +398,36 @@ export default function OrdersPage() {
               })
             );
           } else if (portionCount > 0) {
-            if (!dishByCategory[actualCategory]) {
-              console.warn(`No active dish found for category: ${actualCategory}. Skipping creation.`);
+            // Map category to meal_type
+            // NOTE: hot_fish doesn't exist as a meal_type - both meat and fish use 'hot_meat'
+            let mealType = category;
+            if (category === 'hot_dish_meat_fish' || actualCategory === 'hot_dish_meat' || actualCategory === 'hot_dish_fish') {
+              mealType = 'hot_meat';
+            } else if (actualCategory === 'hot_dish_veg') {
+              mealType = 'hot_veg';
+            } else if (actualCategory === 'soup') {
+              mealType = 'soup';
+            }
+
+            // Look up dish from menu for this date and meal_type
+            const menuKey = `${date}-${mealType}`;
+            const dishId = dishByDateAndMealType[menuKey];
+
+            if (!dishId) {
+              console.warn(`No menu dish found for ${date} ${mealType}. Skipping creation.`);
               continue;
             }
 
             // Collect create operation
-            console.log(`Queuing create: ${actualCategory} for ${date}: ${portionCount} portions`);
+            console.log(`Queuing create: ${mealType} for ${date}: ${portionCount} portions (dish from menu)`);
+
             createPromises.push(
               createOrderItem({
                 order_id: orderId,
-                dish_id: dishByCategory[actualCategory],
+                dish_id: dishId,
                 delivery_date: date,
-                portions: portionCount
+                portions: portionCount,
+                meal_type: mealType
               })
             );
           }
@@ -329,15 +458,17 @@ export default function OrdersPage() {
 
       console.log(`Save complete: ${updateResults.length} updated, ${createResults.length} created`);
 
-      // Only refresh orders if requested (when clicking Done, not during autosave)
-      if (shouldRefresh && selectedLocationId) {
+      // Always refresh orders to keep state in sync (prevents duplicate creation on autosave)
+      if (selectedLocationId) {
         console.log('Refreshing orders...');
         await fetchOrders(selectedLocationId);
         console.log('Orders refreshed');
-        setEditingOrder(null); // Exit edit mode after manual save
       }
 
-      // Don't refresh or exit edit mode during autosave - user is still editing
+      // Only exit edit mode when clicking Done, not during autosave
+      if (shouldRefresh) {
+        setEditingOrder(null); // Exit edit mode after manual save
+      }
     } catch (err) {
       console.error('Error saving order:', err);
       alert('Failed to save changes');

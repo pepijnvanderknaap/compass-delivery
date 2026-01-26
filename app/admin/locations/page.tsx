@@ -267,7 +267,8 @@ export default function AdminLocationsPage() {
                     setShowForm(false);
                     setEditingId(null);
                   }}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  
                 >
                   Cancel
                 </button>
@@ -328,13 +329,15 @@ export default function AdminLocationsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleEdit(location)}
-                      className="text-slate-700 hover:text-slate-900 mr-4"
+                      className="mr-4 px-3 py-1.5 text-xs font-medium border border-slate-300 rounded hover:bg-slate-50 transition-colors"
+                      
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(location.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="px-3 py-1.5 text-xs font-medium border border-slate-300 rounded hover:bg-slate-50 transition-colors"
+                      
                     >
                       Delete
                     </button>

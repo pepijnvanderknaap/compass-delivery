@@ -143,41 +143,55 @@ export default function ComponentForm({ component, onClose, onSave }: ComponentF
               />
             </div>
 
-            {/* Portion Size */}
-            <div>
-              <h3 className="font-semibold mb-3">Portion Size</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Specify the size of one portion for production calculations
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Portion Size</label>
-                  <input
-                    type="number"
-                    step="1"
-                    value={formData.portion_size}
-                    onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
-                    placeholder="e.g., 220"
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Unit</label>
-                  <select
-                    value={formData.portion_unit}
-                    onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  >
-                    <option value="pieces">Pieces</option>
-                    <option value="grams">Grams (g)</option>
-                    <option value="kilograms">Kilograms (kg)</option>
-                    <option value="milliliters">Milliliters (ml)</option>
-                    <option value="liters">Liters (L)</option>
-                    <option value="trays">Trays</option>
-                  </select>
+            {/* Portion Size - Only required for toppings, carbs, and condiments */}
+            {formData.subcategory !== 'salad' && formData.subcategory !== 'warm_veggie' && (
+              <div>
+                <h3 className="font-semibold mb-3">Portion Size *</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Specify the size of one portion for production calculations (required)
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Portion Size *</label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={formData.portion_size}
+                      onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
+                      placeholder="e.g., 220"
+                      className="w-full px-3 py-2 border rounded-lg"
+                      required
+                      min="1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Unit *</label>
+                    <select
+                      value={formData.portion_unit}
+                      onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      required
+                    >
+                      <option value="pieces">Pieces</option>
+                      <option value="grams">Grams (g)</option>
+                      <option value="kilograms">Kilograms (kg)</option>
+                      <option value="milliliters">Milliliters (ml)</option>
+                      <option value="liters">Liters (L)</option>
+                      <option value="trays">Trays</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Info for salad/warm veggie components */}
+            {(formData.subcategory === 'salad' || formData.subcategory === 'warm_veggie') && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900">
+                  <strong>Note:</strong> Portion sizes for {formData.subcategory === 'salad' ? 'salad' : 'warm veggie'} components are calculated based on percentages when creating a hot dish. No fixed portion size needed.
+                </p>
+              </div>
+            )}
 
             {/* Allergens */}
             <div>
@@ -211,7 +225,7 @@ export default function ComponentForm({ component, onClose, onSave }: ComponentF
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 bg-white border border-slate-300 text-slate-900 rounded-lg hover:bg-slate-50"
               >
                 Cancel
               </button>
