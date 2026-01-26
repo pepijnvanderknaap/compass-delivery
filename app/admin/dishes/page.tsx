@@ -251,7 +251,7 @@ export default function AdminDishesPage() {
             <button
               onClick={() => {
                 setEditingDish(null);
-                setShowComponentForm(true);
+                setShowMainDishForm(true);
               }}
               className="px-6 py-2.5 text-[15px] font-medium bg-white border-2 border-slate-300 text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
             >
