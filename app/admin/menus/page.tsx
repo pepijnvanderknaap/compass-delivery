@@ -664,50 +664,43 @@ export default function AdminMenusPage() {
                   </div>
                 </div>
 
-                {/* Container for amber header and data table with tiny gap */}
-                <div className="space-y-2">
-                  {/* Amber header box - separate and detached */}
-                  <div className={`border border-slate-300 rounded-lg overflow-hidden ${isCurrent ? "bg-[#4A7DB5]" : "bg-slate-200"}`}>
-                    <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
-                      <colgroup>
-                        <col className="w-40" />
-                        <col className="w-8" />
-                        {days.map((day) => (
-                          <col key={day} className="w-48" />
-                        ))}
-                      </colgroup>
-                      <thead>
-                        <tr>
-                          <th className={`px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide ${isCurrent ? 'text-white' : 'text-slate-500'}`}>
-                            Meal
-                          </th>
-                          <th></th>
-                          {days.map((day, dayIndex) => (
-                            <th key={day} className="py-4">
-                              <div className={`flex items-baseline justify-center gap-1 ${isCurrent ? 'text-white' : 'text-slate-700'}`}>
-                                <span className="text-apple-footnote font-medium uppercase tracking-wide">{day.substring(0, 3).toUpperCase()}</span>
-                                <span className={`text-apple-caption font-light ${isCurrent ? 'text-white/70' : 'text-slate-400'}`}>
-                                  {format(addDays(weekStart, dayIndex), 'd MMM')}
-                                </span>
-                              </div>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                    </table>
-                  </div>
+                {/* Unified table with visual separation */}
+                <div className="border border-slate-300 rounded-xl overflow-hidden shadow-sm">
+                  <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
+                    <colgroup>
+                      <col className="w-40" />
+                      <col className="w-8" />
+                      {days.map((day) => (
+                        <col key={day} className="w-48" />
+                      ))}
+                    </colgroup>
 
-                  {/* Data table box - separate with tiny gap */}
-                  <div className="overflow-hidden bg-slate-100 pb-4 border border-slate-300 rounded-xl">
-                    <table className="w-full bg-slate-100 border-separate" style={{borderSpacing: '0 0'}}>
-                      <colgroup>
-                        <col className="w-40" />
-                        <col className="w-8" />
-                        {days.map((day) => (
-                          <col key={day} className="w-48" />
+                    {/* Header section with blue/gray background */}
+                    <thead className={`${isCurrent ? "bg-[#4A7DB5]" : "bg-slate-200"}`}>
+                      <tr>
+                        <th className={`px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide ${isCurrent ? 'text-white' : 'text-slate-500'}`}>
+                          Meal
+                        </th>
+                        <th></th>
+                        {days.map((day, dayIndex) => (
+                          <th key={day} className="py-4">
+                            <div className={`flex items-baseline justify-center gap-1 ${isCurrent ? 'text-white' : 'text-slate-700'}`}>
+                              <span className="text-apple-footnote font-medium uppercase tracking-wide">{day.substring(0, 3).toUpperCase()}</span>
+                              <span className={`text-apple-caption font-light ${isCurrent ? 'text-white/70' : 'text-slate-400'}`}>
+                                {format(addDays(weekStart, dayIndex), 'd MMM')}
+                              </span>
+                            </div>
+                          </th>
                         ))}
-                      </colgroup>
-                    <tbody className="divide-y divide-slate-100">
+                      </tr>
+                      {/* Spacer row for visual separation */}
+                      <tr className="bg-white" style={{height: '8px'}}>
+                        <td colSpan={days.length + 2}></td>
+                      </tr>
+                    </thead>
+
+                    {/* Data section with light gray background */}
+                    <tbody className="bg-slate-100 divide-y divide-slate-100">
                       {/* Soup Row */}
                       <tr>
                         <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700">Soup</td>
@@ -818,9 +811,8 @@ export default function AdminMenusPage() {
                           );
                         })}
                       </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             );
