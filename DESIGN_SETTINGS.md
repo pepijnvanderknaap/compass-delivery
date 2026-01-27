@@ -3,8 +3,22 @@
 **CRITICAL**: This document captures the correct design settings for the Menu Planner page. Use this as reference when making any changes to prevent breaking the design again.
 
 ## ✅ Correct Version
-**Commit**: `ff0c0d6` - "Deploy Apple-inspired UI redesign"
+**Original Commit**: `ff0c0d6` - "Deploy Apple-inspired UI redesign"
+**Improved Commit**: `ed0a569` - "Unify menu planner table structure for better column alignment"
 **File**: `app/admin/menus/page.tsx`
+
+## 🎯 Architecture: Unified Table Structure
+
+**CRITICAL**: The header and data sections are now part of ONE unified table, not separate tables. This ensures columns always align perfectly, even when the window is narrowed.
+
+```tsx
+<table>
+  <thead>   {/* Header with blue/gray background */}
+  <tbody>   {/* Data section with light gray background */}
+</table>
+```
+
+This prevents column misalignment issues that occurred with separate tables.
 
 ## Key Design Elements
 
@@ -24,18 +38,33 @@
 ```
 **Important**: Week numbers are floating above WITHOUT background, displayed as "(Week X)"
 
-### 2. Detached Header Table
+### 2. Unified Table Structure (ONE table, visual separation)
 ```tsx
-{/* Container for header and data table with tiny gap */}
-<div className="space-y-2">
-  {/* Header box - separate and detached */}
-  <div className={`border border-slate-300 rounded-lg overflow-hidden ${isCurrent ? "bg-[#4A7DB5]" : "bg-slate-200"}`}>
+{/* Unified table with visual separation */}
+<div className="border border-slate-300 rounded-xl overflow-hidden shadow-sm">
+  <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
+    <thead className={`${isCurrent ? "bg-[#4A7DB5]" : "bg-slate-200"}`}>
+      {/* Header row with days */}
+      <tr>...</tr>
+      {/* 8px spacer row for visual floating effect */}
+      <tr className="bg-white" style={{height: '8px'}}>
+        <td colSpan={days.length + 2}></td>
+      </tr>
+    </thead>
+    <tbody className="bg-slate-100">
+      {/* Data rows */}
+    </tbody>
+  </table>
+</div>
 ```
 **Critical Settings**:
-- `space-y-2` creates the visual separation (detachment)
-- Current week: `bg-[#4A7DB5]` (blue background)
-- Other weeks: `bg-slate-200` (gray background)
+- ONE unified table (not two separate tables)
+- 8px spacer row creates visual separation between header and data
+- Current week: `bg-[#4A7DB5]` (blue background on thead)
+- Other weeks: `bg-slate-200` (gray background on thead)
+- Data section: `bg-slate-100` (light gray on tbody)
 - Border: `border-slate-300`
+- Fixed column widths ensure alignment
 
 ### 3. Days Display Format (HORIZONTAL)
 ```tsx
@@ -69,16 +98,21 @@
 ```
 **Important**: "MEAL TYPE" column uses same background as the header table
 
-### 5. Data Table (Separate from Header)
+### 5. Column Width Specification
 ```tsx
-{/* Data table box - separate with tiny gap */}
-<div className="overflow-hidden bg-slate-100 pb-4 border border-slate-300 rounded-xl">
-  <table className="w-full bg-slate-100 border-separate" style={{borderSpacing: '0 0'}}>
+<colgroup>
+  <col className="w-40" />   {/* Meal type column */}
+  <col className="w-8" />    {/* Spacer column */}
+  {days.map((day) => (
+    <col key={day} className="w-48" />  {/* Day columns */}
+  ))}
+</colgroup>
 ```
-**Critical**: Data table is a SEPARATE div from the header table
-- Background: `bg-slate-100`
-- Border: `border-slate-300`
-- Rounded corners: `rounded-xl`
+**Critical**: Fixed column widths ensure header and data columns align perfectly
+- Meal type: `w-40`
+- Spacer: `w-8`
+- Each day: `w-48`
+- Same colgroup structure in unified table
 
 ### 6. Overall Layout
 ```tsx
@@ -116,12 +150,14 @@ text-apple-body: Dish names (17px)
 ```
 
 ## What NOT to Change
-1. ❌ Do NOT change `space-y-2` - this creates the detached effect
+1. ❌ Do NOT split into separate tables - keep unified table structure
 2. ❌ Do NOT stack days vertically - keep `flex items-baseline`
-3. ❌ Do NOT merge the header and data tables - they must be separate divs
+3. ❌ Do NOT remove the 8px spacer row - creates visual separation
 4. ❌ Do NOT remove UniversalHeader - it provides logo and navigation
 5. ❌ Do NOT change background colors without documenting
 6. ❌ Do NOT use gradients - solid colors only
+7. ❌ Do NOT change column widths - they ensure alignment
+8. ❌ Do NOT remove colgroup - critical for column alignment
 
 ## Functionality
 - Command palette for adding dishes (NO sidebar with drag-and-drop)
@@ -130,11 +166,21 @@ text-apple-body: Dish names (17px)
 - Auto-save on dish selection
 - Warning icons (⚠⚠) for recently used dishes
 
-## Last Verified Working
-- Date: 2026-01-27
-- Commit: ff0c0d6
-- Restored in commit: 3430065
+## Version History
+- **Original Design**: commit `ff0c0d6` (2026-01-27) - Apple-inspired visual design
+- **Headers Restored**: commit `3430065` (2026-01-27) - Fixed invisible headers
+- **Architecture Improved**: commit `ed0a569` (2026-01-27) - Unified table for perfect alignment
+
+## Current Best Version
+**Commit**: `ed0a569` - "Unify menu planner table structure for better column alignment"
+
+This version has:
+- ✅ Beautiful Apple-inspired design
+- ✅ Visible blue/gray headers
+- ✅ Horizontal day display
+- ✅ Perfect column alignment (even on narrow windows)
+- ✅ Unified table architecture
 
 ---
 
-**REMEMBER**: When in doubt, reference commit `ff0c0d6` for the correct design implementation.
+**REMEMBER**: Use commit `ed0a569` as the reference for the menu planner design and architecture.
