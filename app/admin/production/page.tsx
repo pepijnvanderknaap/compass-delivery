@@ -977,41 +977,15 @@ export default function ProductionSheetsPage() {
 
         {/* Main Production Table */}
         {activeTab === 'main' && (
-          <div className="mb-6 space-y-2">
+          <div className="mb-6">
             {productionRows.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
                 <p className="text-gray-500">No production scheduled for this date</p>
               </div>
             ) : (
-              <>
-              {/* Detached Header */}
-              <div className="bg-[#4A7DB5] border border-slate-700 rounded-lg overflow-hidden">
-                <table className="w-full text-sm table-fixed">
-                  <colgroup>
-                    <col style={{width: '30%'}} />
-                    {locations.map(location => (
-                      <col key={location.id} style={{width: `${70 / (locations.length + 1)}%`}} />
-                    ))}
-                    <col style={{width: `${70 / (locations.length + 1)}%`}} />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
-                      {locations.map(location => (
-                        <th key={location.id} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
-                          {getAbbreviatedLocationName(location.name)}
-                        </th>
-                      ))}
-                      <th className="px-3 py-4 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
-                    </tr>
-                  </thead>
-                </table>
-              </div>
-
-              {/* Data Table - Separate Box */}
-              <div className="bg-white border border-black/10 overflow-hidden shadow-sm rounded-lg">
+              <div className="border border-slate-700 rounded-lg overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm table-fixed">
+                  <table className="w-full text-sm table-fixed border-separate" style={{borderSpacing: '0 0'}}>
                     <colgroup>
                       <col style={{width: '30%'}} />
                       {locations.map(location => (
@@ -1019,7 +993,22 @@ export default function ProductionSheetsPage() {
                       ))}
                       <col style={{width: `${70 / (locations.length + 1)}%`}} />
                     </colgroup>
-                    <tbody>
+                    <thead className="bg-[#4A7DB5]">
+                      <tr>
+                        <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
+                        {locations.map(location => (
+                          <th key={location.id} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
+                            {getAbbreviatedLocationName(location.name)}
+                          </th>
+                        ))}
+                        <th className="px-3 py-4 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
+                      </tr>
+                      {/* Spacer row for visual separation */}
+                      <tr className="bg-white" style={{height: '8px'}}>
+                        <td colSpan={locations.length + 2}></td>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white">
                     {(() => {
                       const soupRows = productionRows.filter(row => row.mealType === 'soup' && !row.isComponent);
                       const soupComponents = productionRows.filter(row => row.mealType === 'soup' && row.isComponent);
@@ -1242,38 +1231,39 @@ export default function ProductionSheetsPage() {
                   </table>
                 </div>
               </div>
-              </>
             )}
           </div>
         )}
 
         {/* Main MEP Table */}
         {activeTab === 'mep' && (
-          <div className="mb-6 space-y-2">
+          <div className="mb-6">
             {mepData.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
                 <p className="text-gray-500">No MEP items for this date</p>
               </div>
             ) : (
-              <>
-                {/* Detached Header */}
-                <div className="bg-[#4A7DB5] border border-slate-700 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr>
-                        <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider w-12">✓</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
-                        <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider w-32">Quantity</th>
-                        <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider w-24">Unit</th>
-                      </tr>
-                    </thead>
-                  </table>
-                </div>
-
-                {/* Data Table */}
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                  <table className="w-full text-sm">
-                    <tbody>
+              <div className="border border-slate-700 rounded-lg overflow-hidden shadow-sm">
+                <table className="w-full text-sm border-separate" style={{borderSpacing: '0 0'}}>
+                  <colgroup>
+                    <col className="w-12" />
+                    <col style={{width: 'auto'}} />
+                    <col className="w-32" />
+                    <col className="w-24" />
+                  </colgroup>
+                  <thead className="bg-[#4A7DB5]">
+                    <tr>
+                      <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">✓</th>
+                      <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
+                      <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Quantity</th>
+                      <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Unit</th>
+                    </tr>
+                    {/* Spacer row for visual separation */}
+                    <tr className="bg-white" style={{height: '8px'}}>
+                      <td colSpan={4}></td>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
                       {mepData.map((row, idx) => {
                         if (row.isHeader) {
                           // Main section header row (SOUP, HOT DISHES)
@@ -1319,23 +1309,21 @@ export default function ProductionSheetsPage() {
                     </tbody>
                   </table>
                 </div>
-              </>
             )}
           </div>
         )}
 
         {/* Salad Bar Production Table */}
         {activeTab === 'salad_bar' && (
-          <div className="mb-6 space-y-2">
+          <div className="mb-6">
             {saladBarData.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
                 <p className="text-gray-500">No salad bar orders for this date</p>
               </div>
             ) : (
-              <>
-                {/* Detached Header */}
-                <div className="bg-[#4A7DB5] border border-slate-700 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm table-fixed">
+              <div className="border border-slate-700 rounded-lg overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm table-fixed border-separate" style={{borderSpacing: '0 0'}}>
                     <colgroup>
                       <col style={{width: '30%'}} />
                       {locations.map(location => (
@@ -1343,7 +1331,7 @@ export default function ProductionSheetsPage() {
                       ))}
                       <col style={{width: `${70 / (locations.length + 1)}%`}} />
                     </colgroup>
-                    <thead>
+                    <thead className="bg-[#4A7DB5]">
                       <tr>
                         <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
                         {locations.map(location => (
@@ -1353,21 +1341,12 @@ export default function ProductionSheetsPage() {
                         ))}
                         <th className="px-3 py-4 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
                       </tr>
+                      {/* Spacer row for visual separation */}
+                      <tr className="bg-white" style={{height: '8px'}}>
+                        <td colSpan={locations.length + 2}></td>
+                      </tr>
                     </thead>
-                  </table>
-                </div>
-
-                {/* Data Table */}
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                  <table className="w-full text-sm table-fixed">
-                    <colgroup>
-                      <col style={{width: '30%'}} />
-                      {locations.map(location => (
-                        <col key={location.id} style={{width: `${70 / (locations.length + 1)}%`}} />
-                      ))}
-                      <col style={{width: `${70 / (locations.length + 1)}%`}} />
-                    </colgroup>
-                    <tbody>
+                    <tbody className="bg-white">
                       {/* SALAD BAR Section Header */}
                       <tr style={{backgroundColor: '#5A9E95'}}>
                         <td colSpan={locations.length + 2} className="px-6 py-3 text-sm font-bold text-white uppercase tracking-wide border-b border-gray-400">
@@ -1400,7 +1379,7 @@ export default function ProductionSheetsPage() {
                     </tbody>
                   </table>
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
