@@ -586,7 +586,7 @@ export default function ProductionSheetsPage() {
       locationPortions[loc.id] = 0;
     });
 
-    orderItems?.forEach(item => {
+    orderItems?.forEach((item: any) => {
       const locationId = item.orders?.location_id;
       if (locationId) {
         const mappedLocationId = locationIdMap[locationId] || locationId;

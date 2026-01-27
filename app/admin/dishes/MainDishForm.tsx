@@ -183,6 +183,8 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
         allergen_egg: false,
         allergen_mustard: false,
         allergen_celery: false,
+        allergen_fish: false,
+        allergen_shellfish: false,
         contains_pork: false,
         contains_beef: false,
         contains_lamb: false,

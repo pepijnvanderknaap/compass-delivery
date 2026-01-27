@@ -44,10 +44,11 @@ async function checkOrdersJan29() {
   }, {} as Record<string, any[]>);
 
   Object.entries(byMealType).forEach(([mealType, items]) => {
-    const totalPortions = items.reduce((sum, o) => sum + o.portions, 0);
-    const locations = [...new Set(items.map((o: any) => o.orders?.locations?.name).filter(Boolean))];
+    const itemsArray = items as any[];
+    const totalPortions = itemsArray.reduce((sum, o) => sum + o.portions, 0);
+    const locations = [...new Set(itemsArray.map((o: any) => o.orders?.locations?.name).filter(Boolean))];
     console.log(`${mealType}:`);
-    console.log(`  ${items.length} order items`);
+    console.log(`  ${itemsArray.length} order items`);
     console.log(`  ${totalPortions} total portions`);
     if (locations.length > 0) {
       console.log(`  Locations: ${locations.join(', ')}`);

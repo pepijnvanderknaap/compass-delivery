@@ -122,7 +122,8 @@ async function debugJan29Production() {
   }, {} as Record<string, { count: number; portions: number }>);
 
   Object.entries(ordersByMealType).forEach(([mealType, stats]) => {
-    console.log(`  ${mealType}: ${stats.count} orders, ${stats.portions} total portions`);
+    const statsTyped = stats as { count: number; portions: number };
+    console.log(`  ${mealType}: ${statsTyped.count} orders, ${statsTyped.portions} total portions`);
   });
 
   console.log('\n=== End of Investigation ===');
