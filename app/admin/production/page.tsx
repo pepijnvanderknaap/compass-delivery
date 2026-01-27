@@ -38,6 +38,8 @@ export default function ProductionSheetsPage() {
   const [activeTab, setActiveTab] = useState<'main' | 'mep' | 'salad_bar'>('main');
   const [saladBarData, setSaladBarData] = useState<any[]>([]);
   const [mepData, setMepData] = useState<any[]>([]);
+  const [headingPosition] = useState({ x: 0, y: 0 });
+  const [tabsPosition] = useState({ x: 0, y: 0 });
   const router = useRouter();
   const supabase = createClient();
 
@@ -873,7 +875,7 @@ export default function ProductionSheetsPage() {
                 <button
                   key={idx}
                   onClick={() => setSelectedDate(date)}
-                  className="flex flex-col items-center p-4 border-2 border-gray-200 hover:border-blue-600 hover:bg-blue-50 transition-all"
+                  className="flex flex-col items-center p-4 border-2 border-gray-200 hover:border-blue-600 hover:bg-slate-200 transition-all"
                 >
                   <div className="text-xs font-semibold text-gray-500 uppercase mb-2">
                     {format(date, 'EEE')}
@@ -920,64 +922,79 @@ export default function ProductionSheetsPage() {
       />
 
       <main className="max-w-7xl mx-auto px-8 lg:px-12 py-8">
-        {/* Date and Actions */}
-        <div className="mb-6 flex items-center justify-between">
+        {/* Date Heading */}
+        <div
+          className="mt-32 mb-6"
+          style={{
+            transform: `translate(${headingPosition.x}px, ${headingPosition.y}px)`,
+            width: 'fit-content'
+          }}
+        >
           <h2 className="text-2xl font-extralight text-gray-800 tracking-wide">
             Production for {format(selectedDate!, 'EEEE, MMMM d, yyyy')}
           </h2>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setSelectedDate(null)}
-              className="px-5 py-2 text-sm bg-slate-200 text-[#1D1D1F] hover:bg-slate-300 transition-colors rounded-lg font-semibold"
-            >
-              Change Date
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-lg font-semibold"
-            >
-              Print
-            </button>
-          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-6 flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('main')}
-            className={`px-6 py-3 text-sm font-semibold transition-all ${
-              activeTab === 'main'
-                ? 'text-[#4A7DB5] border-b-2 border-[#4A7DB5]'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+        {/* Tabs and Actions */}
+        <div className="flex items-end justify-between border-b border-gray-200">
+          <div
+            className="flex gap-2"
+            style={{
+              transform: `translate(${tabsPosition.x}px, ${tabsPosition.y}px)`
+            }}
           >
-            Main Production
-          </button>
-          <button
-            onClick={() => setActiveTab('mep')}
-            className={`px-6 py-3 text-sm font-semibold transition-all ${
-              activeTab === 'mep'
-                ? 'text-[#D97706] border-b-2 border-[#D97706]'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Main MEP
-          </button>
-          <button
-            onClick={() => setActiveTab('salad_bar')}
-            className={`px-6 py-3 text-sm font-semibold transition-all ${
-              activeTab === 'salad_bar'
-                ? 'text-[#0F766E] border-b-2 border-[#0F766E]'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Salad Bar
-          </button>
+            <button
+              onClick={() => setActiveTab('main')}
+              className={`px-6 py-3 text-sm font-semibold transition-all ${
+                activeTab === 'main'
+                  ? 'text-[#4A7DB5] border-b-2 border-[#4A7DB5]'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Main Production
+            </button>
+            <button
+              onClick={() => setActiveTab('mep')}
+              className={`px-6 py-3 text-sm font-semibold transition-all ${
+                activeTab === 'mep'
+                  ? 'text-[#D97706] border-b-2 border-[#D97706]'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Main MEP
+            </button>
+            <button
+              onClick={() => setActiveTab('salad_bar')}
+              className={`px-6 py-3 text-sm font-semibold transition-all ${
+                activeTab === 'salad_bar'
+                  ? 'text-[#0F766E] border-b-2 border-[#0F766E]'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Salad Bar
+            </button>
+          </div>
+          {activeTab !== 'mep' && (
+            <div className="flex gap-3 pb-3">
+              <button
+                onClick={() => setSelectedDate(null)}
+                className="px-5 py-2 text-sm bg-slate-200 text-[#1D1D1F] hover:bg-slate-300 transition-colors rounded-lg font-semibold"
+              >
+                Change Date
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-lg font-semibold"
+              >
+                Print
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Main Production Table */}
         {activeTab === 'main' && (
-          <div className="mb-6">
+          <div>
             {productionRows.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
                 <p className="text-gray-500">No production scheduled for this date</p>
@@ -987,14 +1004,16 @@ export default function ProductionSheetsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm table-fixed border-separate" style={{borderSpacing: '0 0'}}>
                     <colgroup>
-                      <col style={{width: '30%'}} />
+                      <col style={{width: '12%'}} />
+                      <col style={{width: '28%'}} />
                       {locations.map(location => (
-                        <col key={location.id} style={{width: `${70 / (locations.length + 1)}%`}} />
+                        <col key={location.id} style={{width: `${60 / (locations.length + 1)}%`}} />
                       ))}
-                      <col style={{width: `${70 / (locations.length + 1)}%`}} />
+                      <col style={{width: `${60 / (locations.length + 1)}%`}} />
                     </colgroup>
                     <thead className="bg-[#4A7DB5]">
                       <tr>
+                        <th className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Category</th>
                         <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
                         {locations.map(location => (
                           <th key={location.id} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
@@ -1002,10 +1021,6 @@ export default function ProductionSheetsPage() {
                           </th>
                         ))}
                         <th className="px-3 py-4 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
-                      </tr>
-                      {/* Spacer row for visual separation */}
-                      <tr className="bg-white" style={{height: '8px'}}>
-                        <td colSpan={locations.length + 2}></td>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -1045,21 +1060,19 @@ export default function ProductionSheetsPage() {
                         components.filter(c => c.componentType === type);
 
                       // Helper to render component section with alternating row colors
-                      const renderComponentSection = (components: ProductionRow[], type: string, label: string, startIdx: number) => {
+                      const renderComponentSection = (components: ProductionRow[], type: string, label: string, startIdx: number, addThickBorder = false) => {
                         const filtered = getComponentsByType(components, type);
                         if (filtered.length === 0) return { rows: null, count: 0 };
 
                         const rows = (
                           <>
-                            <tr className="bg-gray-200/60 border-b border-gray-400">
-                              <td colSpan={locations.length + 2} className="px-7 py-1.5 border-r border-gray-400">
-                                <h4 className="text-[11px] italic font-semibold text-blue-700 uppercase tracking-wide">{label}</h4>
-                              </td>
-                            </tr>
                             {filtered.map((row, idx) => {
                               const globalIdx = startIdx + idx + 1;
                               // Total rows get special styling (bold, slightly darker background)
                               const isTotalRow = row.isTotalRow;
+                              const isEven = globalIdx % 2 === 0;
+                              const isLastRow = idx === filtered.length - 1;
+                              const borderClass = isLastRow && addThickBorder ? 'border-b-[2px] border-b-gray-400' : 'border-b border-gray-300';
 
                               // Calculate weight for each cell (handles both total and component rows)
                               const calculateCellWeight = (locationId?: string) => {
@@ -1071,23 +1084,24 @@ export default function ProductionSheetsPage() {
                               return (
                                 <tr
                                   key={`${type}-${idx}`}
-                                  className={`border-b border-gray-400 transition-colors hover:bg-gray-100 ${
-                                    isTotalRow
-                                      ? 'bg-blue-50 font-semibold'
-                                      : globalIdx % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                                  }`}
+                                  className={`${borderClass} transition-colors hover:bg-gray-100`}
                                 >
-                                  <td className={`px-8 py-2 text-sm border-r border-gray-400 ${isTotalRow ? 'font-bold text-blue-900 bg-blue-50' : 'font-medium text-gray-900 bg-stone-200'}`}>
+                                  {idx === 0 && (
+                                    <td rowSpan={filtered.length} className={`px-3 py-2 text-[11px] font-semibold text-blue-600 uppercase tracking-wide text-right ${borderClass} bg-white align-top`}>
+                                      {label}
+                                    </td>
+                                  )}
+                                  <td className={`px-8 py-2 text-sm border-r ${borderClass} font-medium text-gray-900 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
                                     {row.dish.name}
                                   </td>
                                   {locations.map(location => {
                                     return (
-                                      <td key={location.id} className={`px-3 py-2 text-sm text-center border-r border-gray-400 ${isTotalRow ? 'font-bold text-blue-900' : 'text-gray-700 font-medium'}`}>
+                                      <td key={location.id} className={`px-3 py-2 text-sm text-center border-r ${borderClass} text-gray-700 font-medium ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                         {calculateCellWeight(location.id)}
                                       </td>
                                     );
                                   })}
-                                  <td className={`px-3 py-2 text-sm text-center font-bold bg-amber-100 ${isTotalRow ? 'text-blue-900' : 'text-gray-900'}`}>
+                                  <td className={`px-3 py-2 text-sm text-center font-bold ${borderClass} text-red-700 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                     {calculateCellWeight()}
                                   </td>
                                 </tr>
@@ -1096,7 +1110,7 @@ export default function ProductionSheetsPage() {
                           </>
                         );
 
-                        return { rows, count: filtered.length + 1 };
+                        return { rows, count: filtered.length };
                       };
 
                       let rowCounter = 0;
@@ -1106,37 +1120,41 @@ export default function ProductionSheetsPage() {
                           {/* Soup Section */}
                           {soupRows.length > 0 && (
                             <>
-                              <tr className="bg-slate-300 border-b border-gray-400">
-                                <td colSpan={locations.length + 2} className="px-6 py-3 border-r border-gray-400">
-                                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Soup</h3>
-                                </td>
-                              </tr>
                               {soupRows.map((row, idx) => {
                                 rowCounter++;
+                                const isEven = rowCounter % 2 === 0;
+                                const isLastSoup = idx === soupRows.length - 1;
+                                const hasNoComponents = soupComponents.length === 0;
+                                const borderClass = isLastSoup && hasNoComponents ? 'border-b-[2px] border-b-gray-400' : 'border-b border-gray-300';
                                 return (
                                   <tr
                                     key={`soup-main-${idx}`}
-                                    className="border-b border-gray-400"
+                                    className={borderClass}
                                   >
-                                    <td className="px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-gray-400 bg-stone-200">
+                                    {idx === 0 && (
+                                      <td rowSpan={soupRows.length} className={`px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-center border-r ${borderClass} bg-slate-100 align-top`}>
+                                        Soup
+                                      </td>
+                                    )}
+                                    <td className={`px-5 py-2.5 text-sm font-bold text-gray-900 border-r ${borderClass} ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
                                       {row.dish.name}
                                     </td>
                                     {locations.map(location => {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
-                                        <td key={location.id} className="px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-gray-400">
+                                        <td key={location.id} className={`px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r ${borderClass} ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                           {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
-                                    <td className="px-3 py-2.5 text-sm text-center font-bold text-gray-900 bg-amber-100">
+                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 ${borderClass} ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
                                 );
                               })}
                               {(() => {
-                                const result = renderComponentSection(soupComponents, 'topping', 'Soup Toppings', rowCounter);
+                                const result = renderComponentSection(soupComponents, 'topping', 'Toppings', rowCounter, true);
                                 rowCounter += result.count;
                                 return result.rows;
                               })()}
@@ -1146,31 +1164,34 @@ export default function ProductionSheetsPage() {
                           {/* Hot Dish Section - Combined */}
                           {(hotMeatRows.length > 0 || hotVegRows.length > 0) && (
                             <>
-                              <tr className="bg-slate-300 border-b border-gray-400">
-                                <td colSpan={locations.length + 2} className="px-6 py-3 border-r border-gray-400">
-                                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Hot Dish</h3>
-                                </td>
-                              </tr>
                               {/* Hot Meat Dishes */}
                               {hotMeatRows.map((row, idx) => {
+                                const isFirstHotDish = idx === 0;
+                                const totalHotDishRows = hotMeatRows.length + hotVegRows.length;
                                 rowCounter++;
+                                const isEven = rowCounter % 2 === 0;
                                 return (
                                   <tr
                                     key={`hot-meat-main-${idx}`}
-                                    className="border-b border-gray-400"
+                                    className="border-b border-gray-300"
                                   >
-                                    <td className="px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-gray-400 bg-stone-200">
+                                    {isFirstHotDish && (
+                                      <td rowSpan={totalHotDishRows} className="px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-center border-r border-b border-gray-300 bg-slate-100 align-top">
+                                        Hot Dishes
+                                      </td>
+                                    )}
+                                    <td className={`px-5 py-2.5 text-sm font-bold text-gray-900 border-r border-b border-gray-300 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
                                       {row.dish.name}
                                     </td>
                                     {locations.map(location => {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
-                                        <td key={location.id} className="px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-gray-400">
+                                        <td key={location.id} className={`px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                           {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
-                                    <td className="px-3 py-2.5 text-sm text-center font-bold text-gray-900 bg-amber-100">
+                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
@@ -1179,23 +1200,25 @@ export default function ProductionSheetsPage() {
                               {/* Hot Veg Dishes */}
                               {hotVegRows.map((row, idx) => {
                                 rowCounter++;
+                                const isEven = rowCounter % 2 === 0;
                                 return (
                                   <tr
                                     key={`hot-veg-main-${idx}`}
-                                    className="border-b border-gray-400"
+                                    className="border-b border-gray-300"
                                   >
-                                    <td className="px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-gray-400 bg-stone-200">
+                                    {/* No category cell - covered by Hot Dish rowspan */}
+                                    <td className={`px-5 py-2.5 text-sm font-bold text-gray-900 border-r border-b border-gray-300 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
                                       {row.dish.name}
                                     </td>
                                     {locations.map(location => {
                                       const portions = row.locationOrders[location.id] || 0;
                                       return (
-                                        <td key={location.id} className="px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-gray-400">
+                                        <td key={location.id} className={`px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                           {portions > 0 ? calculateRowWeight(portions, row, location.id) : '-'}
                                         </td>
                                       );
                                     })}
-                                    <td className="px-3 py-2.5 text-sm text-center font-bold text-gray-900 bg-amber-100">
+                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
@@ -1237,19 +1260,34 @@ export default function ProductionSheetsPage() {
 
         {/* Main MEP Table */}
         {activeTab === 'mep' && (
-          <div className="mb-6">
+          <div>
             {mepData.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
                 <p className="text-gray-500">No MEP items for this date</p>
               </div>
             ) : (
-              <div className="border border-slate-700 rounded-lg overflow-hidden shadow-sm">
-                <table className="w-full text-sm border-separate" style={{borderSpacing: '0 0'}}>
+              <div className="max-w-3xl mx-auto">
+                <div className="flex gap-3 mb-4 justify-end">
+                  <button
+                    onClick={() => setSelectedDate(null)}
+                    className="px-5 py-2 text-sm bg-slate-200 text-[#1D1D1F] hover:bg-slate-300 transition-colors rounded-lg font-semibold"
+                  >
+                    Change Date
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-lg font-semibold"
+                  >
+                    Print
+                  </button>
+                </div>
+                <div className="border border-slate-700 rounded-lg overflow-hidden shadow-sm">
+                  <table className="w-full text-sm border-separate" style={{borderSpacing: '0 0'}}>
                   <colgroup>
-                    <col className="w-12" />
-                    <col style={{width: 'auto'}} />
-                    <col className="w-32" />
-                    <col className="w-24" />
+                    <col style={{width: '8%'}} />
+                    <col style={{width: '60%'}} />
+                    <col style={{width: '18%'}} />
+                    <col style={{width: '14%'}} />
                   </colgroup>
                   <thead className="bg-[#4A7DB5]">
                     <tr>
@@ -1258,64 +1296,66 @@ export default function ProductionSheetsPage() {
                       <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Quantity</th>
                       <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Unit</th>
                     </tr>
-                    {/* Spacer row for visual separation */}
-                    <tr className="bg-white" style={{height: '8px'}}>
-                      <td colSpan={4}></td>
-                    </tr>
                   </thead>
                   <tbody className="bg-white">
-                      {mepData.map((row, idx) => {
-                        if (row.isHeader) {
-                          // Main section header row (SOUP, HOT DISHES)
-                          return (
-                            <tr key={idx} style={{backgroundColor: '#E89F4D'}}>
-                              <td colSpan={4} className="px-6 py-3 text-sm font-bold text-white uppercase tracking-wide border-b border-gray-400">
-                                {row.header}
-                              </td>
-                            </tr>
-                          );
-                        } else if (row.isSubheader) {
-                          // Subheader row (Carbs, Warm Vegetables, Salad, Add-Ons)
-                          return (
-                            <tr key={idx} className="bg-stone-200">
-                              <td colSpan={4} className="px-6 py-2 text-sm font-semibold text-gray-800 border-b border-gray-400">
-                                {row.subheader}
-                              </td>
-                            </tr>
-                          );
-                        } else {
-                          // Item row
-                          return (
-                            <tr key={idx} className="border-b border-gray-400">
-                              <td className="px-5 py-2.5 text-center border-r border-gray-400 w-12">
-                                <input
-                                  type="checkbox"
-                                  className="w-5 h-5 border-2 border-gray-400 rounded cursor-pointer"
-                                />
-                              </td>
-                              <td className="px-5 py-2.5 text-sm text-gray-900 border-r border-gray-400">
-                                {row.name}
-                              </td>
-                              <td className="px-5 py-2.5 text-sm text-center font-bold text-gray-900 border-r border-gray-400 w-32">
-                                {row.quantity}
-                              </td>
-                              <td className="px-5 py-2.5 text-sm text-center text-gray-700 w-24">
-                                {row.unit}
-                              </td>
-                            </tr>
-                          );
-                        }
-                      })}
+                      {(() => {
+                        let itemCounter = 0;
+                        return mepData.map((row, idx) => {
+                          if (row.isHeader) {
+                            // Main section header row (SOUP, HOT DISHES)
+                            return (
+                              <tr key={idx} className="bg-slate-100">
+                                <td colSpan={4} className="px-6 py-3 text-sm font-bold text-slate-700 uppercase tracking-wide border-b border-gray-300">
+                                  {row.header}
+                                </td>
+                              </tr>
+                            );
+                          } else if (row.isSubheader) {
+                            // Subheader row (Carbs, Warm Vegetables, Salad, Add-Ons)
+                            return (
+                              <tr key={idx} className="bg-white">
+                                <td colSpan={4} className="px-7 py-2 text-[11px] font-semibold text-blue-600 uppercase tracking-wide border-b border-gray-300">
+                                  {row.subheader}
+                                </td>
+                              </tr>
+                            );
+                          } else {
+                            // Item row
+                            itemCounter++;
+                            const isEven = itemCounter % 2 === 0;
+                            return (
+                              <tr key={idx} className="border-b border-gray-300">
+                                <td className={`px-5 py-2.5 text-center border-r border-b border-gray-300 w-12 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
+                                  <input
+                                    type="checkbox"
+                                    className="w-5 h-5 border-2 border-gray-400 rounded cursor-pointer"
+                                  />
+                                </td>
+                                <td className={`px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-b border-gray-300 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
+                                  {row.name}
+                                </td>
+                                <td className={`px-5 py-2.5 text-sm text-center font-bold text-gray-900 border-r border-b border-gray-300 w-32 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                  {row.quantity}
+                                </td>
+                                <td className={`px-5 py-2.5 text-sm text-center text-gray-700 border-b border-gray-300 w-24 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                  {row.unit}
+                                </td>
+                              </tr>
+                            );
+                          }
+                        });
+                      })()}
                     </tbody>
                   </table>
                 </div>
+              </div>
             )}
           </div>
         )}
 
         {/* Salad Bar Production Table */}
         {activeTab === 'salad_bar' && (
-          <div className="mb-6">
+          <div>
             {saladBarData.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
                 <p className="text-gray-500">No salad bar orders for this date</p>
@@ -1325,14 +1365,16 @@ export default function ProductionSheetsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm table-fixed border-separate" style={{borderSpacing: '0 0'}}>
                     <colgroup>
-                      <col style={{width: '30%'}} />
+                      <col style={{width: '12%'}} />
+                      <col style={{width: '28%'}} />
                       {locations.map(location => (
-                        <col key={location.id} style={{width: `${70 / (locations.length + 1)}%`}} />
+                        <col key={location.id} style={{width: `${60 / (locations.length + 1)}%`}} />
                       ))}
-                      <col style={{width: `${70 / (locations.length + 1)}%`}} />
+                      <col style={{width: `${60 / (locations.length + 1)}%`}} />
                     </colgroup>
                     <thead className="bg-[#4A7DB5]">
                       <tr>
+                        <th className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Category</th>
                         <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
                         {locations.map(location => (
                           <th key={location.id} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
@@ -1341,41 +1383,39 @@ export default function ProductionSheetsPage() {
                         ))}
                         <th className="px-3 py-4 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
                       </tr>
-                      {/* Spacer row for visual separation */}
-                      <tr className="bg-white" style={{height: '8px'}}>
-                        <td colSpan={locations.length + 2}></td>
-                      </tr>
                     </thead>
                     <tbody className="bg-white">
-                      {/* SALAD BAR Section Header */}
-                      <tr style={{backgroundColor: '#5A9E95'}}>
-                        <td colSpan={locations.length + 2} className="px-6 py-3 text-sm font-bold text-white uppercase tracking-wide border-b border-gray-400">
-                          Salad Bar
-                        </td>
-                      </tr>
-                      {saladBarData.map((row, idx) => (
-                        <tr key={idx} className="border-b border-gray-400">
-                          <td className="px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-gray-400 bg-stone-200">
-                            {row.ingredient}
-                          </td>
-                          {locations.map(location => {
-                            const weightG = row.locationWeights[location.id] || 0;
-                            const displayWeight = weightG >= 1000
-                              ? `${(weightG / 1000).toFixed(1)}kg`
-                              : `${Math.round(weightG)}g`;
-                            return (
-                              <td key={location.id} className="px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-gray-400">
-                                {weightG > 0 ? displayWeight : '-'}
+                      {saladBarData.map((row, idx) => {
+                        const isEven = idx % 2 === 0;
+                        return (
+                          <tr key={idx} className="border-b border-gray-300">
+                            {idx === 0 && (
+                              <td rowSpan={saladBarData.length} className="px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-center border-r border-b border-gray-300 bg-slate-100 align-top">
+                                Salad Bar
                               </td>
-                            );
-                          })}
-                          <td className="px-3 py-2.5 text-sm text-center font-bold text-gray-900 bg-amber-100">
-                            {row.totalWeight >= 1000
-                              ? `${(row.totalWeight / 1000).toFixed(1)}kg`
-                              : `${Math.round(row.totalWeight)}g`}
-                          </td>
-                        </tr>
-                      ))}
+                            )}
+                            <td className={`px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-b border-gray-300 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
+                              {row.ingredient}
+                            </td>
+                            {locations.map(location => {
+                              const weightG = row.locationWeights[location.id] || 0;
+                              const displayWeight = weightG >= 1000
+                                ? `${(weightG / 1000).toFixed(1)}kg`
+                                : `${Math.round(weightG)}g`;
+                              return (
+                                <td key={location.id} className={`px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                  {weightG > 0 ? displayWeight : '-'}
+                                </td>
+                              );
+                            })}
+                            <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                              {row.totalWeight >= 1000
+                                ? `${(row.totalWeight / 1000).toFixed(1)}kg`
+                                : `${Math.round(row.totalWeight)}g`}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
