@@ -7,6 +7,7 @@ import type { Dish, UserProfile, DishComponent, DishWithComponents } from '@/lib
 import MainDishForm from './MainDishForm';
 import ComponentForm from './ComponentForm';
 import UniversalHeader from '@/components/UniversalHeader';
+import AdminQuickNav from '@/components/AdminQuickNav';
 
 // Grid layout with component management - v2
 export default function AdminDishesPage() {
@@ -224,6 +225,8 @@ export default function AdminDishesPage() {
 
   return (
     <div className="min-h-screen bg-white font-apple">
+      <AdminQuickNav />
+
       <UniversalHeader
         title="Dishes"
         backPath="/dark-kitchen"

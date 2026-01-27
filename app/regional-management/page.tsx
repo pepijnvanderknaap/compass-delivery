@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
+import AdminQuickNav from '@/components/AdminQuickNav';
 
 export default function RegionalManagementPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -100,6 +101,8 @@ export default function RegionalManagementPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminQuickNav />
+
       {/* Colored header banner */}
       <div className="bg-gradient-to-r from-blue-700 to-blue-800 py-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">

@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { format, addDays, startOfWeek } from 'date-fns';
+import { format, addDays, startOfWeek, getDay } from 'date-fns';
 import type { UserProfile, Dish, Location, DishWithComponents } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
+import AdminQuickNav from '@/components/AdminQuickNav';
 
 interface LocationOrders {
   [locationId: string]: number; // portions
@@ -34,8 +35,26 @@ export default function ProductionSheetsPage() {
   const [productionRows, setProductionRows] = useState<ProductionRow[]>([]);
   const [locationSettingsMap, setLocationSettingsMap] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'main' | 'mep' | 'salad_bar'>('main');
+  const [saladBarData, setSaladBarData] = useState<any[]>([]);
+  const [mepData, setMepData] = useState<any[]>([]);
   const router = useRouter();
   const supabase = createClient();
+
+  // Helper function to abbreviate location names for display
+  const getAbbreviatedLocationName = (locationName: string): string => {
+    const abbreviations: Record<string, string> = {
+      'SnapChat 119': 'Snap119',
+      'Snapchat 119': 'Snap119',
+      'SnapChat 165': 'Snap165',
+      'Snapchat 165': 'Snap165',
+      'Symphony': 'Symph',
+      'Atlassian': 'Atlas',
+      'Snowflake': 'Snow',
+      'JAA Training': 'J.A.A.'
+    };
+    return abbreviations[locationName] || locationName;
+  };
 
   useEffect(() => {
     const initializePage = async () => {
@@ -107,8 +126,18 @@ export default function ProductionSheetsPage() {
   useEffect(() => {
     if (profile && locations.length > 0 && selectedDate) {
       fetchProductionData(selectedDate, locations);
+      fetchSaladBarData(selectedDate, locations);
     }
   }, [selectedDate]);
+
+  // Generate MEP data whenever productionRows changes
+  useEffect(() => {
+    if (productionRows.length > 0) {
+      generateMEPData();
+    } else {
+      setMepData([]);
+    }
+  }, [productionRows]);
 
   const fetchProductionData = async (date: Date, locs: Location[]) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -515,6 +544,200 @@ export default function ProductionSheetsPage() {
     setProductionRows(rows);
   };
 
+  const fetchSaladBarData = async (date: Date, locs: Location[]) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+
+    // Fetch location settings for salad bar composition
+    const { data: locationSettingsData } = await supabase
+      .from('location_settings')
+      .select('*');
+
+    const settingsMap = new Map(
+      (locationSettingsData || []).map(s => [s.location_id, s])
+    );
+
+    // Get ALL active locations (including duplicates) to fetch orders
+    const { data: allLocations } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('is_active', true);
+
+    // Create a map from any location ID to the deduplicated display location
+    const locationIdMap: Record<string, string> = {};
+    allLocations?.forEach(loc => {
+      const displayLoc = locs.find(l => l.name === loc.name);
+      if (displayLoc) {
+        locationIdMap[loc.id] = displayLoc.id;
+      }
+    });
+
+    // Get salad bar orders for this date (meal_type = 'salad_bar')
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select('portions, orders(location_id)')
+      .eq('delivery_date', dateStr)
+      .eq('meal_type', 'salad_bar');
+
+    console.log('Fetched salad bar order items:', orderItems?.length);
+
+    // Aggregate portions by location
+    const locationPortions: Record<string, number> = {};
+    locs.forEach(loc => {
+      locationPortions[loc.id] = 0;
+    });
+
+    orderItems?.forEach(item => {
+      const locationId = item.orders?.location_id;
+      if (locationId) {
+        const mappedLocationId = locationIdMap[locationId] || locationId;
+        if (locationPortions[mappedLocationId] !== undefined) {
+          locationPortions[mappedLocationId] += item.portions || 0;
+        }
+      }
+    });
+
+    // Build salad bar ingredient breakdown
+    const SALAD_BAR_INGREDIENTS = [
+      { key: 'salad_leaves_percentage', label: 'Salad Leaves', defaultPercentage: 0.05 },
+      { key: 'cucumber_percentage', label: 'Cucumber', defaultPercentage: 0.05 },
+      { key: 'tomato_percentage', label: 'Tomato', defaultPercentage: 0.05 },
+      { key: 'carrot_julienne_percentage', label: 'Carrot Julienne', defaultPercentage: 0.05 },
+      { key: 'radish_julienne_percentage', label: 'Radish Julienne', defaultPercentage: 0.05 },
+      { key: 'pickled_beetroot_percentage', label: 'Pickled Beetroot', defaultPercentage: 0.05 },
+      { key: 'mixed_blanched_veg_percentage', label: 'Mixed Blanched Veg', defaultPercentage: 0.07 },
+      { key: 'roasted_veg_1_percentage', label: 'Roasted Veg 1', defaultPercentage: 0.07 },
+      { key: 'roasted_veg_2_percentage', label: 'Roasted Veg 2', defaultPercentage: 0.07 },
+      { key: 'roasted_veg_3_percentage', label: 'Roasted Veg 3', defaultPercentage: 0.07 },
+      { key: 'potato_salad_percentage', label: 'Potato Salad', defaultPercentage: 0.06 },
+      { key: 'composed_salad_percentage', label: 'Composed Salad', defaultPercentage: 0.16 },
+      { key: 'pasta_salad_percentage', label: 'Pasta Salad', defaultPercentage: 0.16 },
+      { key: 'carb_percentage', label: 'Carb', defaultPercentage: 0.04 },
+    ];
+
+    const saladBarRows = SALAD_BAR_INGREDIENTS.map(ingredient => {
+      const row: any = {
+        ingredient: ingredient.label,
+        locationWeights: {},
+        totalWeight: 0
+      };
+
+      locs.forEach(loc => {
+        const portions = locationPortions[loc.id] || 0;
+        const settings = settingsMap.get(loc.id);
+        const portionSizeG = settings?.salad_bar_portion_size_g || 240;
+        const percentage = (settings?.[ingredient.key] as number) ?? ingredient.defaultPercentage;
+        const weightG = portions * portionSizeG * percentage;
+
+        row.locationWeights[loc.id] = weightG;
+        row.totalWeight += weightG;
+      });
+
+      return row;
+    });
+
+    setSaladBarData(saladBarRows);
+  };
+
+  const generateMEPData = () => {
+    console.log('MEP: Generating from production rows:', productionRows.length);
+
+    const mepRows: any[] = [];
+
+    // Group items by section
+    const soupItems: any[] = [];
+    const hotDishItems: any[] = [];
+    const carbItems: any[] = [];
+    const warmVeggieItems: any[] = [];
+    const saladItems: any[] = [];
+    const addOnItems: any[] = [];
+
+    // Process each production row
+    productionRows.forEach((row) => {
+      // Skip total rows
+      if (row.isTotalRow) return;
+
+      const totalWeight = calculateRowWeight(row.totalPortions, row);
+      const quantity = totalWeight.replace(/[a-z]+$/i, '').trim();
+      const unit = totalWeight.match(/[a-z]+$/i)?.[0] || '-';
+
+      const item = {
+        name: row.dish.name,
+        quantity,
+        unit
+      };
+
+      // Add to appropriate section
+      if (row.mealType === 'soup') {
+        soupItems.push(item);
+      } else if (row.mealType === 'hot_meat' || row.mealType === 'hot_fish' || row.mealType === 'hot_veg') {
+        hotDishItems.push(item);
+      } else if (row.isComponent) {
+        if (row.componentType === 'carb') {
+          carbItems.push(item);
+        } else if (row.componentType === 'warm_veggie') {
+          warmVeggieItems.push(item);
+        } else if (row.componentType === 'salad') {
+          saladItems.push(item);
+        } else if (row.componentType === 'topping' || row.componentType === 'condiment') {
+          addOnItems.push(item);
+        }
+      }
+    });
+
+    // Build final array with headers and items
+    // 1. Soup section
+    if (soupItems.length > 0) {
+      mepRows.push({ isHeader: true, header: 'SOUP' });
+      soupItems.forEach(item => {
+        mepRows.push({ isHeader: false, ...item });
+      });
+    }
+
+    // 2. Hot Dishes section (includes both meat/fish and vegetarian)
+    if (hotDishItems.length > 0) {
+      mepRows.push({ isHeader: true, header: 'HOT DISHES' });
+      hotDishItems.forEach(item => {
+        mepRows.push({ isHeader: false, ...item });
+      });
+    }
+
+    // 3. Carbs subheader (only if there are carbs)
+    if (carbItems.length > 0) {
+      mepRows.push({ isSubheader: true, subheader: 'Carbs' });
+      carbItems.forEach(item => {
+        mepRows.push({ isHeader: false, ...item });
+      });
+    }
+
+    // 4. Warm Vegetables subheader (only if there are warm veggies)
+    if (warmVeggieItems.length > 0) {
+      mepRows.push({ isSubheader: true, subheader: 'Warm Vegetables' });
+      warmVeggieItems.forEach(item => {
+        mepRows.push({ isHeader: false, ...item });
+      });
+    }
+
+    // 5. Salad subheader (only if there are salads)
+    if (saladItems.length > 0) {
+      mepRows.push({ isSubheader: true, subheader: 'Salad' });
+      saladItems.forEach(item => {
+        mepRows.push({ isHeader: false, ...item });
+      });
+    }
+
+    // 6. Add-Ons subheader (only if there are add-ons)
+    if (addOnItems.length > 0) {
+      mepRows.push({ isSubheader: true, subheader: 'Add-Ons' });
+      addOnItems.forEach(item => {
+        mepRows.push({ isHeader: false, ...item });
+      });
+    }
+
+    console.log('MEP: Generated rows:', mepRows.length);
+
+    setMepData(mepRows);
+  };
+
   // Calculate weight with 1 decimal place for kg/L
   // Uses location-specific portion sizes when available
   const calculateWeight = (portions: number, dish: Dish, locationId?: string) => {
@@ -689,6 +912,8 @@ export default function ProductionSheetsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminQuickNav />
+
       <UniversalHeader
         title="Production Sheets"
         backPath="/dark-kitchen"
@@ -716,14 +941,49 @@ export default function ProductionSheetsPage() {
           </div>
         </div>
 
-        {/* Production Table */}
-        <div className="mb-6 space-y-2">
-          {productionRows.length === 0 ? (
-            <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
-              <p className="text-gray-500">No production scheduled for this date</p>
-            </div>
-          ) : (
-            <>
+        {/* Tabs */}
+        <div className="mb-6 flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('main')}
+            className={`px-6 py-3 text-sm font-semibold transition-all ${
+              activeTab === 'main'
+                ? 'text-[#4A7DB5] border-b-2 border-[#4A7DB5]'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Main Production
+          </button>
+          <button
+            onClick={() => setActiveTab('mep')}
+            className={`px-6 py-3 text-sm font-semibold transition-all ${
+              activeTab === 'mep'
+                ? 'text-[#D97706] border-b-2 border-[#D97706]'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Main MEP
+          </button>
+          <button
+            onClick={() => setActiveTab('salad_bar')}
+            className={`px-6 py-3 text-sm font-semibold transition-all ${
+              activeTab === 'salad_bar'
+                ? 'text-[#0F766E] border-b-2 border-[#0F766E]'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Salad Bar
+          </button>
+        </div>
+
+        {/* Main Production Table */}
+        {activeTab === 'main' && (
+          <div className="mb-6 space-y-2">
+            {productionRows.length === 0 ? (
+              <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
+                <p className="text-gray-500">No production scheduled for this date</p>
+              </div>
+            ) : (
+              <>
               {/* Detached Header */}
               <div className="bg-[#4A7DB5] border border-slate-700 rounded-lg overflow-hidden">
                 <table className="w-full text-sm table-fixed">
@@ -736,13 +996,13 @@ export default function ProductionSheetsPage() {
                   </colgroup>
                   <thead>
                     <tr>
-                      <th className="px-5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
+                      <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
                       {locations.map(location => (
-                        <th key={location.id} className="px-3 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">
-                          {location.name}
+                        <th key={location.id} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
+                          {getAbbreviatedLocationName(location.name)}
                         </th>
                       ))}
-                      <th className="px-3 py-3 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
+                      <th className="px-3 py-4 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
                     </tr>
                   </thead>
                 </table>
@@ -857,9 +1117,9 @@ export default function ProductionSheetsPage() {
                           {/* Soup Section */}
                           {soupRows.length > 0 && (
                             <>
-                              <tr className="bg-slate-200 border-b border-gray-400">
+                              <tr className="bg-slate-300 border-b border-gray-400">
                                 <td colSpan={locations.length + 2} className="px-6 py-3 border-r border-gray-400">
-                                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Soup</h3>
+                                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Soup</h3>
                                 </td>
                               </tr>
                               {soupRows.map((row, idx) => {
@@ -897,9 +1157,9 @@ export default function ProductionSheetsPage() {
                           {/* Hot Dish Section - Combined */}
                           {(hotMeatRows.length > 0 || hotVegRows.length > 0) && (
                             <>
-                              <tr className="bg-slate-200 border-b border-gray-400">
+                              <tr className="bg-slate-300 border-b border-gray-400">
                                 <td colSpan={locations.length + 2} className="px-6 py-3 border-r border-gray-400">
-                                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Hot Dish</h3>
+                                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Hot Dish</h3>
                                 </td>
                               </tr>
                               {/* Hot Meat Dishes */}
@@ -982,9 +1242,168 @@ export default function ProductionSheetsPage() {
                   </table>
                 </div>
               </div>
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Main MEP Table */}
+        {activeTab === 'mep' && (
+          <div className="mb-6 space-y-2">
+            {mepData.length === 0 ? (
+              <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
+                <p className="text-gray-500">No MEP items for this date</p>
+              </div>
+            ) : (
+              <>
+                {/* Detached Header */}
+                <div className="bg-[#4A7DB5] border border-slate-700 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider w-12">✓</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
+                        <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider w-32">Quantity</th>
+                        <th className="px-5 py-4 text-center text-xs font-bold text-white uppercase tracking-wider w-24">Unit</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+
+                {/* Data Table */}
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {mepData.map((row, idx) => {
+                        if (row.isHeader) {
+                          // Main section header row (SOUP, HOT DISHES)
+                          return (
+                            <tr key={idx} style={{backgroundColor: '#E89F4D'}}>
+                              <td colSpan={4} className="px-6 py-3 text-sm font-bold text-white uppercase tracking-wide border-b border-gray-400">
+                                {row.header}
+                              </td>
+                            </tr>
+                          );
+                        } else if (row.isSubheader) {
+                          // Subheader row (Carbs, Warm Vegetables, Salad, Add-Ons)
+                          return (
+                            <tr key={idx} className="bg-stone-200">
+                              <td colSpan={4} className="px-6 py-2 text-sm font-semibold text-gray-800 border-b border-gray-400">
+                                {row.subheader}
+                              </td>
+                            </tr>
+                          );
+                        } else {
+                          // Item row
+                          return (
+                            <tr key={idx} className="border-b border-gray-400">
+                              <td className="px-5 py-2.5 text-center border-r border-gray-400 w-12">
+                                <input
+                                  type="checkbox"
+                                  className="w-5 h-5 border-2 border-gray-400 rounded cursor-pointer"
+                                />
+                              </td>
+                              <td className="px-5 py-2.5 text-sm text-gray-900 border-r border-gray-400">
+                                {row.name}
+                              </td>
+                              <td className="px-5 py-2.5 text-sm text-center font-bold text-gray-900 border-r border-gray-400 w-32">
+                                {row.quantity}
+                              </td>
+                              <td className="px-5 py-2.5 text-sm text-center text-gray-700 w-24">
+                                {row.unit}
+                              </td>
+                            </tr>
+                          );
+                        }
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Salad Bar Production Table */}
+        {activeTab === 'salad_bar' && (
+          <div className="mb-6 space-y-2">
+            {saladBarData.length === 0 ? (
+              <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
+                <p className="text-gray-500">No salad bar orders for this date</p>
+              </div>
+            ) : (
+              <>
+                {/* Detached Header */}
+                <div className="bg-[#4A7DB5] border border-slate-700 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm table-fixed">
+                    <colgroup>
+                      <col style={{width: '30%'}} />
+                      {locations.map(location => (
+                        <col key={location.id} style={{width: `${70 / (locations.length + 1)}%`}} />
+                      ))}
+                      <col style={{width: `${70 / (locations.length + 1)}%`}} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
+                        {locations.map(location => (
+                          <th key={location.id} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
+                            {getAbbreviatedLocationName(location.name)}
+                          </th>
+                        ))}
+                        <th className="px-3 py-4 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+
+                {/* Data Table */}
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <table className="w-full text-sm table-fixed">
+                    <colgroup>
+                      <col style={{width: '30%'}} />
+                      {locations.map(location => (
+                        <col key={location.id} style={{width: `${70 / (locations.length + 1)}%`}} />
+                      ))}
+                      <col style={{width: `${70 / (locations.length + 1)}%`}} />
+                    </colgroup>
+                    <tbody>
+                      {/* SALAD BAR Section Header */}
+                      <tr style={{backgroundColor: '#5A9E95'}}>
+                        <td colSpan={locations.length + 2} className="px-6 py-3 text-sm font-bold text-white uppercase tracking-wide border-b border-gray-400">
+                          Salad Bar
+                        </td>
+                      </tr>
+                      {saladBarData.map((row, idx) => (
+                        <tr key={idx} className="border-b border-gray-400">
+                          <td className="px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-gray-400 bg-stone-200">
+                            {row.ingredient}
+                          </td>
+                          {locations.map(location => {
+                            const weightG = row.locationWeights[location.id] || 0;
+                            const displayWeight = weightG >= 1000
+                              ? `${(weightG / 1000).toFixed(1)}kg`
+                              : `${Math.round(weightG)}g`;
+                            return (
+                              <td key={location.id} className="px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-gray-400">
+                                {weightG > 0 ? displayWeight : '-'}
+                              </td>
+                            );
+                          })}
+                          <td className="px-3 py-2.5 text-sm text-center font-bold text-gray-900 bg-amber-100">
+                            {row.totalWeight >= 1000
+                              ? `${(row.totalWeight / 1000).toFixed(1)}kg`
+                              : `${Math.round(row.totalWeight)}g`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

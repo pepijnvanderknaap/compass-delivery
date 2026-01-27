@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Dish } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
+import AdminQuickNav from '@/components/AdminQuickNav';
 import { format, startOfWeek, addDays, addWeeks, subWeeks } from 'date-fns';
 
 interface MenuItem {
@@ -133,6 +134,8 @@ export default function WeeklyMenuPreviewPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-apple">
+      <AdminQuickNav />
+
       {/* Header - Hidden when printing */}
       <div className="no-print">
         <UniversalHeader title="Weekly Menu Preview" backPath="/dark-kitchen" />

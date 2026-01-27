@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Dish } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
+import AdminQuickNav from '@/components/AdminQuickNav';
 
 export default function AllergenMatrixPage() {
   const supabase = createClient();
@@ -58,6 +59,8 @@ export default function AllergenMatrixPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-apple">
+      <AdminQuickNav />
+
       {/* Header - Hidden when printing */}
       <div className="no-print">
         <UniversalHeader title="Allergen Matrix" backPath="/dark-kitchen" />

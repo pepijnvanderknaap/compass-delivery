@@ -9,6 +9,7 @@ import type { UserProfile } from '@/lib/types';
 import HoverNumberInput from '@/components/HoverNumberInput';
 import { createOrderItem, createOrderItemsBatch, updateOrderItem, ensureFourWeeksAhead, clearWeekOrders } from './actions';
 import UniversalHeader from '@/components/UniversalHeader';
+import AdminQuickNav from '@/components/AdminQuickNav';
 import SetDefaultWeekModal from './components/SetDefaultWeekModal';
 
 interface OrderWithItems {
@@ -270,7 +271,8 @@ export default function OrdersPage() {
       portions[dateStr] = {
         soup: 0,
         hot_dish_meat_fish: 0,  // Combined category for UI
-        hot_dish_veg: 0
+        hot_dish_veg: 0,
+        salad_bar: 0
       };
     }
 
@@ -350,6 +352,16 @@ export default function OrdersPage() {
 
       console.log('Menu dishes by date and meal_type:', dishByDateAndMealType);
 
+      // Get the generic salad_bar dish (not date-specific, always the same)
+      const { data: saladBarDish } = await supabase
+        .from('dishes')
+        .select('id')
+        .eq('category', 'salad_bar')
+        .eq('is_active', true)
+        .single();
+
+      console.log('Salad bar dish:', saladBarDish);
+
       // Collect all operations to batch them
       const updatePromises = [];
       const createPromises = [];
@@ -380,6 +392,8 @@ export default function OrdersPage() {
             matchMealType = 'hot_veg';
           } else if (actualCategory === 'soup') {
             matchMealType = 'soup';
+          } else if (actualCategory === 'salad_bar') {
+            matchMealType = 'salad_bar';
           }
 
           const orderItem = orders
@@ -407,19 +421,29 @@ export default function OrdersPage() {
               mealType = 'hot_veg';
             } else if (actualCategory === 'soup') {
               mealType = 'soup';
+            } else if (actualCategory === 'salad_bar') {
+              mealType = 'salad_bar';
             }
 
-            // Look up dish from menu for this date and meal_type
-            const menuKey = `${date}-${mealType}`;
-            const dishId = dishByDateAndMealType[menuKey];
-
-            if (!dishId) {
-              console.warn(`No menu dish found for ${date} ${mealType}. Skipping creation.`);
-              continue;
+            // Look up dish - salad_bar uses generic dish, others use menu
+            let dishId: string | undefined;
+            if (mealType === 'salad_bar') {
+              dishId = saladBarDish?.id;
+              if (!dishId) {
+                console.warn(`No salad_bar dish found in database. Skipping creation.`);
+                continue;
+              }
+            } else {
+              const menuKey = `${date}-${mealType}`;
+              dishId = dishByDateAndMealType[menuKey];
+              if (!dishId) {
+                console.warn(`No menu dish found for ${date} ${mealType}. Skipping creation.`);
+                continue;
+              }
             }
 
             // Collect create operation
-            console.log(`Queuing create: ${mealType} for ${date}: ${portionCount} portions (dish from menu)`);
+            console.log(`Queuing create: ${mealType} for ${date}: ${portionCount} portions (dish ${mealType === 'salad_bar' ? 'from database' : 'from menu'})`);
 
             createPromises.push(
               createOrderItem({
@@ -545,6 +569,8 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-white font-apple">
+      <AdminQuickNav />
+
       <UniversalHeader
         title="Orders"
         backPath="/location-management"
@@ -609,7 +635,8 @@ export default function OrdersPage() {
                 groupedItems[dateStr] = {
                   soup: 0,
                   hot_dish_meat_fish: 0,
-                  hot_dish_veg: 0
+                  hot_dish_veg: 0,
+                  salad_bar: 0
                 };
               }
 
@@ -629,6 +656,8 @@ export default function OrdersPage() {
                   // Combine meat and fish into hot_dish_meat_fish
                   if (item.dishes.category === 'hot_dish_meat' || item.dishes.category === 'hot_dish_fish') {
                     groupedItems[item.delivery_date]['hot_dish_meat_fish'] = item.portions;
+                  } else if (item.dishes.category === 'salad_bar') {
+                    groupedItems[item.delivery_date]['salad_bar'] = item.portions;
                   } else {
                     groupedItems[item.delivery_date][item.dishes.category] = item.portions;
                   }
@@ -742,6 +771,7 @@ export default function OrdersPage() {
                       <tbody className="divide-y divide-slate-100">
                         {[
                           { key: 'soup', label: 'Soup' },
+                          { key: 'salad_bar', label: 'Salad Bar' },
                           { key: 'hot_dish_meat_fish', label: 'Hot Dish Meat/Fish' },
                           { key: 'hot_dish_veg', label: 'Hot Dish Veg' }
                         ].map(({ key, label }) => (

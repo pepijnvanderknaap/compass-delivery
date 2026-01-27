@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { UserProfile, Location, LocationSettings, LocationStaff } from '@/lib/types';
+import AdminQuickNav from '@/components/AdminQuickNav';
 
 export default function LocationSettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -183,6 +184,8 @@ export default function LocationSettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminQuickNav />
+
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-800 to-blue-900 py-6">
         <div className="max-w-full mx-auto px-6 lg:px-8">
@@ -762,51 +765,10 @@ export default function LocationSettingsPage() {
               </div>
             </div>
 
-            {/* Section 3: Dish Settings */}
+            {/* Section 3: Key Interest Points */}
             <div className="bg-white border border-black/10 shadow-sm p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-3">
-                3. Dish Settings
-              </h2>
-
-              <p className="text-sm text-gray-600 mb-6">
-                Override default portion sizes for this location. Leave blank to use dish defaults.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Soup Portion Size (ml)
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.soup_portion_size_ml || ''}
-                    onChange={(e) => setSettings({ ...settings, soup_portion_size_ml: parseInt(e.target.value) || null })}
-                    placeholder="150"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Default: 150ml</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Salad Bar Portion Size (g)
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.salad_bar_portion_size_g || ''}
-                    onChange={(e) => setSettings({ ...settings, salad_bar_portion_size_g: parseInt(e.target.value) || null })}
-                    placeholder="240"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Default: 240g</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 4: Key Interest Points */}
-            <div className="bg-white border border-black/10 shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-3">
-                4. Key Interest Points
+                3. Key Interest Points
               </h2>
 
               <p className="text-sm text-gray-600 mb-4">
@@ -822,10 +784,10 @@ export default function LocationSettingsPage() {
               />
             </div>
 
-            {/* Section 5: Satisfaction Score */}
+            {/* Section 4: Satisfaction Score */}
             <div className="bg-white border border-black/10 shadow-sm p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-3">
-                5. Satisfaction Score
+                4. Satisfaction Score
               </h2>
 
               <div className="flex items-center space-x-6">

@@ -671,30 +671,30 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
 
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-apple">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="flex gap-0 max-h-[90vh]">
         {/* Main Form */}
-        <div className="bg-white rounded-2xl max-w-4xl w-full flex flex-col max-h-[90vh]">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh]">
         <div className="p-8 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 100px)' }}>
-          <h2 className="text-apple-title-lg text-apple-gray1 mb-8">
+          <h2 className="text-[28px] font-semibold text-[#1D1D1F] mb-8">
             {dish ? 'Edit Main Dish' : 'Create Main Dish'}
           </h2>
 
           {message && (
-            <div className={`mb-6 px-4 py-3 rounded-xl text-apple-subheadline ${message.type === 'success' ? 'bg-apple-green/10 text-apple-green border border-apple-green/20' : 'bg-apple-red/10 text-apple-red border border-apple-red/20'}`}>
+            <div className={`mb-6 px-5 py-4 rounded-xl text-[15px] ${message.type === 'success' ? 'bg-[#34C759]/10 text-[#34C759] border border-[#34C759]/20' : 'bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20'}`}>
               {message.text}
             </div>
           )}
 
           <form id="main-dish-form" onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Dish Name *</label>
+              <label className="block text-[13px] font-medium text-[#86868B] mb-2">Dish Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                className="w-full px-4 py-3 border border-[#D2D2D7] rounded-lg text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
               />
             </div>
 
@@ -1185,13 +1185,12 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
           </form>
         </div>
 
-        {/* Sticky Footer with Buttons - Always Visible */}
-        <div className="flex justify-end gap-3 px-8 py-6 bg-white rounded-b-2xl">
+        {/* Sticky Footer with Buttons */}
+        <div className="flex justify-end gap-3 px-8 py-6 bg-white border-t border-[#E8E8ED] rounded-b-2xl">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-3 text-apple-subheadline font-medium border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
-            
+            className="px-6 py-3 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-lg hover:bg-[#F5F5F7] transition-colors"
           >
             Cancel
           </button>
@@ -1199,19 +1198,13 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory }:
             type="button"
             onClick={(e) => {
               e.preventDefault();
-              console.log('[MainDishForm] Create button clicked');
-              console.log('[MainDishForm] saving state:', saving);
               const form = document.getElementById('main-dish-form') as HTMLFormElement;
-              console.log('[MainDishForm] form element:', form);
               if (form) {
-                console.log('[MainDishForm] Calling form.requestSubmit()');
                 form.requestSubmit();
-              } else {
-                console.error('[MainDishForm] Form element not found!');
               }
             }}
             disabled={saving}
-            className="px-6 py-3 text-apple-subheadline font-semibold text-[#1D1D1F] bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-lg transition-colors disabled:opacity-40"
           >
             {saving ? 'Saving...' : (dish ? 'Update' : 'Create')}
           </button>

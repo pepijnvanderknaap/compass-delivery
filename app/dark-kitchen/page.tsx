@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
+import AdminQuickNav from '@/components/AdminQuickNav';
 
 export default function DarkKitchenPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -173,6 +174,8 @@ export default function DarkKitchenPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminQuickNav />
+
       <UniversalHeader
         title="Dashboard"
         backPath="/dashboard"

@@ -117,14 +117,14 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
   };
 
   return (
-    <div className="w-80 bg-white rounded-2xl flex flex-col h-full font-apple">
+    <div className="w-80 bg-white border-l border-[#E8E8ED] shadow-lg flex flex-col h-full">
       {/* Header */}
-      <div className="bg-apple-gray7 px-6 py-4 rounded-t-2xl">
+      <div className="bg-[#FAFAFA] px-6 py-4 border-b border-[#E8E8ED]">
         <div className="flex items-center justify-between">
-          <h3 className="text-apple-headline text-apple-gray1">{getTitle()}</h3>
+          <h3 className="text-[17px] font-semibold text-[#1D1D1F]">{getTitle()}</h3>
           <button
             onClick={onClose}
-            className="text-apple-gray3 hover:text-apple-gray1 transition-colors"
+            className="text-[#86868B] hover:text-[#1D1D1F] transition-colors text-xl"
           >
             ✕
           </button>
@@ -136,13 +136,13 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         <div className="space-y-4 flex-1">
           {/* Name */}
           <div>
-            <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Name *</label>
+            <label className="block text-[13px] font-medium text-[#86868B] mb-2">Name *</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Croutons"
-              className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+              className="w-full px-4 py-3 border border-[#D2D2D7] rounded-lg text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
               required
               autoFocus
             />
@@ -151,7 +151,7 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
           {/* Portion Size - Only for toppings, carbs, and condiments */}
           {type !== 'warm_veggie' && (
             <div>
-              <label className="block text-apple-footnote font-medium text-apple-gray3 mb-2">Portion Size *</label>
+              <label className="block text-[13px] font-medium text-[#86868B] mb-2">Portion Size *</label>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="number"
@@ -159,14 +159,14 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
                   value={formData.portion_size}
                   onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
                   placeholder="25"
-                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                  className="w-full px-4 py-3 border border-[#D2D2D7] rounded-lg text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
                   required
                   min="1"
                 />
                 <select
                   value={formData.portion_unit}
                   onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
-                  className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                  className="w-full px-4 py-3 border border-[#D2D2D7] rounded-lg text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
                   required
                 >
                   <option value="grams">g</option>
@@ -178,103 +178,103 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
 
           {/* Allergens */}
           <div>
-            <label className="block text-apple-footnote font-medium text-apple-gray3 mb-3">Allergens</label>
+            <label className="block text-[13px] font-medium text-[#86868B] mb-3">Allergens</label>
             <div className="grid grid-cols-2 gap-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_gluten}
                   onChange={(e) => setFormData({ ...formData, allergen_gluten: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Gluten</span>
+                <span className="text-[15px] text-[#1D1D1F]">Gluten</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_soy}
                   onChange={(e) => setFormData({ ...formData, allergen_soy: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Soy</span>
+                <span className="text-[15px] text-[#1D1D1F]">Soy</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_lactose}
                   onChange={(e) => setFormData({ ...formData, allergen_lactose: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Lactose</span>
+                <span className="text-[15px] text-[#1D1D1F]">Lactose</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_sesame}
                   onChange={(e) => setFormData({ ...formData, allergen_sesame: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Sesame</span>
+                <span className="text-[15px] text-[#1D1D1F]">Sesame</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_sulphites}
                   onChange={(e) => setFormData({ ...formData, allergen_sulphites: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Sulphites</span>
+                <span className="text-[15px] text-[#1D1D1F]">Sulphites</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_egg}
                   onChange={(e) => setFormData({ ...formData, allergen_egg: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Egg</span>
+                <span className="text-[15px] text-[#1D1D1F]">Egg</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_mustard}
                   onChange={(e) => setFormData({ ...formData, allergen_mustard: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Mustard</span>
+                <span className="text-[15px] text-[#1D1D1F]">Mustard</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_celery}
                   onChange={(e) => setFormData({ ...formData, allergen_celery: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Celery</span>
+                <span className="text-[15px] text-[#1D1D1F]">Celery</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_fish}
                   onChange={(e) => setFormData({ ...formData, allergen_fish: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Fish</span>
+                <span className="text-[15px] text-[#1D1D1F]">Fish</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.allergen_shellfish}
                   onChange={(e) => setFormData({ ...formData, allergen_shellfish: e.target.checked })}
-                  className="w-4 h-4 text-apple-blue border-apple-gray4 rounded focus:ring-apple-blue/20"
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                 />
-                <span className="text-apple-footnote text-apple-gray1">Shellfish</span>
+                <span className="text-[15px] text-[#1D1D1F]">Shellfish</span>
               </label>
             </div>
           </div>
 
           {/* Info */}
-          <p className="text-apple-footnote text-apple-gray2 bg-apple-gray6 p-3 rounded-lg">
+          <p className="text-[13px] text-[#6E6E73] bg-[#F5F5F7] p-3 rounded-lg">
             This component will be automatically selected in your main dish
           </p>
         </div>
@@ -284,17 +284,16 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-6 py-3 text-apple-subheadline font-medium border border-apple-gray4 rounded-lg hover:bg-apple-gray6 transition-colors"
-            
+            className="flex-1 px-4 py-3 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-lg hover:bg-[#F5F5F7] transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || !formData.name.trim() || (type !== 'warm_veggie' && !formData.portion_size)}
-            className="flex-1 px-6 py-3 text-apple-subheadline font-semibold text-[#1D1D1F] bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-lg transition-colors disabled:opacity-40"
           >
-            {saving ? 'Adding...' : 'Add'}
+            {saving ? 'Adding...' : 'Create'}
           </button>
         </div>
       </form>

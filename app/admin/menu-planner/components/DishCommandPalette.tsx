@@ -130,35 +130,18 @@ export default function DishCommandPalette({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm font-apple"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl border border-slate-300 w-full max-w-2xl max-h-[500px] flex flex-col"
+        className="bg-white rounded-2xl shadow-2xl border border-[#E8E8ED] w-full max-w-2xl max-h-[600px] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with Cancel Button */}
-        <div className="p-5 border-b border-slate-300">
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={onClose}
-              className="px-6 py-2 text-apple-subheadline font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-              
-            >
-              Cancel
-            </button>
-          </div>
+        {/* Search Input */}
+        <div className="p-6 border-b border-[#E8E8ED]">
           <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={`Search ${getCategoryLabel()}...`}
-              className="w-full px-4 py-3 pl-10 text-apple-body border border-slate-300 rounded-lg focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all bg-white text-slate-700"
-            />
             <svg
-              className="absolute left-3 top-3.5 w-5 h-5 text-slate-400"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -170,24 +153,41 @@ export default function DishCommandPalette({
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={`Search ${getCategoryLabel()}...`}
+              className="w-full pl-12 pr-20 py-3 text-[17px] border border-[#D2D2D7] rounded-lg focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all bg-white text-[#1D1D1F] placeholder:text-[#86868B]"
+            />
+            <button
+              onClick={onClose}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[15px] text-[#0071E3] hover:text-[#0077ED] font-medium transition-colors"
+            >
+              Cancel
+            </button>
           </div>
+          <p className="mt-3 text-[13px] text-[#86868B]">
+            Start typing to find a dish, or create a new one below
+          </p>
         </div>
 
         {/* Results List */}
-        <div className="flex-1 overflow-y-auto px-2 py-2">
+        <div className="flex-1 overflow-y-auto px-4 py-2">
           {loadingDishes || loadingUsage ? (
-            <div className="p-8 text-center text-slate-500">Loading...</div>
+            <div className="p-12 text-center text-[#86868B] text-[15px]">Loading...</div>
           ) : !searchQuery ? (
             /* Empty state - no search entered yet */
-            <div className="p-8 text-center">
-              <svg className="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-12 text-center">
+              <svg className="w-16 h-16 mx-auto text-[#D2D2D7] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <p className="text-apple-body text-slate-500 mb-2">Start typing to search {getCategoryLabel()}</p>
-              <p className="text-apple-subheadline text-slate-400">or create a new one below</p>
+              <p className="text-[15px] text-[#6E6E73] mb-1">Search for {getCategoryLabel()}</p>
+              <p className="text-[13px] text-[#86868B]">Type to find existing dishes or create a new one</p>
             </div>
           ) : dishes.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">
+            <div className="p-12 text-center text-[#86868B] text-[15px]">
               No {getCategoryLabel()} found matching "{searchQuery}"
             </div>
           ) : (
@@ -199,20 +199,20 @@ export default function DishCommandPalette({
                   <button
                     key={dish.id}
                     onClick={() => handleSelectDish(dish.id)}
-                    className="w-full px-4 py-3 flex items-center justify-between rounded-lg transition-colors hover:bg-slate-50"
+                    className="w-full px-4 py-3 flex items-center justify-between rounded-lg transition-colors hover:bg-[#F5F5F7]"
                   >
                     <div className="flex items-center gap-3 flex-1">
                       {/* Dish Name */}
-                      <span className="text-apple-subheadline font-medium text-slate-700">
+                      <span className="text-[15px] font-medium text-[#1D1D1F]">
                         {dish.name}
                       </span>
 
                       {/* Duplicate Warning */}
                       {usage && (
                         <div className="flex items-center gap-1 group/tooltip relative">
-                          <span className="text-apple-orange text-lg">⚠⚠</span>
-                          {/* Tooltip - shows above the icons */}
-                          <div className="absolute left-0 bottom-full mb-1 hidden group-hover/tooltip:block z-10 bg-slate-700 text-white text-apple-caption px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                          <span className="text-[#FF9500] text-lg">⚠⚠</span>
+                          {/* Tooltip */}
+                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tooltip:block z-10 bg-[#1D1D1F] text-white text-[12px] px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
                             Used on {formatUsageDate(usage.lastUsed)}
                           </div>
                         </div>
@@ -220,11 +220,11 @@ export default function DishCommandPalette({
                     </div>
 
                     {/* Portion Size */}
-                    <span className="text-apple-caption text-slate-500">
+                    <span className="text-[12px] text-[#86868B]">
                       {dish.default_portion_size_ml
-                        ? `[${dish.default_portion_size_ml}ml]`
+                        ? `${dish.default_portion_size_ml}ml`
                         : dish.default_portion_size_g
-                        ? `[${dish.default_portion_size_g}g]`
+                        ? `${dish.default_portion_size_g}g`
                         : ''}
                     </span>
                   </button>
@@ -234,11 +234,11 @@ export default function DishCommandPalette({
           )}
         </div>
 
-        {/* Create New Button - Always visible at bottom */}
-        <div className="border-t border-slate-300 p-3">
+        {/* Create New Button */}
+        <div className="border-t border-[#E8E8ED] p-4">
           <button
             onClick={handleCreateNewDish}
-            className="w-full px-4 py-3 flex items-center justify-center gap-2 rounded-lg transition-colors bg-[#4A7DB5] text-white hover:bg-[#3A6DA2]"
+            className="w-full px-4 py-3 flex items-center justify-center gap-2 text-[#0071E3] hover:text-[#0077ED] font-medium text-[15px] transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -253,7 +253,7 @@ export default function DishCommandPalette({
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            <span className="text-apple-subheadline font-medium">
+            <span>
               Create new {category === 'soup' ? 'soup' : 'dish'}
             </span>
           </button>

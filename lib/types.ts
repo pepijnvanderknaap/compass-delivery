@@ -256,6 +256,22 @@ export interface LocationSettings {
   soup_portion_size_ml?: number | null;
   salad_bar_portion_size_g?: number | null;
 
+  // Salad Bar Composition (percentages 0-1, must sum to 1.00)
+  salad_leaves_percentage?: number | null;
+  cucumber_percentage?: number | null;
+  tomato_percentage?: number | null;
+  carrot_julienne_percentage?: number | null;
+  radish_julienne_percentage?: number | null;
+  pickled_beetroot_percentage?: number | null;
+  mixed_blanched_veg_percentage?: number | null;
+  roasted_veg_1_percentage?: number | null;
+  roasted_veg_2_percentage?: number | null;
+  roasted_veg_3_percentage?: number | null;
+  potato_salad_percentage?: number | null;
+  composed_salad_percentage?: number | null;
+  pasta_salad_percentage?: number | null;
+  carb_percentage?: number | null;
+
   // Key Interest Points
   key_interest_points?: string | null;
 
