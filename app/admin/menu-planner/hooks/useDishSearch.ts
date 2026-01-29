@@ -38,25 +38,18 @@ export function useDishSearch({ category, usedDishes }: UseDishSearchOptions) {
 
   const fetchDishes = async () => {
     try {
-      let query = supabase
+      // Fetch ALL active dishes - don't filter by category
+      // Users should be able to add any dish to any slot
+      const query = supabase
         .from('dishes')
         .select('*')
-        .eq('is_active', true);
-
-      // Filter by category if provided
-      if (category) {
-        // Special case: hot_dish_meat should include BOTH meat AND fish
-        if (category === 'hot_dish_meat') {
-          query = query.in('category', ['hot_dish_meat', 'hot_dish_fish']);
-        } else {
-          query = query.eq('category', category);
-        }
-      }
+        .eq('is_active', true)
+        .neq('category', 'component'); // Exclude components
 
       const { data, error } = await query.order('name');
 
       console.log('[useDishSearch] Fetched dishes:', data?.length, 'dishes');
-      console.log('[useDishSearch] Category filter:', category);
+      console.log('[useDishSearch] Category context (not filtered):', category);
       console.log('[useDishSearch] Error:', error);
       console.log('[useDishSearch] First 5 dishes:', data?.slice(0, 5).map(d => d.name));
 

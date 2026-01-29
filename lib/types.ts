@@ -1,5 +1,5 @@
 // Database types
-export type DishCategory = 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'component' | 'off_menu';
+export type DishCategory = 'soup' | 'hot_dish_meat' | 'hot_dish_fish' | 'hot_dish_veg' | 'component';
 export type DishSubcategory = 'topping' | 'carb' | 'warm_veggie' | 'salad' | 'condiment';
 export type PortionUnit = 'pieces' | 'grams' | 'kilograms' | 'milliliters' | 'liters' | 'trays';
 export type UserRole = 'admin' | 'kitchen' | 'manager';
@@ -77,7 +77,7 @@ export interface SaladComponentWithDish extends SaladComponent {
 
 export interface WarmVeggieComponent {
   id: string;
-  main_dish_id: string;
+  dish_id: string;
   component_dish_id: string;
   percentage: number;
   created_at: string;

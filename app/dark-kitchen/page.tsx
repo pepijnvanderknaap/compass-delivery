@@ -184,7 +184,7 @@ export default function DarkKitchenPage() {
             <span className="text-apple-subheadline text-slate-700">{profile.full_name}</span>
             <button
               onClick={handleSignOut}
-              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg transition-colors"
+              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-sm transition-colors"
             >
               Sign Out
             </button>
@@ -199,7 +199,7 @@ export default function DarkKitchenPage() {
               <Link
                 key={section.href}
                 href={section.href}
-                className="group relative overflow-hidden bg-white border border-blue-200 rounded-lg p-5 hover:border-blue-800 hover:shadow-lg transition-all duration-300"
+                className="group relative overflow-hidden bg-white border border-blue-200 rounded-sm p-5 hover:border-blue-800 hover:shadow-lg transition-all duration-300"
               >
                 <div className="text-blue-800 mb-3 group-hover:text-blue-900 group-hover:scale-110 transition-all duration-300">
                   {section.icon}
@@ -212,7 +212,7 @@ export default function DarkKitchenPage() {
             ) : (
               <div
                 key={section.title}
-                className="relative overflow-hidden bg-white border border-gray-100 rounded-lg p-5 opacity-50 cursor-not-allowed"
+                className="relative overflow-hidden bg-white border border-gray-100 rounded-sm p-5 opacity-50 cursor-not-allowed"
               >
                 <div className="text-gray-400 mb-3">
                   {section.icon}

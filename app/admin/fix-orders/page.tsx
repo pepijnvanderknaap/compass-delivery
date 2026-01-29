@@ -145,7 +145,7 @@ export default function FixOrdersPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-sm shadow p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Fix Existing Orders</h1>
           <p className="text-gray-600 mb-6">
             This tool will add missing order items to all existing orders with default portion values based on location.
@@ -154,20 +154,20 @@ export default function FixOrdersPage() {
           <button
             onClick={fixOrders}
             disabled={loading}
-            className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-teal-600 text-white rounded-sm hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Processing...' : 'Fix All Orders'}
           </button>
 
           <button
             onClick={() => router.push('/orders')}
-            className="ml-4 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            className="ml-4 px-6 py-3 bg-gray-200 text-gray-700 rounded-sm hover:bg-gray-300 transition-colors"
           >
             Back to Orders
           </button>
 
           {error && (
-            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-sm">
               <p className="text-red-900 font-medium">Error:</p>
               <p className="text-red-700">{error}</p>
             </div>
@@ -182,7 +182,7 @@ export default function FixOrdersPage() {
                 {results.results.map((result: any, index: number) => (
                   <div
                     key={index}
-                    className={`p-4 rounded-lg border ${
+                    className={`p-4 rounded-sm border ${
                       result.status === 'success'
                         ? 'bg-green-50 border-green-200'
                         : result.status === 'error'

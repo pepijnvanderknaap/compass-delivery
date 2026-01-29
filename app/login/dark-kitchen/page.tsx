@@ -57,7 +57,7 @@ export default function DarkKitchenLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900">
       <div className="max-w-md w-full mx-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-sm shadow-xl p-8">
           <div className="text-center mb-8">
             <Link href="/dashboard" className="inline-block mb-4 text-gray-600 hover:text-gray-900 text-sm">
               ← Back to Home
@@ -70,7 +70,7 @@ export default function DarkKitchenLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
                 <p className="text-sm">{error}</p>
               </div>
             )}
@@ -85,7 +85,7 @@ export default function DarkKitchenLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
                 placeholder="you@example.com"
                 disabled={loading}
               />
@@ -101,7 +101,7 @@ export default function DarkKitchenLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
                 placeholder="Enter your password"
                 disabled={loading}
               />
@@ -110,7 +110,7 @@ export default function DarkKitchenLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 px-4 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

@@ -65,7 +65,7 @@ export default function HoverNumberInput({
       onBlur={handleBlur}
       min={min}
       max={max}
-      className={`w-16 px-2 py-1.5 text-center text-apple-subheadline font-medium border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white text-slate-700 ${className}`}
+      className={`w-16 px-2 py-1.5 text-center text-apple-subheadline font-medium border border-slate-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white text-slate-700 ${className}`}
     />
   );
 }

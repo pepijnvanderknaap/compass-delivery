@@ -588,7 +588,7 @@ export default function OrdersPage() {
                 id="location-select"
                 value={selectedLocationId}
                 onChange={(e) => handleLocationChange(e.target.value)}
-                className="px-4 py-2 text-apple-subheadline font-medium border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue bg-white text-slate-700"
+                className="px-4 py-2 text-apple-subheadline font-medium border border-slate-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue bg-white text-slate-700"
               >
                 {locations.map((location) => (
                   <option key={location.id} value={location.id}>
@@ -613,7 +613,7 @@ export default function OrdersPage() {
             <p className="text-apple-body text-slate-600 mb-4">No orders found</p>
             <button
               onClick={() => router.push('/orders/new')}
-              className="px-6 py-3 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg transition-colors"
+              className="px-6 py-3 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-sm transition-colors"
             >
               Create New Order
             </button>
@@ -694,7 +694,7 @@ export default function OrdersPage() {
                             <button
                               onClick={() => handleDone(order.id)}
                               disabled={saving}
-                              className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors disabled:opacity-50"
+                              className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors disabled:opacity-50"
                             >
                               Done
                             </button>
@@ -704,14 +704,14 @@ export default function OrdersPage() {
                             {order.order_items.length > 0 && (
                               <button
                                 onClick={() => handleClearWeek(order.id, formatWeekRange(order.week_start_date))}
-                                className="px-3 py-1.5 text-apple-subheadline font-medium text-red-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors"
+                                className="px-3 py-1.5 text-apple-subheadline font-medium text-red-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
                               >
                                 Clear
                               </button>
                             )}
                             <button
                               onClick={() => handleEdit(order.id, order)}
-                              className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors"
+                              className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
                             >
                               Edit
                             </button>
@@ -724,7 +724,7 @@ export default function OrdersPage() {
                   {/* Container for teal header and data table with tiny gap */}
                   <div className="space-y-2">
                     {/* Teal header box - separate and detached */}
-                    <div className={`border rounded-lg overflow-hidden ${isCurrentWeek ? "border-[#0d9488] border-2 bg-[#0d9488]" : "border-slate-300 bg-slate-200"}`}>
+                    <div className={`border rounded-sm overflow-hidden ${isCurrentWeek ? "border-[#0d9488] border-2 bg-[#0d9488]" : "border-slate-300 bg-slate-200"}`}>
                       <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                         <colgroup>
                           <col className="w-48" />
@@ -759,7 +759,7 @@ export default function OrdersPage() {
                     </div>
 
                   {/* Data table box - separate with tiny gap */}
-                  <div className="overflow-hidden bg-slate-100 pb-4 border border-slate-300 rounded-xl">
+                  <div className="overflow-hidden bg-slate-100 pb-4 border border-slate-300 rounded-sm">
                     <table className="w-full bg-slate-100 border-separate" style={{borderSpacing: '0 0'}}>
                       <colgroup>
                         <col className="w-48" />

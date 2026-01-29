@@ -66,13 +66,13 @@ export default function AllergenMatrixPage() {
         <UniversalHeader title="Allergen Matrix" backPath="/dark-kitchen" />
 
         <div className="max-w-7xl mx-auto px-8 lg:px-12 py-6">
-          <div className="bg-white border border-slate-300 rounded-lg p-6 mb-6">
+          <div className="bg-white border border-slate-300 rounded-sm p-6 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex gap-4">
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className="px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                  className="px-4 py-3 border border-apple-gray4 rounded-sm text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
                 >
                   <option value="all">All Categories</option>
                   <option value="soup">Soup</option>
@@ -84,7 +84,7 @@ export default function AllergenMatrixPage() {
 
               <button
                 onClick={handlePrint}
-                className="px-6 py-3 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg transition-colors"
+                className="px-6 py-3 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-sm transition-colors"
               >
                 Print Matrix
               </button>
@@ -108,11 +108,11 @@ export default function AllergenMatrixPage() {
         {loading ? (
           <div className="text-center py-12 text-apple-gray2 no-print">Loading dishes...</div>
         ) : filteredDishes.length === 0 ? (
-          <div className="bg-white border border-slate-300 rounded-lg p-12 text-center no-print">
+          <div className="bg-white border border-slate-300 rounded-sm p-12 text-center no-print">
             <p className="text-apple-subheadline text-apple-gray2">No dishes found.</p>
           </div>
         ) : (
-          <div className="bg-white border border-slate-300 rounded-lg overflow-hidden print:border-2">
+          <div className="bg-white border border-slate-300 rounded-sm overflow-hidden print:border-2">
             <div className="overflow-x-auto">
               <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead>

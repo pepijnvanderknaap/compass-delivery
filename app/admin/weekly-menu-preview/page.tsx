@@ -144,7 +144,7 @@ export default function WeeklyMenuPreviewPage() {
           <div className="flex items-center justify-center gap-8 mb-6">
             <button
               onClick={previousWeek}
-              className="p-2 text-slate-700 hover:text-slate-900 rounded-lg transition-colors"
+              className="p-2 text-slate-700 hover:text-slate-900 rounded-sm transition-colors"
               title="Previous Week"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,7 +161,7 @@ export default function WeeklyMenuPreviewPage() {
 
             <button
               onClick={nextWeek}
-              className="p-2 text-slate-700 hover:text-slate-900 rounded-lg transition-colors"
+              className="p-2 text-slate-700 hover:text-slate-900 rounded-sm transition-colors"
               title="Next Week"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,7 +173,7 @@ export default function WeeklyMenuPreviewPage() {
           <div className="flex justify-center mb-6">
             <button
               onClick={handlePrint}
-              className="px-6 py-2 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg transition-colors"
+              className="px-6 py-2 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-sm transition-colors"
             >
               Print Menu
             </button>
@@ -181,7 +181,7 @@ export default function WeeklyMenuPreviewPage() {
 
           {/* Update Photo Button */}
           <div className="flex justify-center mb-6">
-            <button className="px-6 py-3 bg-slate-200 hover:bg-slate-300 rounded-xl text-apple-subheadline font-medium text-slate-700 transition-colors">
+            <button className="px-6 py-3 bg-slate-200 hover:bg-slate-300 rounded-sm text-apple-subheadline font-medium text-slate-700 transition-colors">
               Adjust Photo
             </button>
           </div>
@@ -189,31 +189,31 @@ export default function WeeklyMenuPreviewPage() {
           {/* Color Palette Reference */}
           <div className="flex justify-center gap-3 mb-6">
             <div className="text-center">
-              <div className="w-16 h-16 bg-slate-700 rounded-lg mb-2"></div>
+              <div className="w-16 h-16 bg-slate-700 rounded-sm mb-2"></div>
               <p className="text-apple-caption text-slate-500">Logo</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-800 rounded-lg mb-2"></div>
+              <div className="w-16 h-16 bg-blue-800 rounded-sm mb-2"></div>
               <p className="text-apple-caption text-slate-500">DK</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 rounded-lg mb-2" style={{backgroundColor: '#0d9488'}}></div>
+              <div className="w-16 h-16 rounded-sm mb-2" style={{backgroundColor: '#0d9488'}}></div>
               <p className="text-apple-caption text-slate-500">LM</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-lg mb-2"></div>
+              <div className="w-16 h-16 bg-purple-600 rounded-sm mb-2"></div>
               <p className="text-apple-caption text-slate-500">RM</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 rounded-lg mb-2" style={{backgroundColor: '#E5944A'}}></div>
+              <div className="w-16 h-16 rounded-sm mb-2" style={{backgroundColor: '#E5944A'}}></div>
               <p className="text-apple-caption text-slate-500">Universal</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-slate-200 rounded-lg mb-2 border border-slate-300"></div>
+              <div className="w-16 h-16 bg-slate-200 rounded-sm mb-2 border border-slate-300"></div>
               <p className="text-apple-caption text-slate-500">Light BG</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 rounded-lg mb-2" style={{backgroundColor: '#0071E3'}}></div>
+              <div className="w-16 h-16 rounded-sm mb-2" style={{backgroundColor: '#0071E3'}}></div>
               <p className="text-apple-caption text-slate-500">Buttons</p>
             </div>
           </div>
@@ -234,11 +234,11 @@ export default function WeeklyMenuPreviewPage() {
         {loading ? (
           <div className="text-center py-12 text-slate-500 no-print">Loading menu...</div>
         ) : !weeklyMenu ? (
-          <div className="bg-white border border-slate-300 rounded-lg p-12 text-center no-print">
+          <div className="bg-white border border-slate-300 rounded-sm p-12 text-center no-print">
             <p className="text-apple-subheadline text-slate-500">No menu found for this week.</p>
           </div>
         ) : (
-          <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-slate-300 rounded-sm overflow-hidden shadow-sm">
             {/* Table Header */}
             <div className="grid grid-cols-6 border-b border-[#C8965D]" style={{backgroundColor: '#E5944A'}}>
               <div className="px-4 py-3 text-apple-footnote font-semibold text-white uppercase tracking-wide">

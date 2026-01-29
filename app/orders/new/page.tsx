@@ -282,7 +282,7 @@ export default function NewOrderPage() {
             </div>
             <button
               onClick={() => router.push('/orders')}
-              className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors"
+              className="px-6 py-2 text-sm font-medium bg-teal-600 text-white rounded-sm hover:bg-teal-700 transition-colors"
             >
               Cancel
             </button>
@@ -292,7 +292,7 @@ export default function NewOrderPage() {
 
       <main className="max-w-6xl mx-auto px-8 py-10">
         {message && (
-          <div className={`mb-6 px-4 py-3 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'} text-sm font-medium`}>
+          <div className={`mb-6 px-4 py-3 rounded-sm ${message.type === 'success' ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'} text-sm font-medium`}>
             {message.text}
           </div>
         )}
@@ -306,11 +306,11 @@ export default function NewOrderPage() {
               type="date"
               value={format(selectedWeek, 'yyyy-MM-dd')}
               onChange={(e) => setSelectedWeek(new Date(e.target.value))}
-              className="px-4 py-2.5 border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+              className="px-4 py-2.5 border border-black/10 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
             />
           </div>
 
-          <div className="bg-white border border-black/10 rounded-lg overflow-hidden">
+          <div className="bg-white border border-black/10 rounded-sm overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="bg-black/[0.02]">
@@ -340,7 +340,7 @@ export default function NewOrderPage() {
                           min="0"
                           value={orderData[key][dayIndex] || ''}
                           onChange={(e) => handlePortionChange(key, dayIndex, e.target.value)}
-                          className="w-full px-3 py-2 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                          className="w-full px-3 py-2 text-center text-sm border border-black/10 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                           placeholder="0"
                         />
                       </td>
@@ -356,12 +356,12 @@ export default function NewOrderPage() {
                           value={item.label}
                           onChange={(e) => updateOffMenuLabel(item.id, e.target.value)}
                           placeholder="Bespoke Item..."
-                          className="flex-1 px-3 py-1.5 text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                          className="flex-1 px-3 py-1.5 text-sm border border-black/10 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                         />
                         <select
                           value={item.unit}
                           onChange={(e) => updateOffMenuUnit(item.id, e.target.value)}
-                          className="px-3 py-1.5 text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                          className="px-3 py-1.5 text-sm border border-black/10 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                         >
                           <option value="portions">Portions</option>
                           <option value="kilograms">Kilograms</option>
@@ -384,7 +384,7 @@ export default function NewOrderPage() {
                           min="0"
                           value={item.portions[dayIndex] || ''}
                           onChange={(e) => updateOffMenuPortion(item.id, dayIndex, e.target.value)}
-                          className="w-full px-3 py-2 text-center text-sm border border-black/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                          className="w-full px-3 py-2 text-center text-sm border border-black/10 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                           placeholder="0"
                         />
                       </td>
@@ -410,7 +410,7 @@ export default function NewOrderPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-8 py-3 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              className="px-8 py-3 bg-teal-600 text-white text-sm font-medium rounded-sm hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               {submitting ? 'Submitting...' : 'Submit Order'}
             </button>

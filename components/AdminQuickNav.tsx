@@ -74,12 +74,12 @@ export default function AdminQuickNav() {
   return (
     <div className="w-full bg-white border-b border-gray-200 py-3 z-50">
       <div className="max-w-7xl mx-auto px-8 flex justify-center">
-        <div className="inline-flex gap-3 bg-gray-50 rounded-xl p-2">
+        <div className="inline-flex gap-3 bg-gray-50 rounded-sm p-2">
           {sections.map((section) => (
             <button
               key={section.href}
               onClick={() => router.push(section.href)}
-              className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+              className={`px-6 py-2.5 text-sm font-semibold rounded-sm transition-all ${
                 isActive(section.href)
                   ? section.activeColor
                   : section.inactiveColor

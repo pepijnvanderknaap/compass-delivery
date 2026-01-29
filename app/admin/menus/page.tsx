@@ -9,6 +9,7 @@ import DishCommandPalette from '../menu-planner/components/DishCommandPalette';
 import DishDetailModal from '../menu-planner/components/DishDetailModal';
 import MainDishForm from '../dishes/MainDishForm';
 import UniversalHeader from '@/components/UniversalHeader';
+import AdminQuickNav from '@/components/AdminQuickNav';
 
 export default function AdminMenusPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -17,6 +18,7 @@ export default function AdminMenusPage() {
   const [menuData, setMenuData] = useState<Record<string, Record<string, string | null>>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [paletteState, setPaletteState] = useState<{
     isOpen: boolean;
     category: string;
@@ -43,9 +45,8 @@ export default function AdminMenusPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Generate 4 weeks starting from current Monday
-  const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const weeks = Array.from({ length: 4 }, (_, i) => addWeeks(startDate, i));
+  // Generate 4 weeks starting from selected Monday
+  const weeks = Array.from({ length: 4 }, (_, i) => addWeeks(selectedWeekStart, i));
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   // Determine which week is current (this week)
@@ -86,6 +87,13 @@ export default function AdminMenusPage() {
     initializePage();
   }, [supabase, router]);
 
+  // Reload menu data when selected week changes
+  useEffect(() => {
+    if (profile) {
+      loadMenuData();
+    }
+  }, [selectedWeekStart]);
+
   const fetchDishes = async () => {
     const { data, error } = await supabase
       .from('dishes')
@@ -122,11 +130,27 @@ export default function AdminMenusPage() {
           continue;
         }
 
-        // If this is week 4 and it doesn't exist, try to copy from week 1 (4 weeks ago)
-        if (!weeklyMenu && weekIndex === 3) {
-          await copyPreviousWeek();
+        // Auto-copy from 4 weeks ago if this week is empty
+        // Check if menu doesn't exist OR exists but has no items
+        let shouldCopy = false;
 
-          // Try to fetch again after copying
+        if (!weeklyMenu) {
+          shouldCopy = true;
+        } else {
+          // Check if menu exists but has no items
+          const { data: existingItems } = await supabase
+            .from('menu_items')
+            .select('id')
+            .eq('menu_id', weeklyMenu.id)
+            .limit(1);
+
+          shouldCopy = !existingItems || existingItems.length === 0;
+        }
+
+        if (shouldCopy) {
+          await copyPreviousWeek(weekIndex, weekStart);
+
+          // Refetch the menu after copying
           const { data: newMenu } = await supabase
             .from('weekly_menus')
             .select('*')
@@ -176,43 +200,53 @@ export default function AdminMenusPage() {
     }
   };
 
-  const copyPreviousWeek = async () => {
+  const copyPreviousWeek = async (weekIndex: number, newWeekStart: string) => {
     try {
-      // Get the date 4 weeks ago from the new week we're creating
-      const fourWeeksAgo = format(addWeeks(weeks[0], -4), 'yyyy-MM-dd');
+      // Calculate the date 4 weeks ago from this specific week
+      const fourWeeksAgo = format(addWeeks(weeks[weekIndex], -4), 'yyyy-MM-dd');
 
       // Get the menu from 4 weeks ago
       const { data: oldMenu } = await supabase
         .from('weekly_menus')
         .select('*, menu_items(*)')
         .eq('week_start_date', fourWeeksAgo)
-        .single();
+        .maybeSingle();
 
       if (!oldMenu || !oldMenu.menu_items || oldMenu.menu_items.length === 0) {
         return; // Nothing to copy
       }
 
-      // Create new menu for week 4
-      const newWeekStart = format(weeks[3], 'yyyy-MM-dd');
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const { data: newMenu, error: createError } = await supabase
+      // Check if target menu already exists
+      let { data: targetMenu } = await supabase
         .from('weekly_menus')
-        .insert({
-          week_start_date: newWeekStart,
-          created_by: user?.id
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('week_start_date', newWeekStart)
+        .maybeSingle();
 
-      if (createError || !newMenu) {
-        console.error('Error creating new menu:', createError);
-        return;
+      // Create new menu if it doesn't exist
+      if (!targetMenu) {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        const { data: newMenu, error: createError } = await supabase
+          .from('weekly_menus')
+          .insert({
+            week_start_date: newWeekStart,
+            created_by: user?.id
+          })
+          .select()
+          .single();
+
+        if (createError || !newMenu) {
+          console.error('Error creating new menu:', createError);
+          return;
+        }
+
+        targetMenu = newMenu;
       }
 
       // Copy menu items
       const itemsToCopy = oldMenu.menu_items.map((item: any) => ({
-        menu_id: newMenu.id,
+        menu_id: targetMenu!.id,
         dish_id: item.dish_id,
         day_of_week: item.day_of_week,
         meal_type: item.meal_type
@@ -224,6 +258,8 @@ export default function AdminMenusPage() {
 
       if (copyError) {
         console.error('Error copying menu items:', copyError);
+      } else {
+        console.log(`✓ Auto-copied ${itemsToCopy.length} items from ${fourWeeksAgo} to ${newWeekStart}`);
       }
     } catch (err) {
       console.error('Error copying previous week:', err);
@@ -598,14 +634,67 @@ export default function AdminMenusPage() {
         }
       `}</style>
 
+      <AdminQuickNav />
+
       <UniversalHeader
         title="Menu Planner"
         backPath="/dark-kitchen"
       />
 
       <main className="max-w-7xl mx-auto py-24">
+        {/* Week Navigation */}
+        <div className="px-8 lg:px-12 mb-8">
+          <div className="bg-white border border-[#E8E8ED] rounded-sm shadow-sm p-4">
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => setSelectedWeekStart(addWeeks(selectedWeekStart, -1))}
+                className="px-4 py-2 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-sm hover:bg-[#F5F5F7] transition-colors"
+                title="Previous week"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              <input
+                id="week-picker"
+                type="date"
+                value={format(selectedWeekStart, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  const selected = new Date(e.target.value);
+                  const monday = startOfWeek(selected, { weekStartsOn: 1 });
+                  setSelectedWeekStart(monday);
+                }}
+                className="px-4 py-2 border border-[#D2D2D7] rounded-sm text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
+              />
+
+              <button
+                onClick={() => setSelectedWeekStart(addWeeks(selectedWeekStart, 1))}
+                className="px-4 py-2 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-sm hover:bg-[#F5F5F7] transition-colors"
+                title="Next week"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Back to Current Week Button */}
+            {format(selectedWeekStart, 'yyyy-MM-dd') !== format(currentWeekStart, 'yyyy-MM-dd') && (
+              <div className="mt-3 pt-3 border-t border-[#E8E8ED]">
+                <button
+                  onClick={() => setSelectedWeekStart(currentWeekStart)}
+                  className="w-full px-4 py-2 text-[13px] font-medium text-[#0071E3] hover:bg-[#F5F5F7] rounded-sm transition-colors"
+                >
+                  Back to Current Week
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {message && (
-          <div className={`mb-6 mx-8 lg:mx-12 px-4 py-3 rounded-xl text-apple-subheadline ${message.type === 'success' ? 'bg-apple-green/10 text-apple-green border border-apple-green/20' : 'bg-apple-red/10 text-apple-red border border-apple-red/20'}`}>
+          <div className={`mb-6 mx-8 lg:mx-12 px-4 py-3 rounded-sm text-apple-subheadline ${message.type === 'success' ? 'bg-apple-green/10 text-apple-green border border-apple-green/20' : 'bg-apple-red/10 text-apple-red border border-apple-red/20'}`}>
             {message.text}
           </div>
         )}
@@ -657,7 +746,7 @@ export default function AdminMenusPage() {
                     </span>
                     <button
                       onClick={() => window.print()}
-                      className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors ml-auto no-print"
+                      className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors ml-auto no-print"
                     >
                       Print
                     </button>
@@ -665,7 +754,7 @@ export default function AdminMenusPage() {
                 </div>
 
                 {/* Unified table with visual separation */}
-                <div className="border border-slate-300 rounded-xl overflow-hidden shadow-sm">
+                <div className="border border-slate-300 rounded-sm overflow-hidden shadow-sm">
                   <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                     <colgroup>
                       <col className="w-40" />
@@ -714,10 +803,10 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'soup')}
-                                className="w-full h-16 border border-slate-300/50 rounded-lg p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 border border-slate-300/50 rounded-sm p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
+                                  <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
                                     <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
@@ -751,10 +840,10 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_meat')}
-                                className="w-full h-16 border border-slate-300/50 rounded-lg p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 border border-slate-300/50 rounded-sm p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
+                                  <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
                                     <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
@@ -788,10 +877,10 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_veg')}
-                                className="w-full h-16 border border-slate-300/50 rounded-lg p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 border border-slate-300/50 rounded-sm p-2 hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
-                                  <div className="relative group w-full h-full rounded-md p-2 flex items-center justify-center">
+                                  <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
                                     <div className="text-apple-body text-slate-800 text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {

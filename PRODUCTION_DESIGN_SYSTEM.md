@@ -1,5 +1,9 @@
 # Production Sheet Design System
 
+**Version**: 1.0 LOCKED
+**Last Updated**: January 28, 2026
+**Status**: FINALIZED - Do not modify without explicit approval
+
 This document captures the finalized design patterns from the production sheets to be applied across all data tables in the application.
 
 ## Color Palette
@@ -13,14 +17,16 @@ This document captures the finalized design patterns from the production sheets 
 - **Background**: `bg-slate-100`
 - **Text**: `text-slate-700`
 - **Font**: `text-sm font-bold uppercase tracking-wide`
-- **Alignment**: `text-center`
+- **Alignment**: `text-left` (left-aligned)
+- **Borders**: `border-r border-gray-300` (only right vertical border, NO horizontal borders)
+- **Width**: `10%` (narrower than item column)
 
-### Subcategories (Right-aligned in Category Column)
+### Subcategories (Left-aligned in Category Column)
 - **Background**: `bg-white`
 - **Text**: `text-blue-600`
 - **Font**: `text-[11px] font-semibold uppercase tracking-wide`
-- **Alignment**: `text-right`
-- **No right border** (removed `border-r` for seamless flow)
+- **Alignment**: `text-left` (left-aligned, NOT right-aligned)
+- **Borders**: `border-r border-gray-300` (only right vertical border, plus bottom border when at section end)
 
 ### Item Column (Second Column)
 - **Main Dishes**: `font-bold text-gray-900`
@@ -39,7 +45,7 @@ This document captures the finalized design patterns from the production sheets 
 ### Total Column (Last Column)
 - **Header**: `bg-amber-900/30 text-amber-50`
 - **Values**: `font-bold text-red-700`
-- **Same alternating pattern as data columns**
+- **Background**: `bg-white` (consistent white, NO alternating rows)
 - **Red text color distinguishes totals while maintaining readability**
 
 ## Typography Scale
@@ -84,12 +90,12 @@ Total Values: text-sm font-bold
 ### Column Groups (for 3 locations + total)
 ```tsx
 <colgroup>
-  <col style={{width: '12%'}} />  {/* Category */}
-  <col style={{width: '28%'}} />  {/* Item */}
+  <col style={{width: '10%'}} />  {/* Category */}
+  <col style={{width: '22%'}} />  {/* Item - Main Production */}
   {locations.map(location => (
-    <col key={location.id} style={{width: `${60 / (locations.length + 1)}%`}} />
+    <col key={location.id} style={{width: `${68 / (locations.length + 1)}%`}} />
   ))}
-  <col style={{width: `${60 / (locations.length + 1)}%`}} />  {/* Total */}
+  <col style={{width: `${68 / (locations.length + 1)}%`}} />  {/* Total */}
 </colgroup>
 ```
 
@@ -117,17 +123,19 @@ Total Values: text-sm font-bold
 
 ### Main Category Row (e.g., "Soup", "Hot Dishes")
 ```tsx
-<td rowSpan={soupRows.length} className={`px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-center border-r ${borderClass} bg-slate-100 align-top`}>
+<td rowSpan={soupRows.length} className={`px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-left border-r border-gray-300 bg-slate-100 align-top`}>
   Soup
 </td>
 ```
+**Important**: No `borderClass` on category cells - only `border-r border-gray-300` (no horizontal borders inside the category column)
 
 ### Subcategory Row (e.g., "Toppings", "Carbs")
 ```tsx
-<td rowSpan={filtered.length} className={`px-3 py-2 text-[11px] font-semibold text-blue-600 uppercase tracking-wide text-right ${borderClass} bg-white align-top`}>
+<td rowSpan={filtered.length} className={`px-3 py-2 text-[11px] font-semibold text-blue-600 uppercase tracking-wide text-left border-r border-gray-300 ${categoryBorder} bg-white align-top`}>
   Toppings
 </td>
 ```
+**Important**: Left-aligned with `text-left`, and `categoryBorder` adds thick bottom border at section end
 
 ### Item Cell (Main Dishes - Bold)
 ```tsx
@@ -152,10 +160,11 @@ Total Values: text-sm font-bold
 
 ### Total Cell
 ```tsx
-<td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 ${borderClass} ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+<td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 ${borderClass} bg-white`}>
   {total}
 </td>
 ```
+**Important**: Total column always has `bg-white` - NO alternating background pattern
 
 ## Alternating Row Logic
 
@@ -231,7 +240,7 @@ Header cells: px-3 py-4 (or px-5 py-4 for Item header)
     <tr key={idx} className={borderClass}>
       {/* Category cell with rowspan - only on first row */}
       {idx === 0 && (
-        <td rowSpan={soupRows.length} className={`px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-center border-r ${borderClass} bg-slate-100 align-top`}>
+        <td rowSpan={soupRows.length} className={`px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-left border-r border-gray-300 bg-slate-100 align-top`}>
           Soup
         </td>
       )}
@@ -249,7 +258,7 @@ Header cells: px-3 py-4 (or px-5 py-4 for Item header)
       ))}
 
       {/* Total cell */}
-      <td className={`px-3 py-2.5 text-sm text-center font-bold text-gray-900 ${borderClass} ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+      <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 ${borderClass} bg-white`}>
         {calculateTotal()}
       </td>
     </tr>
@@ -284,32 +293,38 @@ Header cells: px-3 py-4 (or px-5 py-4 for Item header)
 ## Tabs and Action Buttons Layout
 
 ### Structure
-The tabs and action buttons are placed in a single flex row with bottom alignment:
+The tabs and action buttons are placed in a single flex row. Tabs float cleanly above the content with color-coded active states:
 
 ```tsx
-<div className="mb-6 flex items-end justify-between border-b border-gray-200">
-  <div className="flex gap-2">
+<div className="flex items-center justify-between mb-4">
+  <div className="flex gap-6">
     {/* Tab buttons */}
   </div>
-  <div className="flex gap-3 pb-3">
+  <div className="flex gap-3">
     {/* Action buttons */}
   </div>
 </div>
 ```
 
-### Tab Styling
+### Tab Styling (Floating Design)
 ```tsx
 <button
   onClick={() => setActiveTab('main')}
-  className={`px-6 py-3 text-sm font-semibold transition-all ${
+  className={`text-sm font-semibold transition-all ${
     activeTab === 'main'
-      ? 'text-[#4A7DB5] border-b-2 border-[#4A7DB5]'
-      : 'text-gray-500 hover:text-gray-700'
+      ? 'text-[#4A7DB5]'
+      : 'text-gray-400 hover:text-gray-600'
   }`}
 >
   Main Production
 </button>
 ```
+
+**Tab Colors**:
+- Main Production: `text-[#4A7DB5]` (blue)
+- Main MEP: `text-[#D97706]` (orange)
+- Salad Bar: `text-[#0F766E]` (teal)
+- Inactive: `text-gray-400 hover:text-gray-600`
 
 ### Action Button Styling
 ```tsx
@@ -329,10 +344,12 @@ The tabs and action buttons are placed in a single flex row with bottom alignmen
 ```
 
 **Key Points**:
-- Tabs use `py-3` padding
-- Action buttons use `py-2` with `pb-3` on container to align bottom edges with tab text
-- `items-end` on flex container ensures bottom alignment
+- Tabs are text-only with color changes (no borders or backgrounds)
+- `gap-6` between tab buttons for clear separation
+- Action buttons use `py-2` with standard padding
+- `items-center` on flex container for vertical alignment
 - `justify-between` pushes tabs left and buttons right
+- Top spacing: `mt-24` from header to date heading (96px)
 
 ---
 
@@ -351,3 +368,208 @@ When applying this design to other data tables:
 9. Test responsive behavior with overflow-x-auto
 
 This design system ensures consistency across all production and data sheets in the application.
+
+---
+
+## Locked Design Decisions (Final)
+
+These settings are finalized and should not be changed without careful consideration:
+
+### Layout
+- **Page top margin**: `mt-24` (96px between header and content)
+- **Tab spacing**: `gap-6` between floating tab labels
+- **Content margin**: `mb-4` between tabs and table
+- **MEP tab layout**: Heading and tabs wrapped in `max-w-3xl mx-auto` container to align with centered table
+- **Action buttons**: Visible on ALL tabs (Main Production, Main MEP, Salad Bar)
+
+### Column Structure
+- **Category column**: 10% width, left-aligned labels, only right vertical border (NO horizontal borders inside)
+- **Item column**: 22% width (Main Production) - reduced to give more space to data columns
+- **Data columns**: Remaining 68% split between location columns and total
+- **Total column**: White background (no alternating), red text (`text-red-700`)
+
+### Category/Subcategory Styling
+- **Main categories** (Soup, Hot Dishes): Left-aligned, gray background, no horizontal borders
+- **Subcategories** (Toppings, Carbs): Left-aligned, blue text, thick bottom border at section end only
+
+### Tab Design
+- **Style**: Floating text labels (no borders, no background shapes)
+- **Active colors**: Blue (#4A7DB5), Orange (#D97706), Teal (#0F766E)
+- **Inactive**: Light gray (#9CA3AF) with hover state
+
+### Border Pattern
+- **Standard borders**: `border-gray-300` (1px)
+- **Section separators**: `border-b-[2px] border-b-gray-400` (2px thick)
+- **Category column**: Only right vertical border, extends through all rows in section
+
+### Color Coding
+- **Headers**: Blue (`bg-[#4A7DB5]`)
+- **Category cells**: Slate gray (`bg-slate-100`)
+- **Subcategory text**: Blue (`text-blue-600`)
+- **Total values**: Red (`text-red-700`)
+- **Alternating rows**: Gray-200 / White (Item column), Slate-200 / White (Data columns)
+
+---
+
+## Implementation Lock (Critical)
+
+### Page Structure
+```tsx
+<main className="max-w-7xl mx-auto px-8 lg:px-12 py-8">
+  <div className={activeTab === 'mep' ? 'max-w-3xl mx-auto' : ''}>
+    {/* Date Heading */}
+    <div className="mt-24 mb-6">
+      <h2 className="text-2xl font-extralight text-gray-800 tracking-wide">
+        Production for {format(selectedDate!, 'EEEE, MMMM d, yyyy')}
+      </h2>
+    </div>
+
+    {/* Tabs and Actions */}
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex gap-6">
+        {/* Tab buttons */}
+      </div>
+      <div className="flex gap-3">
+        {/* Action buttons - visible on ALL tabs */}
+        <button className="px-5 py-2 text-sm bg-slate-200 text-[#1D1D1F] hover:bg-slate-300 transition-colors rounded-lg font-semibold">
+          Change Date
+        </button>
+        <button className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-lg font-semibold">
+          Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {/* Table content for each tab */}
+</main>
+```
+
+### Critical Rules
+1. **Never remove the conditional wrapper** `className={activeTab === 'mep' ? 'max-w-3xl mx-auto' : ''}` - this ensures heading/tabs align with MEP table
+2. **Action buttons must appear on all tabs** - do not conditionally hide them
+3. **Category column borders**: ONLY `border-r border-gray-300` - NO horizontal borders inside category cells
+4. **Total column background**: ALWAYS `bg-white` - never alternating
+5. **Tab colors are fixed**: Blue (#4A7DB5), Orange (#D97706), Teal (#0F766E)
+6. **Column widths Main Production**: 10% category, 22% item, 68% data columns (split evenly)
+7. **Top margin**: `mt-24` (96px) - tested and finalized
+8. **Subcategory alignment**: `text-left` (NOT right-aligned)
+
+### Table Widths
+- **Main Production & Salad Bar**: Full width with overflow-x-auto
+- **Main MEP**: `max-w-3xl mx-auto` centered with action buttons
+
+### DO NOT CHANGE
+- Border patterns (1px standard, 2px for section separators)
+- Alternating row logic and counter
+- Color scheme for headers, categories, subcategories
+- Font sizes and weights
+- Padding and spacing values
+- Tab label text and colors
+- Column width ratios (10% category, 22% item, 68% data for Main Production)
+
+---
+
+## Print Layout System
+
+All three production sheets are optimized to print on exactly ONE A4 page with appropriate orientation and maximized content size for readability.
+
+### Print Settings by Tab
+
+#### Main Production
+- **Page Size**: A4 Landscape
+- **Margins**: 8mm all sides
+- **Font Size**: 8px body text, 7px headers
+- **Padding**: Reduced to 2-3px
+- **Target**: Fit wide table with multiple location columns
+
+#### Main MEP
+- **Page Size**: A4 Portrait
+- **Margins**: 10mm all sides
+- **Font Size**: 9px body text, 8px headers
+- **Padding**: Reduced to 3-4px
+- **Target**: Fit narrow table with better vertical readability
+
+#### Salad Bar
+- **Page Size**: A4 Landscape
+- **Margins**: 8mm all sides
+- **Font Size**: 8px body text, 7px headers
+- **Padding**: Reduced to 2-3px
+- **Checkbox Size**: 12px × 12px
+- **Target**: Fit wide table with checkboxes and totals
+
+### Print CSS Implementation
+
+```css
+@media print {
+  /* Hide navigation and buttons */
+  nav, button, .no-print {
+    display: none !important;
+  }
+
+  /* Apply page orientation per tab */
+  .print-main {
+    page: main-production;
+  }
+
+  @page main-production {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  .print-mep {
+    page: mep;
+  }
+
+  @page mep {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  .print-salad_bar {
+    page: salad-bar;
+  }
+
+  @page salad-bar {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  /* Prevent page breaks */
+  table, tr, td, th {
+    page-break-inside: avoid !important;
+  }
+
+  /* Scale content to fit */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  h2 {
+    font-size: 14px !important;
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
+  }
+}
+```
+
+### Critical Print Requirements
+1. **Single page only** - Content MUST fit on one A4 page, never overflow to second page
+2. **Orientation locked** - Main Production and Salad Bar use landscape, MEP uses portrait
+3. **Maximum readability** - Font sizes optimized for each orientation to balance legibility and space
+4. **No UI elements** - Navigation, buttons, and decorative elements hidden in print
+5. **Page class required** - Main element must have `print-${activeTab}` class for orientation rules to apply
+
+### Print Testing Checklist
+- [ ] All three tabs print on exactly one page
+- [ ] Correct orientation applied (landscape vs portrait)
+- [ ] No content cut off or overflowing
+- [ ] Font sizes are readable when printed
+- [ ] Checkboxes visible and appropriately sized (Salad Bar)
+- [ ] Totals row visible at bottom (Salad Bar)
+- [ ] No navigation or buttons visible in print
+- [ ] Page margins appropriate (8-10mm)
+
+---

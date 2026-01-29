@@ -1,5 +1,23 @@
 'use client';
 
+/**
+ * PRODUCTION SHEETS PAGE - DESIGN LOCKED v1.0
+ *
+ * ⚠️ CRITICAL: This page follows the finalized Production Design System
+ * Documentation: /compass-delivery/PRODUCTION_DESIGN_SYSTEM.md
+ *
+ * DO NOT MODIFY without reviewing the design system document:
+ * - Layout structure (conditional MEP wrapper)
+ * - Tab styling and colors
+ * - Category column borders (NO horizontal borders)
+ * - Total column (white background, no alternating)
+ * - Column widths (10% category, 30% item)
+ * - Spacing and margins (mt-24, mb-4, gap-6)
+ * - Action buttons (visible on ALL tabs)
+ *
+ * Last Finalized: January 28, 2026
+ */
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -914,6 +932,374 @@ export default function ProductionSheetsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <style jsx global>{`
+        @media print {
+          /* Force everything to start on first page */
+          * {
+            box-sizing: border-box;
+          }
+
+          /* Hide navigation and UI elements */
+          nav,
+          button,
+          .no-print,
+          header,
+          [class*="QuickNav"],
+          [class*="UniversalHeader"] {
+            display: none !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: absolute !important;
+            visibility: hidden !important;
+          }
+
+          /* Reset page margins and background */
+          html {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+          }
+
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            height: auto !important;
+          }
+
+          /* Remove wrapper min-height and force position */
+          .min-h-screen {
+            min-height: 0 !important;
+            height: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+          }
+
+          /* Reset root container */
+          #__next {
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          /* Force page to start immediately */
+          @page {
+            margin: 8mm;
+          }
+
+          /* Page setup for Main Production (Landscape) */
+          @page {
+            size: A4 landscape;
+            margin: 8mm;
+          }
+
+          .print-main {
+            page: main-production;
+          }
+
+          @page main-production {
+            size: A4 landscape;
+            margin: 8mm;
+          }
+
+          /* Page setup for Main MEP (Portrait) */
+          .print-mep {
+            page: mep;
+          }
+
+          @page mep {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+
+          /* Page setup for Salad Bar (Landscape) */
+          .print-salad_bar {
+            page: salad-bar;
+          }
+
+          @page salad-bar {
+            size: A4 landscape;
+            margin: 8mm;
+          }
+
+          /* Prevent page breaks */
+          main {
+            page-break-before: avoid !important;
+            page-break-after: avoid !important;
+          }
+
+          table, tr, td, th {
+            page-break-inside: avoid !important;
+          }
+
+          /* Remove any page breaks before content */
+          main::before {
+            page-break-before: avoid !important;
+          }
+
+          /* Main container adjustments - force to top of page */
+          main {
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            padding-top: 0 !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+          }
+
+          /* Remove conditional wrapper for print */
+          main > div {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          /* Remove all spacing divs */
+          main > div > div {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          /* Hide date heading */
+          h2 {
+            display: none !important;
+          }
+
+          /* Hide the entire tabs and actions row */
+          .flex.items-center.justify-between {
+            display: none !important;
+          }
+
+          /* Show only active tab title as heading */
+          .print-main::before {
+            content: 'Main Production';
+            display: block;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1D1D1F;
+            margin-bottom: 12px;
+            text-align: center;
+          }
+
+          .print-mep::before {
+            content: 'Main MEP';
+            display: block;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1D1D1F;
+            margin-bottom: 12px;
+            text-align: center;
+          }
+
+          .print-salad_bar::before {
+            content: 'Salad Bar';
+            display: block;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1D1D1F;
+            margin-bottom: 12px;
+            text-align: center;
+          }
+
+          /* Main Production Table - Landscape optimized */
+          .print-main table {
+            width: 100%;
+            font-size: 11px !important;
+          }
+
+          .print-main thead th {
+            padding: 7px 4px !important;
+            font-size: 10px !important;
+          }
+
+          .print-main tbody td {
+            padding: 7px 4px !important;
+            font-size: 11px !important;
+          }
+
+          /* Add top border to first row */
+          .print-main tbody tr:first-child td {
+            border-top: 1px solid #6B7280 !important;
+          }
+
+          /* Ensure bottom border matches outer border */
+          .print-main tbody tr:last-child td {
+            border-bottom: 1px solid #6B7280 !important;
+          }
+
+          /* Category column - left border and font */
+          .print-main tbody td:first-child {
+            font-size: 10px !important;
+            border-left: 1px solid #6B7280 !important;
+          }
+
+          /* Item column */
+          .print-main tbody td:nth-child(2) {
+            font-size: 11px !important;
+            padding-left: 5px !important;
+          }
+
+          /* Total column */
+          .print-main tbody td:last-child {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+          }
+
+          /* Main MEP Table - Portrait optimized */
+          .print-mep table {
+            width: 100%;
+            font-size: 12px !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+          }
+
+          .print-mep thead th {
+            padding: 8px 5px !important;
+            font-size: 11px !important;
+          }
+
+          .print-mep tbody td {
+            padding: 8px 5px !important;
+            font-size: 12px !important;
+          }
+
+          /* Add top border to first row */
+          .print-mep tbody tr:first-child td {
+            border-top: 1px solid #6B7280 !important;
+          }
+
+          /* Ensure bottom border matches outer border */
+          .print-mep tbody tr:last-child td {
+            border-bottom: 1px solid #6B7280 !important;
+          }
+
+          /* Item column - left border and font */
+          .print-mep tbody td:first-child {
+            font-size: 12px !important;
+            border-left: 1px solid #6B7280 !important;
+          }
+
+          /* Quantity column */
+          .print-mep tbody td:nth-child(2) {
+            font-size: 12px !important;
+          }
+
+          /* Total column */
+          .print-mep tbody td:last-child {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+          }
+
+          /* Salad Bar Table - Landscape optimized */
+          .print-salad_bar table {
+            width: 100%;
+            font-size: 11px !important;
+          }
+
+          .print-salad_bar thead th {
+            padding: 7px 4px !important;
+            font-size: 10px !important;
+          }
+
+          .print-salad_bar tbody td {
+            padding: 7px 4px !important;
+            font-size: 11px !important;
+          }
+
+          /* Add top border to first row */
+          .print-salad_bar tbody tr:first-child td {
+            border-top: 1px solid #6B7280 !important;
+          }
+
+          /* Ensure bottom border matches outer border */
+          .print-salad_bar tbody tr:last-child td {
+            border-bottom: 1px solid #6B7280 !important;
+          }
+
+          /* Checkbox column - left border */
+          .print-salad_bar tbody td:first-child {
+            padding: 6px !important;
+            border-left: 1px solid #6B7280 !important;
+          }
+
+          /* Checkbox styling */
+          .print-salad_bar input[type="checkbox"] {
+            width: 16px !important;
+            height: 16px !important;
+            margin: 0 !important;
+          }
+
+          /* Item column */
+          .print-salad_bar tbody td:nth-child(2) {
+            font-size: 11px !important;
+            padding-left: 5px !important;
+          }
+
+          /* Total column */
+          .print-salad_bar tbody td:last-child {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+          }
+
+          /* Total row */
+          .print-salad_bar tr.bg-slate-100 td {
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            padding: 8px 5px !important;
+          }
+
+          /* Ensure single page */
+          @page {
+            orphans: 4;
+            widows: 4;
+          }
+
+          /* Scale down if needed to fit */
+          .overflow-x-auto {
+            overflow: visible !important;
+          }
+
+          table {
+            page-break-inside: avoid !important;
+            border-collapse: collapse !important;
+            border: 1px solid #6B7280 !important;
+          }
+
+          /* Remove borders on table container divs but keep table borders */
+          .border-slate-700, .rounded-sm, .shadow-sm {
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+          }
+
+          .overflow-x-auto {
+            border: none !important;
+          }
+
+          /* Optimize spacing - remove ALL margins */
+          .mb-4, .mb-6, .mt-24, .mt-8, .mt-6 {
+            margin: 0 !important;
+          }
+
+          /* Hide any extra spacing elements */
+          .py-8 {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+          }
+
+          /* Start content at top of page */
+          .print-main::before,
+          .print-mep::before,
+          .print-salad_bar::before {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+          }
+        }
+      `}</style>
       <AdminQuickNav />
 
       <UniversalHeader
@@ -921,99 +1307,99 @@ export default function ProductionSheetsPage() {
         backPath="/dark-kitchen"
       />
 
-      <main className="max-w-7xl mx-auto px-8 lg:px-12 py-8">
-        {/* Date Heading */}
-        <div
-          className="mt-32 mb-6"
-          style={{
-            transform: `translate(${headingPosition.x}px, ${headingPosition.y}px)`,
-            width: 'fit-content'
-          }}
-        >
-          <h2 className="text-2xl font-extralight text-gray-800 tracking-wide">
-            Production for {format(selectedDate!, 'EEEE, MMMM d, yyyy')}
-          </h2>
-        </div>
-
-        {/* Tabs and Actions */}
-        <div className="flex items-end justify-between border-b border-gray-200">
+      <main className={`max-w-7xl mx-auto px-8 lg:px-12 py-8 print-${activeTab}`}>
+        <div className={activeTab === 'mep' ? 'max-w-3xl mx-auto' : ''}>
+          {/* Date Heading */}
           <div
-            className="flex gap-2"
+            className="mt-24 mb-6"
             style={{
-              transform: `translate(${tabsPosition.x}px, ${tabsPosition.y}px)`
+              transform: `translate(${headingPosition.x}px, ${headingPosition.y}px)`,
+              width: 'fit-content'
             }}
           >
-            <button
-              onClick={() => setActiveTab('main')}
-              className={`px-6 py-3 text-sm font-semibold transition-all ${
-                activeTab === 'main'
-                  ? 'text-[#4A7DB5] border-b-2 border-[#4A7DB5]'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Main Production
-            </button>
-            <button
-              onClick={() => setActiveTab('mep')}
-              className={`px-6 py-3 text-sm font-semibold transition-all ${
-                activeTab === 'mep'
-                  ? 'text-[#D97706] border-b-2 border-[#D97706]'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Main MEP
-            </button>
-            <button
-              onClick={() => setActiveTab('salad_bar')}
-              className={`px-6 py-3 text-sm font-semibold transition-all ${
-                activeTab === 'salad_bar'
-                  ? 'text-[#0F766E] border-b-2 border-[#0F766E]'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Salad Bar
-            </button>
+            <h2 className="text-2xl font-extralight text-gray-800 tracking-wide">
+              Production for {format(selectedDate!, 'EEEE, MMMM d, yyyy')}
+            </h2>
           </div>
-          {activeTab !== 'mep' && (
-            <div className="flex gap-3 pb-3">
+
+          {/* Tabs and Actions */}
+          <div className="flex items-center justify-between mb-4">
+            <div
+              className="flex gap-6"
+              style={{
+                transform: `translate(${tabsPosition.x}px, ${tabsPosition.y}px)`
+              }}
+            >
+              <button
+                onClick={() => setActiveTab('main')}
+                className={`text-sm font-semibold transition-all ${
+                  activeTab === 'main'
+                    ? 'text-[#4A7DB5]'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Main Production
+              </button>
+              <button
+                onClick={() => setActiveTab('mep')}
+                className={`text-sm font-semibold transition-all ${
+                  activeTab === 'mep'
+                    ? 'text-[#D97706]'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Main MEP
+              </button>
+              <button
+                onClick={() => setActiveTab('salad_bar')}
+                className={`text-sm font-semibold transition-all ${
+                  activeTab === 'salad_bar'
+                    ? 'text-[#0F766E]'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Salad Bar
+              </button>
+            </div>
+            <div className="flex gap-3">
               <button
                 onClick={() => setSelectedDate(null)}
-                className="px-5 py-2 text-sm bg-slate-200 text-[#1D1D1F] hover:bg-slate-300 transition-colors rounded-lg font-semibold"
+                className="px-5 py-2 text-sm bg-slate-200 text-[#1D1D1F] hover:bg-slate-300 transition-colors rounded-sm font-semibold"
               >
                 Change Date
               </button>
               <button
                 onClick={() => window.print()}
-                className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-lg font-semibold"
+                className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-sm font-semibold"
               >
                 Print
               </button>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Main Production Table */}
         {activeTab === 'main' && (
           <div>
             {productionRows.length === 0 ? (
-              <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
+              <div className="bg-white border border-black/10 shadow-sm rounded-sm p-8 text-center">
                 <p className="text-gray-500">No production scheduled for this date</p>
               </div>
             ) : (
-              <div className="border border-slate-700 rounded-lg overflow-hidden shadow-sm">
+              <div className="border border-slate-700 rounded-sm overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm table-fixed border-separate" style={{borderSpacing: '0 0'}}>
                     <colgroup>
-                      <col style={{width: '12%'}} />
-                      <col style={{width: '28%'}} />
+                      <col style={{width: '10%'}} />
+                      <col style={{width: '22%'}} />
                       {locations.map(location => (
-                        <col key={location.id} style={{width: `${60 / (locations.length + 1)}%`}} />
+                        <col key={location.id} style={{width: `${68 / (locations.length + 1)}%`}} />
                       ))}
-                      <col style={{width: `${60 / (locations.length + 1)}%`}} />
+                      <col style={{width: `${68 / (locations.length + 1)}%`}} />
                     </colgroup>
                     <thead className="bg-[#4A7DB5]">
                       <tr>
-                        <th className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Category</th>
+                        <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Category</th>
                         <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
                         {locations.map(location => (
                           <th key={location.id} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
@@ -1064,6 +1450,8 @@ export default function ProductionSheetsPage() {
                         const filtered = getComponentsByType(components, type);
                         if (filtered.length === 0) return { rows: null, count: 0 };
 
+                        const categoryBorder = addThickBorder ? 'border-b-[2px] border-b-gray-400' : 'border-b border-gray-300';
+
                         const rows = (
                           <>
                             {filtered.map((row, idx) => {
@@ -1087,21 +1475,21 @@ export default function ProductionSheetsPage() {
                                   className={`${borderClass} transition-colors hover:bg-gray-100`}
                                 >
                                   {idx === 0 && (
-                                    <td rowSpan={filtered.length} className={`px-3 py-2 text-[11px] font-semibold text-blue-600 uppercase tracking-wide text-right ${borderClass} bg-white align-top`}>
+                                    <td rowSpan={filtered.length} className={`px-3 py-2 text-[11px] font-semibold text-blue-600 uppercase tracking-wide text-left border-r border-gray-300 ${categoryBorder} bg-white align-top`}>
                                       {label}
                                     </td>
                                   )}
-                                  <td className={`px-8 py-2 text-sm border-r ${borderClass} font-medium text-gray-900 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
+                                  <td className={`px-8 py-2 text-sm border-r border-gray-300 ${borderClass} font-medium text-gray-900 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
                                     {row.dish.name}
                                   </td>
                                   {locations.map(location => {
                                     return (
-                                      <td key={location.id} className={`px-3 py-2 text-sm text-center border-r ${borderClass} text-gray-700 font-medium ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                      <td key={location.id} className={`px-3 py-2 text-sm text-center border-r border-gray-300 ${borderClass} text-gray-700 font-medium ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
                                         {calculateCellWeight(location.id)}
                                       </td>
                                     );
                                   })}
-                                  <td className={`px-3 py-2 text-sm text-center font-bold ${borderClass} text-red-700 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                  <td className={`px-3 py-2 text-sm text-center font-bold ${borderClass} text-red-700 bg-white`}>
                                     {calculateCellWeight()}
                                   </td>
                                 </tr>
@@ -1132,7 +1520,7 @@ export default function ProductionSheetsPage() {
                                     className={borderClass}
                                   >
                                     {idx === 0 && (
-                                      <td rowSpan={soupRows.length} className={`px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-center border-r ${borderClass} bg-slate-100 align-top`}>
+                                      <td rowSpan={soupRows.length} className={`px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-left border-r border-gray-300 bg-slate-100 align-top`}>
                                         Soup
                                       </td>
                                     )}
@@ -1147,7 +1535,7 @@ export default function ProductionSheetsPage() {
                                         </td>
                                       );
                                     })}
-                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 ${borderClass} ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 ${borderClass} bg-white`}>
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
@@ -1176,7 +1564,7 @@ export default function ProductionSheetsPage() {
                                     className="border-b border-gray-300"
                                   >
                                     {isFirstHotDish && (
-                                      <td rowSpan={totalHotDishRows} className="px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-center border-r border-b border-gray-300 bg-slate-100 align-top">
+                                      <td rowSpan={totalHotDishRows} className="px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-left border-r border-gray-300 bg-slate-100 align-top">
                                         Hot Dishes
                                       </td>
                                     )}
@@ -1191,7 +1579,7 @@ export default function ProductionSheetsPage() {
                                         </td>
                                       );
                                     })}
-                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 bg-white`}>
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
@@ -1218,7 +1606,7 @@ export default function ProductionSheetsPage() {
                                         </td>
                                       );
                                     })}
-                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                    <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 bg-white`}>
                                       {calculateRowWeight(row.totalPortions, row)}
                                     </td>
                                   </tr>
@@ -1262,26 +1650,12 @@ export default function ProductionSheetsPage() {
         {activeTab === 'mep' && (
           <div>
             {mepData.length === 0 ? (
-              <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
+              <div className="bg-white border border-black/10 shadow-sm rounded-sm p-8 text-center">
                 <p className="text-gray-500">No MEP items for this date</p>
               </div>
             ) : (
               <div className="max-w-3xl mx-auto">
-                <div className="flex gap-3 mb-4 justify-end">
-                  <button
-                    onClick={() => setSelectedDate(null)}
-                    className="px-5 py-2 text-sm bg-slate-200 text-[#1D1D1F] hover:bg-slate-300 transition-colors rounded-lg font-semibold"
-                  >
-                    Change Date
-                  </button>
-                  <button
-                    onClick={() => window.print()}
-                    className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-lg font-semibold"
-                  >
-                    Print
-                  </button>
-                </div>
-                <div className="border border-slate-700 rounded-lg overflow-hidden shadow-sm">
+                <div className="border border-slate-700 rounded-sm overflow-hidden shadow-sm">
                   <table className="w-full text-sm border-separate" style={{borderSpacing: '0 0'}}>
                   <colgroup>
                     <col style={{width: '8%'}} />
@@ -1357,16 +1731,16 @@ export default function ProductionSheetsPage() {
         {activeTab === 'salad_bar' && (
           <div>
             {saladBarData.length === 0 ? (
-              <div className="bg-white border border-black/10 shadow-sm rounded-lg p-8 text-center">
+              <div className="bg-white border border-black/10 shadow-sm rounded-sm p-8 text-center">
                 <p className="text-gray-500">No salad bar orders for this date</p>
               </div>
             ) : (
-              <div className="border border-slate-700 rounded-lg overflow-hidden shadow-sm">
+              <div className="border border-slate-700 rounded-sm overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm table-fixed border-separate" style={{borderSpacing: '0 0'}}>
                     <colgroup>
-                      <col style={{width: '12%'}} />
-                      <col style={{width: '28%'}} />
+                      <col style={{width: '10%'}} />
+                      <col style={{width: '30%'}} />
                       {locations.map(location => (
                         <col key={location.id} style={{width: `${60 / (locations.length + 1)}%`}} />
                       ))}
@@ -1374,7 +1748,7 @@ export default function ProductionSheetsPage() {
                     </colgroup>
                     <thead className="bg-[#4A7DB5]">
                       <tr>
-                        <th className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Category</th>
+                        <th className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Salad Bar</th>
                         <th className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item</th>
                         {locations.map(location => (
                           <th key={location.id} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">
@@ -1389,11 +1763,12 @@ export default function ProductionSheetsPage() {
                         const isEven = idx % 2 === 0;
                         return (
                           <tr key={idx} className="border-b border-gray-300">
-                            {idx === 0 && (
-                              <td rowSpan={saladBarData.length} className="px-3 py-2.5 text-sm font-bold text-slate-700 uppercase tracking-wide text-center border-r border-b border-gray-300 bg-slate-100 align-top">
-                                Salad Bar
-                              </td>
-                            )}
+                            <td className={`px-3 py-2.5 text-center border-r border-b border-gray-300 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
+                              <input
+                                type="checkbox"
+                                className="w-5 h-5 border-2 border-gray-400 rounded cursor-pointer"
+                              />
+                            </td>
                             <td className={`px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-b border-gray-300 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
                               {row.ingredient}
                             </td>
@@ -1408,7 +1783,7 @@ export default function ProductionSheetsPage() {
                                 </td>
                               );
                             })}
-                            <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                            <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 bg-white`}>
                               {row.totalWeight >= 1000
                                 ? `${(row.totalWeight / 1000).toFixed(1)}kg`
                                 : `${Math.round(row.totalWeight)}g`}
@@ -1416,6 +1791,32 @@ export default function ProductionSheetsPage() {
                           </tr>
                         );
                       })}
+                      {/* Total Row */}
+                      <tr className="border-b-[2px] border-b-gray-400 bg-slate-100">
+                        <td className="px-3 py-3 text-center border-r border-gray-300"></td>
+                        <td className="px-5 py-3 text-sm font-bold text-slate-700 uppercase tracking-wide border-r border-gray-300">
+                          Total
+                        </td>
+                        {locations.map(location => {
+                          const locationTotal = saladBarData.reduce((sum, row) => sum + (row.locationWeights[location.id] || 0), 0);
+                          const displayWeight = locationTotal >= 1000
+                            ? `${(locationTotal / 1000).toFixed(1)}kg`
+                            : `${Math.round(locationTotal)}g`;
+                          return (
+                            <td key={location.id} className="px-3 py-3 text-sm text-center font-bold text-gray-900 border-r border-gray-300">
+                              {displayWeight}
+                            </td>
+                          );
+                        })}
+                        <td className="px-3 py-3 text-sm text-center font-bold text-red-700 bg-white">
+                          {(() => {
+                            const grandTotal = saladBarData.reduce((sum, row) => sum + row.totalWeight, 0);
+                            return grandTotal >= 1000
+                              ? `${(grandTotal / 1000).toFixed(1)}kg`
+                              : `${Math.round(grandTotal)}g`;
+                          })()}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>

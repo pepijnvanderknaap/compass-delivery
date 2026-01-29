@@ -99,9 +99,9 @@ export default function DishDetailModal({
 
     // Fetch warm veggie components with percentages
     const { data: warmVeggieComponentsData } = await supabase
-      .from('warm_veggie_components')
-      .select('*, component_dish:dishes!component_dish_id(*)')
-      .eq('main_dish_id', dishId);
+      .from('dish_warm_veggie_components')
+      .select('*, component_dish:dishes!dish_warm_veggie_components_component_dish_id_fkey(*)')
+      .eq('dish_id', dishId);
 
     if (warmVeggieComponentsData) {
       setWarmVeggieComponents(warmVeggieComponentsData as WarmVeggieComponentWithDish[]);
@@ -139,7 +139,7 @@ export default function DishDetailModal({
       ) : dish ? (
         <div className="w-full max-w-sm flex flex-col gap-2">
           {/* 1. Header Box - No border */}
-          <div className="rounded-xl bg-[#4A7DB5] relative overflow-hidden">
+          <div className="rounded-sm bg-[#4A7DB5] relative overflow-hidden">
             <div className="px-6 py-8">
               <h2 className="text-[32px] leading-tight font-semibold text-white text-center">{dish.name}</h2>
               {dish.description && (
@@ -157,7 +157,7 @@ export default function DishDetailModal({
           </div>
 
           {/* 2. Content Card with buttons inside - No border */}
-          <div className="rounded-xl bg-white overflow-y-auto max-h-[60vh]">
+          <div className="rounded-sm bg-white overflow-y-auto max-h-[60vh]">
             <div className="px-6 py-6">
               {/* Components - Simple vertical list */}
               {(dish.components && Object.values(dish.components).some(arr => arr && arr.length > 0)) || saladComponents.length > 0 || warmVeggieComponents.length > 0 ? (
@@ -277,14 +277,14 @@ export default function DishDetailModal({
                 <button
                   type="button"
                   onClick={handleEdit}
-                  className="flex-1 max-w-[140px] px-6 py-3 text-[16px] font-semibold text-[#1D1D1F] bg-slate-200 rounded-lg hover:bg-slate-300 transition-colors"
+                  className="flex-1 max-w-[140px] px-6 py-3 text-[16px] font-semibold text-[#1D1D1F] bg-slate-200 rounded-sm hover:bg-slate-300 transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={handleReplace}
-                  className="flex-1 max-w-[140px] px-6 py-3 text-[16px] font-semibold text-[#1D1D1F] bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex-1 max-w-[140px] px-6 py-3 text-[16px] font-semibold text-[#1D1D1F] bg-white border border-slate-300 rounded-sm hover:bg-slate-50 transition-colors"
                 >
                   Replace
                 </button>

@@ -159,7 +159,7 @@ export default function AdminLocationsPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <div className={`mb-6 p-4 rounded-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {message.text}
           </div>
         )}
@@ -178,14 +178,14 @@ export default function AdminLocationsPage() {
                 is_active: true,
               });
             }}
-            className="px-6 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 font-medium"
+            className="px-6 py-3 bg-slate-700 text-white rounded-sm hover:bg-slate-800 font-medium"
           >
             {showForm ? 'Cancel' : '+ Add New Location'}
           </button>
         </div>
 
         {showForm && (
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <div className="bg-white rounded-sm shadow-md p-6 mb-6">
             <h2 className="text-xl font-bold mb-4">
               {editingId ? 'Edit Location' : 'New Location'}
             </h2>
@@ -200,7 +200,7 @@ export default function AdminLocationsPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
@@ -211,7 +211,7 @@ export default function AdminLocationsPage() {
                     type="text"
                     value={formData.address || ''}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
@@ -222,7 +222,7 @@ export default function AdminLocationsPage() {
                     type="text"
                     value={formData.contact_person || ''}
                     onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
@@ -233,7 +233,7 @@ export default function AdminLocationsPage() {
                     type="email"
                     value={formData.contact_email || ''}
                     onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
@@ -244,7 +244,7 @@ export default function AdminLocationsPage() {
                     type="tel"
                     value={formData.contact_phone || ''}
                     onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div className="flex items-center">
@@ -267,14 +267,14 @@ export default function AdminLocationsPage() {
                     setShowForm(false);
                     setEditingId(null);
                   }}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-6 py-2 border border-gray-300 rounded-sm hover:bg-gray-50"
                   
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800"
+                  className="px-6 py-2 bg-slate-700 text-white rounded-sm hover:bg-slate-800"
                 >
                   {editingId ? 'Update' : 'Create'}
                 </button>
@@ -283,7 +283,7 @@ export default function AdminLocationsPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-sm shadow-md overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>

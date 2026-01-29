@@ -204,7 +204,7 @@ export default function LocationSettingsPage() {
             </div>
             <button
               onClick={() => router.push('/dark-kitchen')}
-              className="px-6 py-2 text-sm font-medium bg-blue-800 text-white rounded-md hover:bg-blue-900 transition-colors"
+              className="px-6 py-2 text-sm font-medium bg-blue-800 text-white rounded-sm hover:bg-blue-900 transition-colors"
             >
               Back
             </button>
@@ -221,7 +221,7 @@ export default function LocationSettingsPage() {
           <select
             value={selectedLocationId}
             onChange={(e) => setSelectedLocationId(e.target.value)}
-            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Choose a location...</option>
             {locations.map(location => (
@@ -258,7 +258,7 @@ export default function LocationSettingsPage() {
                             .update({ address: newAddress })
                             .eq('id', selectedLocationId);
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -274,7 +274,7 @@ export default function LocationSettingsPage() {
                             type="text"
                             value={settings.site_manager_name || ''}
                             onChange={(e) => setSettings({ ...settings, site_manager_name: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
@@ -286,7 +286,7 @@ export default function LocationSettingsPage() {
                             type="email"
                             value={settings.site_manager_email || ''}
                             onChange={(e) => setSettings({ ...settings, site_manager_email: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
@@ -298,7 +298,7 @@ export default function LocationSettingsPage() {
                             type="tel"
                             value={settings.site_manager_mobile || ''}
                             onChange={(e) => setSettings({ ...settings, site_manager_mobile: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                       </div>
@@ -317,7 +317,7 @@ export default function LocationSettingsPage() {
                             type="text"
                             value={settings.regional_manager_name || ''}
                             onChange={(e) => setSettings({ ...settings, regional_manager_name: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
@@ -329,7 +329,7 @@ export default function LocationSettingsPage() {
                             type="email"
                             value={settings.regional_manager_email || ''}
                             onChange={(e) => setSettings({ ...settings, regional_manager_email: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
@@ -341,7 +341,7 @@ export default function LocationSettingsPage() {
                             type="tel"
                             value={settings.regional_manager_mobile || ''}
                             onChange={(e) => setSettings({ ...settings, regional_manager_mobile: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                       </div>
@@ -360,7 +360,7 @@ export default function LocationSettingsPage() {
                             type="text"
                             value={settings.contact_person_name || ''}
                             onChange={(e) => setSettings({ ...settings, contact_person_name: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
@@ -372,7 +372,7 @@ export default function LocationSettingsPage() {
                             type="email"
                             value={settings.contact_person_email || ''}
                             onChange={(e) => setSettings({ ...settings, contact_person_email: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
@@ -384,7 +384,7 @@ export default function LocationSettingsPage() {
                             type="tel"
                             value={settings.contact_person_mobile || ''}
                             onChange={(e) => setSettings({ ...settings, contact_person_mobile: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                       </div>
@@ -397,7 +397,7 @@ export default function LocationSettingsPage() {
                         </h3>
                         <button
                           onClick={handleAddStaff}
-                          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors"
                         >
                           + Add Staff
                         </button>
@@ -408,31 +408,31 @@ export default function LocationSettingsPage() {
                       ) : (
                         <div className="space-y-3">
                           {staff.map((member) => (
-                            <div key={member.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-md">
+                            <div key={member.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-sm">
                               <input
                                 type="text"
                                 value={member.staff_name}
                                 onChange={(e) => handleUpdateStaff(member.id, 'staff_name', e.target.value)}
                                 placeholder="Name"
-                                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                className="px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                               />
                               <input
                                 type="text"
                                 value={member.staff_role || ''}
                                 onChange={(e) => handleUpdateStaff(member.id, 'staff_role', e.target.value)}
                                 placeholder="Role"
-                                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                className="px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                               />
                               <input
                                 type="tel"
                                 value={member.staff_mobile || ''}
                                 onChange={(e) => handleUpdateStaff(member.id, 'staff_mobile', e.target.value)}
                                 placeholder="Mobile"
-                                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                className="px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                               />
                               <button
                                 onClick={() => handleDeleteStaff(member.id)}
-                                className="px-3 py-2 text-sm font-medium text-red-600 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                                className="px-3 py-2 text-sm font-medium text-red-600 border border-slate-300 rounded-sm hover:bg-slate-50 transition-colors"
                                 
                               >
                                 {/* ACSS: Global "delete" button
@@ -467,7 +467,7 @@ export default function LocationSettingsPage() {
                       value={settings.satisfaction_score || ''}
                       onChange={(e) => setSettings({ ...settings, satisfaction_score: parseFloat(e.target.value) || null })}
                       placeholder="8.5"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                     />
                     <p className="text-xs text-gray-500 mt-1">Average satisfaction score across all locations</p>
                   </div>
@@ -478,7 +478,7 @@ export default function LocationSettingsPage() {
                   <button
                     onClick={handleSaveSettings}
                     disabled={saving}
-                    className="px-8 py-3 bg-blue-800 text-white font-medium rounded-md hover:bg-blue-900 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="px-8 py-3 bg-blue-800 text-white font-medium rounded-sm hover:bg-blue-900 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     {saving ? 'Saving...' : 'Save All Settings'}
                   </button>
@@ -501,7 +501,7 @@ export default function LocationSettingsPage() {
                     type="text"
                     value={selectedLocation?.address || ''}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-sm bg-gray-50 text-gray-600"
                   />
                 </div>
 
@@ -514,7 +514,7 @@ export default function LocationSettingsPage() {
                     value={settings.general_phone || ''}
                     onChange={(e) => setSettings({ ...settings, general_phone: e.target.value })}
                     placeholder="+31 20 123 4567"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -526,7 +526,7 @@ export default function LocationSettingsPage() {
                     type="text"
                     value={settings.contact_person_name || ''}
                     onChange={(e) => setSettings({ ...settings, contact_person_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -538,7 +538,7 @@ export default function LocationSettingsPage() {
                     type="email"
                     value={settings.contact_person_email || ''}
                     onChange={(e) => setSettings({ ...settings, contact_person_email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -551,7 +551,7 @@ export default function LocationSettingsPage() {
                     value={settings.contact_person_mobile || ''}
                     onChange={(e) => setSettings({ ...settings, contact_person_mobile: e.target.value })}
                     placeholder="+31 6 1234 5678"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -570,7 +570,7 @@ export default function LocationSettingsPage() {
                       type="text"
                       value={settings.billing_contact_name || ''}
                       onChange={(e) => setSettings({ ...settings, billing_contact_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -582,7 +582,7 @@ export default function LocationSettingsPage() {
                       type="email"
                       value={settings.billing_contact_email || ''}
                       onChange={(e) => setSettings({ ...settings, billing_contact_email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -594,7 +594,7 @@ export default function LocationSettingsPage() {
                       type="tel"
                       value={settings.billing_contact_phone || ''}
                       onChange={(e) => setSettings({ ...settings, billing_contact_phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -609,7 +609,7 @@ export default function LocationSettingsPage() {
                   onChange={(e) => setSettings({ ...settings, delivery_directions: e.target.value })}
                   rows={4}
                   placeholder="e.g., Enter via main entrance, use service elevator on the left, kitchen is on 2nd floor..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -634,7 +634,7 @@ export default function LocationSettingsPage() {
                         type="text"
                         value={settings.site_manager_name || ''}
                         onChange={(e) => setSettings({ ...settings, site_manager_name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -646,7 +646,7 @@ export default function LocationSettingsPage() {
                         type="email"
                         value={settings.site_manager_email || ''}
                         onChange={(e) => setSettings({ ...settings, site_manager_email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -658,7 +658,7 @@ export default function LocationSettingsPage() {
                         type="tel"
                         value={settings.site_manager_mobile || ''}
                         onChange={(e) => setSettings({ ...settings, site_manager_mobile: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -677,7 +677,7 @@ export default function LocationSettingsPage() {
                         type="text"
                         value={settings.regional_manager_name || ''}
                         onChange={(e) => setSettings({ ...settings, regional_manager_name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -689,7 +689,7 @@ export default function LocationSettingsPage() {
                         type="email"
                         value={settings.regional_manager_email || ''}
                         onChange={(e) => setSettings({ ...settings, regional_manager_email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -701,7 +701,7 @@ export default function LocationSettingsPage() {
                         type="tel"
                         value={settings.regional_manager_mobile || ''}
                         onChange={(e) => setSettings({ ...settings, regional_manager_mobile: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -714,7 +714,7 @@ export default function LocationSettingsPage() {
                     </h3>
                     <button
                       onClick={handleAddStaff}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors"
                     >
                       + Add Staff
                     </button>
@@ -725,31 +725,31 @@ export default function LocationSettingsPage() {
                   ) : (
                     <div className="space-y-3">
                       {staff.map((member) => (
-                        <div key={member.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-md">
+                        <div key={member.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-sm">
                           <input
                             type="text"
                             value={member.staff_name}
                             onChange={(e) => handleUpdateStaff(member.id, 'staff_name', e.target.value)}
                             placeholder="Name"
-                            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                           <input
                             type="text"
                             value={member.staff_role || ''}
                             onChange={(e) => handleUpdateStaff(member.id, 'staff_role', e.target.value)}
                             placeholder="Role"
-                            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                           <input
                             type="tel"
                             value={member.staff_mobile || ''}
                             onChange={(e) => handleUpdateStaff(member.id, 'staff_mobile', e.target.value)}
                             placeholder="Mobile"
-                            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                           />
                           <button
                             onClick={() => handleDeleteStaff(member.id)}
-                            className="px-3 py-2 text-sm font-medium text-red-600 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                            className="px-3 py-2 text-sm font-medium text-red-600 border border-slate-300 rounded-sm hover:bg-slate-50 transition-colors"
                           >
                             {/* ACSS: Global "delete" button
                                 LOCKED: button-style (border with rounded corners), size (px-3 py-2 text-sm), text-size/weight (scales with button)
@@ -780,7 +780,7 @@ export default function LocationSettingsPage() {
                 onChange={(e) => setSettings({ ...settings, key_interest_points: e.target.value })}
                 rows={6}
                 placeholder="e.g., Very focused on sustainability, prefers organic ingredients when possible. Appreciates detailed allergen information. Values consistent delivery times..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -803,11 +803,11 @@ export default function LocationSettingsPage() {
                     value={settings.satisfaction_score || ''}
                     onChange={(e) => setSettings({ ...settings, satisfaction_score: parseFloat(e.target.value) || null })}
                     placeholder="8.5"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
-                <div className="flex-1 bg-blue-50 border border-blue-200 rounded-md p-4">
+                <div className="flex-1 bg-blue-50 border border-blue-200 rounded-sm p-4">
                   <p className="text-sm text-blue-800 font-medium">
                     Review System Coming Soon
                   </p>
@@ -823,7 +823,7 @@ export default function LocationSettingsPage() {
                   <button
                     onClick={handleSaveSettings}
                     disabled={saving}
-                    className="px-8 py-3 bg-blue-800 text-white font-medium rounded-md hover:bg-blue-900 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="px-8 py-3 bg-blue-800 text-white font-medium rounded-sm hover:bg-blue-900 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     {saving ? 'Saving...' : 'Save All Settings'}
                   </button>

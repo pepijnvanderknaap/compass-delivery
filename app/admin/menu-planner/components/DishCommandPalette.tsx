@@ -134,7 +134,7 @@ export default function DishCommandPalette({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-[#E8E8ED] w-full max-w-2xl max-h-[600px] flex flex-col overflow-hidden"
+        className="bg-white rounded-sm shadow-2xl border border-[#E8E8ED] w-full max-w-2xl max-h-[600px] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}
@@ -159,7 +159,7 @@ export default function DishCommandPalette({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${getCategoryLabel()}...`}
-              className="w-full pl-12 pr-20 py-3 text-[17px] border border-[#D2D2D7] rounded-lg focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all bg-white text-[#1D1D1F] placeholder:text-[#86868B]"
+              className="w-full pl-12 pr-20 py-3 text-[17px] border border-[#D2D2D7] rounded-sm focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all bg-white text-[#1D1D1F] placeholder:text-[#86868B]"
             />
             <button
               onClick={onClose}
@@ -179,13 +179,7 @@ export default function DishCommandPalette({
             <div className="p-12 text-center text-[#86868B] text-[15px]">Loading...</div>
           ) : !searchQuery ? (
             /* Empty state - no search entered yet */
-            <div className="p-12 text-center">
-              <svg className="w-16 h-16 mx-auto text-[#D2D2D7] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <p className="text-[15px] text-[#6E6E73] mb-1">Search for {getCategoryLabel()}</p>
-              <p className="text-[13px] text-[#86868B]">Type to find existing dishes or create a new one</p>
-            </div>
+            <div className="p-12"></div>
           ) : dishes.length === 0 ? (
             <div className="p-12 text-center text-[#86868B] text-[15px]">
               No {getCategoryLabel()} found matching "{searchQuery}"
@@ -199,7 +193,7 @@ export default function DishCommandPalette({
                   <button
                     key={dish.id}
                     onClick={() => handleSelectDish(dish.id)}
-                    className="w-full px-4 py-3 flex items-center justify-between rounded-lg transition-colors hover:bg-[#F5F5F7]"
+                    className="w-full px-4 py-3 flex items-center justify-between rounded-sm transition-colors hover:bg-[#F5F5F7]"
                   >
                     <div className="flex items-center gap-3 flex-1">
                       {/* Dish Name */}
@@ -212,7 +206,7 @@ export default function DishCommandPalette({
                         <div className="flex items-center gap-1 group/tooltip relative">
                           <span className="text-[#FF9500] text-lg">⚠⚠</span>
                           {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tooltip:block z-10 bg-[#1D1D1F] text-white text-[12px] px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tooltip:block z-10 bg-[#1D1D1F] text-white text-[12px] px-3 py-1.5 rounded-sm shadow-lg whitespace-nowrap">
                             Used on {formatUsageDate(usage.lastUsed)}
                           </div>
                         </div>

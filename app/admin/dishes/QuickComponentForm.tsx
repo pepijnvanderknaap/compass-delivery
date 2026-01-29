@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface QuickComponentFormProps {
-  type: 'component' | 'warm_veggie' | 'carb' | 'condiment';
+  type: 'component' | 'warm_veggie' | 'carb' | 'condiment' | 'salad';
   onClose: () => void;
   onCreated: (newComponent: { id: string; name: string }) => void;
 }
@@ -35,9 +35,11 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
       case 'carb':
         return 'New Carb';
       case 'warm_veggie':
-        return 'New Warm Vegetables';
+        return 'Create Vegetable';
       case 'condiment':
         return 'New Add-on';
+      case 'salad':
+        return 'Create Salad Item';
     }
   };
 
@@ -51,6 +53,8 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         return 'warm_veggie';
       case 'condiment':
         return 'condiment';
+      case 'salad':
+        return 'salad';
     }
   };
 
@@ -58,13 +62,15 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
     e.preventDefault();
     if (!formData.name.trim()) return;
 
+    console.log('[QuickComponentForm] Starting submission...', { name: formData.name, type });
     setSaving(true);
     try {
       const trimmedName = formData.name.trim();
       const subcategory = getSubcategory();
+      console.log('[QuickComponentForm] Checking for existing component...', { trimmedName, subcategory });
 
       // Check if component already exists with this name and subcategory
-      const { data: existingComponent } = await supabase
+      const { data: existingComponent, error: checkError } = await supabase
         .from('dishes')
         .select('*')
         .eq('category', 'component')
@@ -72,9 +78,13 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         .ilike('name', trimmedName)
         .single();
 
+      console.log('[QuickComponentForm] Existing component check result:', { existingComponent, checkError });
+
       if (existingComponent) {
         // Component already exists - just use it
+        console.log('[QuickComponentForm] Using existing component:', existingComponent);
         onCreated({ id: existingComponent.id, name: existingComponent.name });
+        onClose();
         return;
       }
 
@@ -98,26 +108,46 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
         allergen_shellfish: formData.allergen_shellfish,
       };
 
+      console.log('[QuickComponentForm] Creating new component with data:', dataToSave);
+
       const { data: newComponent, error } = await supabase
         .from('dishes')
         .insert(dataToSave)
         .select()
         .single();
 
-      if (error) throw error;
+      console.log('[QuickComponentForm] Insert result:', { newComponent, error });
+
+      if (error) {
+        console.error('[QuickComponentForm] Database error:', error);
+        throw error;
+      }
+
+      if (!newComponent) {
+        console.error('[QuickComponentForm] No component returned from insert!');
+        throw new Error('No component returned from database');
+      }
+
+      console.log('[QuickComponentForm] Successfully created component:', newComponent);
 
       // Call onCreated with the new component
+      console.log('[QuickComponentForm] Calling onCreated callback...');
       onCreated({ id: newComponent.id, name: newComponent.name });
+
+      console.log('[QuickComponentForm] Closing form...');
+      onClose();
     } catch (error) {
-      console.error('Error creating component:', error);
+      console.error('[QuickComponentForm] Error creating component:', error);
       alert('Failed to create component. Please try again.');
-    } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="w-80 bg-white border-l border-[#E8E8ED] shadow-lg flex flex-col h-full">
+    <div
+      className="w-80 bg-white border-l border-[#E8E8ED] shadow-lg flex flex-col h-full"
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Header */}
       <div className="bg-[#FAFAFA] px-6 py-4 border-b border-[#E8E8ED]">
         <div className="flex items-center justify-between">
@@ -142,14 +172,14 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Croutons"
-              className="w-full px-4 py-3 border border-[#D2D2D7] rounded-lg text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
+              className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
               required
               autoFocus
             />
           </div>
 
           {/* Portion Size - Only for toppings, carbs, and condiments */}
-          {type !== 'warm_veggie' && (
+          {type !== 'warm_veggie' && type !== 'salad' && (
             <div>
               <label className="block text-[13px] font-medium text-[#86868B] mb-2">Portion Size *</label>
               <div className="grid grid-cols-2 gap-2">
@@ -159,14 +189,14 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
                   value={formData.portion_size}
                   onChange={(e) => setFormData({ ...formData, portion_size: e.target.value })}
                   placeholder="25"
-                  className="w-full px-4 py-3 border border-[#D2D2D7] rounded-lg text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
+                  className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
                   required
                   min="1"
                 />
                 <select
                   value={formData.portion_unit}
                   onChange={(e) => setFormData({ ...formData, portion_unit: e.target.value as any })}
-                  className="w-full px-4 py-3 border border-[#D2D2D7] rounded-lg text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
+                  className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] text-[#1D1D1F] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
                   required
                 >
                   <option value="grams">g</option>
@@ -274,7 +304,7 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
           </div>
 
           {/* Info */}
-          <p className="text-[13px] text-[#6E6E73] bg-[#F5F5F7] p-3 rounded-lg">
+          <p className="text-[13px] text-[#6E6E73] bg-[#F5F5F7] p-3 rounded-sm">
             This component will be automatically selected in your main dish
           </p>
         </div>
@@ -284,14 +314,14 @@ export default function QuickComponentForm({ type, onClose, onCreated }: QuickCo
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-3 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-lg hover:bg-[#F5F5F7] transition-colors"
+            className="flex-1 px-4 py-3 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-sm hover:bg-[#F5F5F7] transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={saving || !formData.name.trim() || (type !== 'warm_veggie' && !formData.portion_size)}
-            className="flex-1 px-4 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-lg transition-colors disabled:opacity-40"
+            disabled={saving || !formData.name.trim() || (type !== 'warm_veggie' && type !== 'salad' && !formData.portion_size)}
+            className="flex-1 px-4 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-sm transition-colors disabled:opacity-40"
           >
             {saving ? 'Adding...' : 'Create'}
           </button>

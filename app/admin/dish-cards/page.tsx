@@ -102,7 +102,7 @@ export default function DishCardsPage() {
                 <button
                   key={dish.id}
                   onClick={() => setSelectedDish(dish)}
-                  className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-6 hover:border-apple-blue hover:shadow-lg transition-all text-left"
+                  className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-sm p-6 hover:border-apple-blue hover:shadow-lg transition-all text-left"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="text-apple-headline font-semibold text-apple-gray1 flex-1">
@@ -138,7 +138,7 @@ export default function DishCardsPage() {
         )}
 
         {/* Filters */}
-        <div className="bg-white border border-slate-300 rounded-lg p-6 mb-6">
+        <div className="bg-white border border-slate-300 rounded-sm p-6 mb-6">
           <div className="flex gap-4 flex-wrap">
             {/* Search */}
             <div className="flex-1 min-w-[250px]">
@@ -147,7 +147,7 @@ export default function DishCardsPage() {
                 placeholder="Search dishes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                className="w-full px-4 py-3 border border-apple-gray4 rounded-sm text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
               />
             </div>
 
@@ -156,7 +156,7 @@ export default function DishCardsPage() {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full px-4 py-3 border border-apple-gray4 rounded-lg text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
+                className="w-full px-4 py-3 border border-apple-gray4 rounded-sm text-apple-subheadline focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 outline-none transition-all"
               >
                 <option value="all">All Categories</option>
                 <option value="soup">Soup</option>
@@ -172,7 +172,7 @@ export default function DishCardsPage() {
         {loading ? (
           <div className="text-center py-12 text-apple-gray2">Loading dishes...</div>
         ) : filteredDishes.length === 0 ? (
-          <div className="bg-white border border-slate-300 rounded-lg p-12 text-center">
+          <div className="bg-white border border-slate-300 rounded-sm p-12 text-center">
             <p className="text-apple-subheadline text-apple-gray2">No dishes found matching your filters.</p>
           </div>
         ) : (
@@ -181,7 +181,7 @@ export default function DishCardsPage() {
               <button
                 key={dish.id}
                 onClick={() => setSelectedDish(dish)}
-                className="bg-white border border-slate-300 rounded-lg p-6 hover:border-apple-blue hover:shadow-md transition-all text-left"
+                className="bg-white border border-slate-300 rounded-sm p-6 hover:border-apple-blue hover:shadow-md transition-all text-left"
               >
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="text-apple-headline font-semibold text-apple-gray1 flex-1">
