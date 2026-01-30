@@ -111,9 +111,9 @@ export default function DarkKitchenPage() {
     },
     {
       title: 'Recipes',
-      href: '#',
-      description: 'Coming soon',
-      available: false,
+      href: '/dark-kitchen/recipes',
+      description: 'Manage and calculate recipe quantities',
+      available: true,
       icon: (
         <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

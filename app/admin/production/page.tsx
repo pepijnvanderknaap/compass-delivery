@@ -53,9 +53,17 @@ export default function ProductionSheetsPage() {
   const [productionRows, setProductionRows] = useState<ProductionRow[]>([]);
   const [locationSettingsMap, setLocationSettingsMap] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'main' | 'mep' | 'salad_bar'>('main');
+  const [activeTab, setActiveTab] = useState<'main' | 'mep' | 'salad_bar' | 'recipes'>('main');
   const [saladBarData, setSaladBarData] = useState<any[]>([]);
   const [mepData, setMepData] = useState<any[]>([]);
+  const [recipesData, setRecipesData] = useState<any[]>([]);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printSections, setPrintSections] = useState({
+    main: true,
+    mep: true,
+    salad: true,
+    recipes: true,
+  });
   const [headingPosition] = useState({ x: 0, y: 0 });
   const [tabsPosition] = useState({ x: 0, y: 0 });
   const router = useRouter();
@@ -147,6 +155,7 @@ export default function ProductionSheetsPage() {
     if (profile && locations.length > 0 && selectedDate) {
       fetchProductionData(selectedDate, locations);
       fetchSaladBarData(selectedDate, locations);
+      fetchRecipesData(selectedDate);
     }
   }, [selectedDate]);
 
@@ -319,6 +328,8 @@ export default function ProductionSheetsPage() {
       // Aggregate NON-salad/NON-warm-veggie components from dish_components table
       // (e.g., carbs, toppings, condiments - things that don't use percentage breakdown)
       const components = dishComponents?.filter(dc => dc.main_dish_id === mainDish.id) || [];
+      console.log(`[COMPONENT DEBUG] Processing ${components.length} components for ${mainDish.name} (${mealType}), totalPortions: ${totalPortions}`);
+
       components.forEach((comp: any) => {
         if (comp.component_dish) {
           // SKIP salad and warm_veggie types - these MUST come from dedicated tables with percentages
@@ -333,6 +344,8 @@ export default function ProductionSheetsPage() {
 
           // Process other component types (carb, topping, condiment, etc.)
           const key = `${comp.component_dish.id}-${comp.component_type}`;
+
+          console.log(`[COMPONENT DEBUG] Processing ${comp.component_type}: ${comp.component_dish.name}, adding ${totalPortions} portions`);
 
           if (!componentAggregation[key]) {
             componentAggregation[key] = {
@@ -353,6 +366,8 @@ export default function ProductionSheetsPage() {
               (componentAggregation[key].locationOrders[locId] || 0) + locationOrders[locId];
           });
           componentAggregation[key].totalPortions += totalPortions;
+
+          console.log(`[COMPONENT DEBUG] ${comp.component_dish.name} now has ${componentAggregation[key].totalPortions} total portions`);
         }
       });
 
@@ -658,6 +673,81 @@ export default function ProductionSheetsPage() {
     setSaladBarData(saladBarRows);
   };
 
+  const fetchRecipesData = async (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const weekStart = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
+    console.log('[RECIPES] Fetching recipes for date:', dateStr);
+
+    // Get the weekly menu first
+    const { data: weeklyMenu, error: weekError } = await supabase
+      .from('weekly_menus')
+      .select('id')
+      .eq('week_start_date', weekStart)
+      .single();
+
+    if (weekError || !weeklyMenu) {
+      console.error('[RECIPES] Error fetching weekly menu:', weekError);
+      setRecipesData([]);
+      return;
+    }
+
+    // Calculate day of week (Monday = 0)
+    const dayOfWeek = (date.getDay() + 6) % 7;
+
+    // Get menu items for this menu and day
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select('dish_id, meal_type')
+      .eq('menu_id', weeklyMenu.id)
+      .eq('day_of_week', dayOfWeek);
+
+    if (menuError) {
+      console.error('[RECIPES] Error fetching menu items:', menuError);
+      setRecipesData([]);
+      return;
+    }
+
+    if (!menuItems || menuItems.length === 0) {
+      console.log('[RECIPES] No menu items found for this date');
+      setRecipesData([]);
+      return;
+    }
+
+    // Get unique dish IDs
+    const dishIds = [...new Set(menuItems.map(item => item.dish_id))];
+    console.log('[RECIPES] Found dish IDs:', dishIds);
+
+    // Fetch recipes for these dishes
+    const { data: recipes, error: recipesError } = await supabase
+      .from('recipes')
+      .select('*, dishes(name, category)')
+      .in('dish_id', dishIds);
+
+    if (recipesError) {
+      console.error('[RECIPES] Error fetching recipes:', recipesError);
+      setRecipesData([]);
+      return;
+    }
+
+    console.log('[RECIPES] Fetched recipes:', recipes?.length, recipes);
+
+    // Sort recipes by dish category (soups first, then hot dishes)
+    const sortedRecipes = (recipes || []).sort((a, b) => {
+      const categoryOrder: Record<string, number> = {
+        'soup': 1,
+        'hot_dish_meat': 2,
+        'hot_dish_fish': 3,
+        'hot_dish_veg': 4
+      };
+      const catA = (a.dishes as any)?.category || '';
+      const catB = (b.dishes as any)?.category || '';
+      return (categoryOrder[catA] || 99) - (categoryOrder[catB] || 99);
+    });
+
+    setRecipesData(sortedRecipes);
+  };
+
   const generateMEPData = () => {
     console.log('MEP: Generating from production rows:', productionRows.length);
 
@@ -676,9 +766,21 @@ export default function ProductionSheetsPage() {
       // Skip total rows
       if (row.isTotalRow) return;
 
+      // Skip items with no portions
+      if (row.totalPortions === 0) {
+        console.log('MEP: Skipping item with 0 portions:', row.dish.name);
+        return;
+      }
+
       const totalWeight = calculateRowWeight(row.totalPortions, row);
       const quantity = totalWeight.replace(/[a-z]+$/i, '').trim();
       const unit = totalWeight.match(/[a-z]+$/i)?.[0] || '-';
+
+      // Skip if quantity is 0 or invalid
+      if (quantity === '0' || quantity === '-' || !quantity) {
+        console.log('MEP: Skipping item with invalid quantity:', row.dish.name, totalWeight);
+        return;
+      }
 
       const item = {
         name: row.dish.name,
@@ -939,6 +1041,11 @@ export default function ProductionSheetsPage() {
             box-sizing: border-box;
           }
 
+          /* Hide sections that shouldn't be printed */
+          .print-hide {
+            display: none !important;
+          }
+
           /* Hide navigation and UI elements */
           nav,
           button,
@@ -1024,6 +1131,16 @@ export default function ProductionSheetsPage() {
             margin: 8mm;
           }
 
+          /* Page setup for Recipes (Portrait) */
+          .print-recipes {
+            page: recipes;
+          }
+
+          @page recipes {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+
           /* Prevent page breaks */
           main {
             page-break-before: avoid !important;
@@ -1097,6 +1214,16 @@ export default function ProductionSheetsPage() {
 
           .print-salad_bar::before {
             content: 'Salad Bar';
+            display: block;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1D1D1F;
+            margin-bottom: 12px;
+            text-align: center;
+          }
+
+          .print-recipes::before {
+            content: 'Recipes';
             display: block;
             font-size: 18px;
             font-weight: 600;
@@ -1252,6 +1379,40 @@ export default function ProductionSheetsPage() {
             padding: 8px 5px !important;
           }
 
+          /* Recipes section styling */
+          .print-recipes {
+            page-break-after: always;
+          }
+
+          .print-recipes > div {
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          .print-recipes .space-y-6 {
+            gap: 20px !important;
+          }
+
+          .print-recipes .space-y-6 > div {
+            page-break-inside: avoid;
+            margin-bottom: 20px !important;
+          }
+
+          .print-recipes h3 {
+            font-size: 16px !important;
+            font-weight: 600 !important;
+          }
+
+          .print-recipes h4 {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+          }
+
+          .print-recipes p,
+          .print-recipes div {
+            font-size: 11px !important;
+          }
+
           /* Ensure single page */
           @page {
             orphans: 4;
@@ -1360,6 +1521,16 @@ export default function ProductionSheetsPage() {
               >
                 Salad Bar
               </button>
+              <button
+                onClick={() => setActiveTab('recipes')}
+                className={`text-sm font-semibold transition-all ${
+                  activeTab === 'recipes'
+                    ? 'text-[#10B981]'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Recipes
+              </button>
             </div>
             <div className="flex gap-3">
               <button
@@ -1369,7 +1540,7 @@ export default function ProductionSheetsPage() {
                 Change Date
               </button>
               <button
-                onClick={() => window.print()}
+                onClick={() => setShowPrintModal(true)}
                 className="px-5 py-2 text-sm bg-white border border-slate-300 text-[#1D1D1F] hover:bg-slate-50 transition-colors rounded-sm font-semibold"
               >
                 Print
@@ -1379,8 +1550,10 @@ export default function ProductionSheetsPage() {
         </div>
 
         {/* Main Production Table */}
-        {activeTab === 'main' && (
-          <div>
+        <div
+          data-print-section="main"
+          className={`print-main ${activeTab !== 'main' ? 'hidden print:block' : ''} ${!printSections.main ? 'print-hide' : ''}`}
+        >
             {productionRows.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-sm p-8 text-center">
                 <p className="text-gray-500">No production scheduled for this date</p>
@@ -1411,14 +1584,15 @@ export default function ProductionSheetsPage() {
                     </thead>
                     <tbody className="bg-white">
                     {(() => {
-                      const soupRows = productionRows.filter(row => row.mealType === 'soup' && !row.isComponent);
-                      const soupComponents = productionRows.filter(row => row.mealType === 'soup' && row.isComponent);
+                      // Filter out rows with 0 portions
+                      const soupRows = productionRows.filter(row => row.mealType === 'soup' && !row.isComponent && row.totalPortions > 0);
+                      const soupComponents = productionRows.filter(row => row.mealType === 'soup' && row.isComponent && row.totalPortions > 0);
 
-                      const hotMeatRows = productionRows.filter(row => row.mealType === 'hot_meat' && !row.isComponent);
-                      const hotMeatComponents = productionRows.filter(row => row.mealType === 'hot_meat' && row.isComponent);
+                      const hotMeatRows = productionRows.filter(row => row.mealType === 'hot_meat' && !row.isComponent && row.totalPortions > 0);
+                      const hotMeatComponents = productionRows.filter(row => row.mealType === 'hot_meat' && row.isComponent && row.totalPortions > 0);
 
-                      const hotVegRows = productionRows.filter(row => row.mealType === 'hot_veg' && !row.isComponent);
-                      const hotVegComponents = productionRows.filter(row => row.mealType === 'hot_veg' && row.isComponent);
+                      const hotVegRows = productionRows.filter(row => row.mealType === 'hot_veg' && !row.isComponent && row.totalPortions > 0);
+                      const hotVegComponents = productionRows.filter(row => row.mealType === 'hot_veg' && row.isComponent && row.totalPortions > 0);
 
                       // Combine all hot dish components and aggregate by dish name
                       const allHotComponents = [...hotMeatComponents, ...hotVegComponents];
@@ -1643,12 +1817,13 @@ export default function ProductionSheetsPage() {
                 </div>
               </div>
             )}
-          </div>
-        )}
+        </div>
 
         {/* Main MEP Table */}
-        {activeTab === 'mep' && (
-          <div>
+        <div
+          data-print-section="mep"
+          className={`print-mep ${activeTab !== 'mep' ? 'hidden print:block' : ''} ${!printSections.mep ? 'print-hide' : ''}`}
+        >
             {mepData.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-sm p-8 text-center">
                 <p className="text-gray-500">No MEP items for this date</p>
@@ -1724,12 +1899,13 @@ export default function ProductionSheetsPage() {
                 </div>
               </div>
             )}
-          </div>
-        )}
+        </div>
 
         {/* Salad Bar Production Table */}
-        {activeTab === 'salad_bar' && (
-          <div>
+        <div
+          data-print-section="salad"
+          className={`print-salad_bar ${activeTab !== 'salad_bar' ? 'hidden print:block' : ''} ${!printSections.salad ? 'print-hide' : ''}`}
+        >
             {saladBarData.length === 0 ? (
               <div className="bg-white border border-black/10 shadow-sm rounded-sm p-8 text-center">
                 <p className="text-gray-500">No salad bar orders for this date</p>
@@ -1822,9 +1998,178 @@ export default function ProductionSheetsPage() {
                 </div>
               </div>
             )}
-          </div>
-        )}
+        </div>
+
+        {/* Recipes Tab */}
+        <div
+          data-print-section="recipes"
+          className={`print-recipes ${activeTab !== 'recipes' ? 'hidden print:block' : ''} ${!printSections.recipes ? 'print-hide' : ''}`}
+        >
+            {recipesData.length === 0 ? (
+              <div className="bg-white border border-black/10 shadow-sm rounded-sm p-8 text-center">
+                <p className="text-gray-500">No recipes available for this date</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {recipesData.map((recipe, idx) => (
+                  <div key={idx} className="bg-white border border-slate-700 rounded-sm overflow-hidden shadow-sm">
+                    {/* Recipe Header */}
+                    <div className="bg-[#10B981] px-6 py-4">
+                      <h3 className="text-lg font-bold text-white">
+                        {recipe.dishes?.name || 'Unknown Dish'}
+                      </h3>
+                      <p className="text-xs text-white/80 uppercase tracking-wide mt-1">
+                        {recipe.dishes?.category?.replace(/_/g, ' ') || 'Unknown Category'}
+                      </p>
+                    </div>
+
+                    {/* Recipe Content */}
+                    <div className="p-6">
+                      {recipe.instructions && (
+                        <div className="mb-4">
+                          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
+                            Instructions
+                          </h4>
+                          <div className="text-sm text-gray-900 whitespace-pre-wrap">
+                            {recipe.instructions}
+                          </div>
+                        </div>
+                      )}
+
+                      {recipe.ingredients && (
+                        <div className="mb-4">
+                          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
+                            Ingredients
+                          </h4>
+                          <div className="text-sm text-gray-900 whitespace-pre-wrap">
+                            {recipe.ingredients}
+                          </div>
+                        </div>
+                      )}
+
+                      {recipe.notes && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
+                            Notes
+                          </h4>
+                          <div className="text-sm text-gray-600 whitespace-pre-wrap italic">
+                            {recipe.notes}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
       </main>
+
+      {/* Print Selection Modal */}
+      {showPrintModal && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={() => setShowPrintModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 border border-[#E8E8ED]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-[#FAFAFA] px-6 py-4 border-b border-[#E8E8ED] rounded-t-2xl">
+              <h3 className="text-[22px] font-semibold text-[#1D1D1F]">Print Production Sheets</h3>
+              <p className="text-[13px] text-[#86868B] mt-1">Select which sheets to print</p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Print All Checkbox */}
+              <label className="flex items-center gap-3 p-4 bg-[#F5F5F7] rounded-lg cursor-pointer hover:bg-[#E8E8ED] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={printSections.main && printSections.mep && printSections.salad && printSections.recipes}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setPrintSections({
+                      main: checked,
+                      mep: checked,
+                      salad: checked,
+                      recipes: checked,
+                    });
+                  }}
+                  className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20 cursor-pointer"
+                />
+                <span className="text-[17px] font-semibold text-[#1D1D1F]">Print All!</span>
+              </label>
+
+              {/* Individual Checkboxes */}
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={printSections.main}
+                    onChange={(e) => setPrintSections({ ...printSections, main: e.target.checked })}
+                    className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20 cursor-pointer"
+                  />
+                  <span className="text-[15px] text-[#1D1D1F]">Main Production Sheet</span>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={printSections.mep}
+                    onChange={(e) => setPrintSections({ ...printSections, mep: e.target.checked })}
+                    className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20 cursor-pointer"
+                  />
+                  <span className="text-[15px] text-[#1D1D1F]">Main MEP</span>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={printSections.salad}
+                    onChange={(e) => setPrintSections({ ...printSections, salad: e.target.checked })}
+                    className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20 cursor-pointer"
+                  />
+                  <span className="text-[15px] text-[#1D1D1F]">Salad Bar</span>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={printSections.recipes}
+                    onChange={(e) => setPrintSections({ ...printSections, recipes: e.target.checked })}
+                    className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20 cursor-pointer"
+                  />
+                  <span className="text-[15px] text-[#1D1D1F]">Recipes</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 px-6 pb-6">
+              <button
+                onClick={() => setShowPrintModal(false)}
+                className="flex-1 px-4 py-3 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-lg hover:bg-[#F5F5F7] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowPrintModal(false);
+                  // Give the modal time to close, then trigger print
+                  setTimeout(() => {
+                    window.print();
+                  }, 100);
+                }}
+                className="flex-1 px-4 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-lg transition-colors"
+              >
+                Print
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
