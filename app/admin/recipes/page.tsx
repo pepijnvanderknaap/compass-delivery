@@ -309,6 +309,31 @@ export default function RecipesAdminPage() {
     }
   };
 
+  const handleDuplicate = async (recipe: Recipe) => {
+    const newName = prompt('Enter name for duplicated recipe:', `${recipe.name} (Copy)`);
+    if (!newName) return;
+
+    const { error } = await supabase
+      .from('recipes')
+      .insert({
+        dish_id: recipe.dish_id,
+        name: newName,
+        base_quantity: recipe.base_quantity,
+        base_unit: recipe.base_unit,
+        rows: recipe.rows,
+        cooking_loss_percentage: recipe.cooking_loss_percentage,
+        final_steps: recipe.final_steps,
+      });
+
+    if (error) {
+      console.error('Error duplicating recipe:', error);
+      setMessage({ type: 'error', text: 'Failed to duplicate recipe' });
+    } else {
+      setMessage({ type: 'success', text: 'Recipe duplicated successfully!' });
+      fetchRecipes();
+    }
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setEditingRecipe(null);
@@ -619,7 +644,7 @@ export default function RecipesAdminPage() {
           </div>
         )}
 
-        {/* Recipes List - Excel Style */}
+        {/* Recipes List - Grouped by Category */}
         {recipes.length === 0 ? (
           <div className="bg-white border border-[#D2D2D7] rounded-lg p-12 text-center">
             <p className="text-[#86868B] text-[15px]">
@@ -627,8 +652,43 @@ export default function RecipesAdminPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {recipes.map((recipe) => (
+          <div className="space-y-8">
+            {/* Group recipes by category */}
+            {(() => {
+              const categoryLabels: Record<string, string> = {
+                soup: 'Soups',
+                hot_dish_meat: 'Hot Dishes - Meat',
+                hot_dish_fish: 'Hot Dishes - Fish',
+                hot_dish_veg: 'Hot Dishes - Vegetable',
+              };
+
+              const groupedRecipes: Record<string, Recipe[]> = {};
+              recipes.forEach(recipe => {
+                const category = recipe.dishes?.category || 'uncategorized';
+                if (!groupedRecipes[category]) {
+                  groupedRecipes[category] = [];
+                }
+                groupedRecipes[category].push(recipe);
+              });
+
+              return Object.entries(groupedRecipes).map(([category, categoryRecipes]) => (
+                <div key={category} className="space-y-4">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between bg-[#FAFAFA] border border-[#D2D2D7] rounded-lg px-6 py-4">
+                    <h2 className="text-[22px] font-semibold text-[#1D1D1F]">
+                      {categoryLabels[category] || category.charAt(0).toUpperCase() + category.slice(1)}
+                    </h2>
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className="px-5 py-2.5 text-[15px] font-medium bg-[#0071E3] text-white rounded-lg hover:bg-[#0077ED] transition-colors"
+                    >
+                      + Create Recipe
+                    </button>
+                  </div>
+
+                  {/* Recipes in this category */}
+                  <div className="space-y-6">
+                    {categoryRecipes.map((recipe) => (
               <div
                 key={recipe.id}
                 className="bg-white border border-[#D2D2D7] rounded-lg overflow-hidden"
@@ -649,6 +709,12 @@ export default function RecipesAdminPage() {
                       className="px-4 py-2 text-[13px] font-medium bg-[#0071E3] text-white rounded hover:bg-[#0077ED] transition-colors"
                     >
                       Edit
+                    </button>
+                    <button
+                      onClick={() => handleDuplicate(recipe)}
+                      className="px-4 py-2 text-[13px] font-medium bg-white border border-[#D2D2D7] text-[#1D1D1F] rounded hover:bg-[#F5F5F7] transition-colors"
+                    >
+                      Duplicate
                     </button>
                     <button
                       onClick={() => handleDelete(recipe.id)}
@@ -938,7 +1004,11 @@ export default function RecipesAdminPage() {
                   </table>
                 </div>
               </div>
-            ))}
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         )}
       </main>

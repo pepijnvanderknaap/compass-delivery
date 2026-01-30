@@ -1,500 +1,465 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import UniversalHeader from '@/components/UniversalHeader';
+import * as XLSX from 'xlsx';
 
-interface RecipeIngredient {
+interface RecipeRow {
   id: string;
-  name: string;
-  multiplier: number; // hidden from UI, calculated behind the scenes
-  unit: string;
-  category: 'vegetable' | 'meat' | 'fish' | 'dairy' | 'dry_store';
-  instruction?: string;
+  type: 'action' | 'ingredient';
+  text: string;
+  hardValue?: number;
+  multiplier?: number;
+  unit?: string;
+  category?: 'vegetable' | 'meat' | 'fish' | 'dairy' | 'dry_store';
 }
 
 interface Recipe {
   id: string;
+  dish_id: string;
   name: string;
-  ingredients: RecipeIngredient[];
+  base_quantity: number;
+  base_unit: string;
+  rows: RecipeRow[];
   cooking_loss_percentage: number;
   final_steps: string[];
+  created_at: string;
+  dishes?: {
+    id: string;
+    name: string;
+    category: string;
+  };
 }
 
-export default function RecipesPage() {
+interface Dish {
+  id: string;
+  name: string;
+  category: string;
+}
+
+export default function DarkKitchenRecipesPage() {
+  const router = useRouter();
   const supabase = createClient();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [requiredKg, setRequiredKg] = useState(25);
-  const [editedIngredients, setEditedIngredients] = useState<RecipeIngredient[]>([]);
-  const [editedCookingLoss, setEditedCookingLoss] = useState(8);
-  const [editedRecipeName, setEditedRecipeName] = useState('');
-  const [editedFinalSteps, setEditedFinalSteps] = useState<string[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [quickViewRecipe, setQuickViewRecipe] = useState<Recipe | null>(null);
+
+  const [formData, setFormData] = useState({
+    dish_id: '',
+    base_quantity: 25,
+    base_unit: 'kg',
+    cooking_loss_percentage: 8,
+  });
+
+  const [rows, setRows] = useState<RecipeRow[]>([]);
+  const [finalSteps, setFinalSteps] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [importResults, setImportResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchRecipes();
+    checkAuth();
   }, []);
 
-  const fetchRecipes = async () => {
-    // TODO: Fetch from database
-    const exampleRecipe: Recipe = {
-      id: '1',
-      name: 'Creamy Cauliflower Soup',
-      cooking_loss_percentage: 8,
-      final_steps: [
-        'Puree with stick blender',
-        'Balance with pepper, salt & lemon juice'
-      ],
-      ingredients: [
-        {
-          id: '1',
-          name: 'Cauliflower rosets',
-          multiplier: 0.284,
-          unit: 'kg',
-          category: 'vegetable',
-          instruction: 'Roast on 200C until Cauliflower is brown & soft'
-        },
-        {
-          id: '2',
-          name: 'Onion dice',
-          multiplier: 0.17,
-          unit: 'kg',
-          category: 'vegetable',
-          instruction: 'Slowly braise in oil for 15 minutes'
-        },
-        {
-          id: '3',
-          name: 'Dried Thyme',
-          multiplier: 0.0008,
-          unit: 'kg',
-          category: 'dry_store'
-        },
-        {
-          id: '4',
-          name: 'Potato',
-          multiplier: 0.14,
-          unit: 'kg',
-          category: 'vegetable',
-          instruction: 'Add & cook until potatoes & pumpkin are completely soft'
-        },
-        {
-          id: '5',
-          name: 'Garlic (roasted in alu foil for 45 minutes on 180C)',
-          multiplier: 0.012,
-          unit: 'kg',
-          category: 'vegetable'
-        },
-        {
-          id: '6',
-          name: 'Veggie Cream',
-          multiplier: 0.168,
-          unit: 'kg',
-          category: 'dairy'
-        },
-        {
-          id: '7',
-          name: 'Vegetable Stock',
-          multiplier: 0.38,
-          unit: 'liters',
-          category: 'dry_store'
-        },
-        {
-          id: '8',
-          name: 'Roasted Cauliflower',
-          multiplier: 0.2,
-          unit: 'kg',
-          category: 'vegetable'
-        },
-        {
-          id: '9',
-          name: 'Salt n pepper',
-          multiplier: 0.004,
-          unit: 'kg',
-          category: 'dry_store'
-        },
-        {
-          id: '10',
-          name: 'Parsley',
-          multiplier: 0.003,
-          unit: 'kg',
-          category: 'vegetable',
-          instruction: 'Add & blend until super smooth'
-        }
-      ]
-    };
-
-    setRecipes([exampleRecipe]);
-    setSelectedRecipe(exampleRecipe);
-    setEditedIngredients(exampleRecipe.ingredients);
-    setEditedCookingLoss(exampleRecipe.cooking_loss_percentage);
-    setEditedRecipeName(exampleRecipe.name);
-    setEditedFinalSteps(exampleRecipe.final_steps);
-  };
-
-  const calculateGrossWeight = (ingredients: RecipeIngredient[], required: number) => {
-    return ingredients.reduce((sum, ing) => {
-      const weight = ing.multiplier * required;
-      return sum + weight;
-    }, 0);
-  };
-
-  const calculateNetWeight = (grossWeight: number, lossPercentage: number) => {
-    return grossWeight * (1 - lossPercentage / 100);
-  };
-
-  // Format weight with smart unit conversion (grams if < 0.5 kg)
-  const formatWeight = (weight: number, unit: string) => {
-    // Convert unit abbreviations
-    let displayUnit = unit;
-    if (unit === 'grams') displayUnit = 'gr';
-    else if (unit === 'kg') displayUnit = 'kg';
-    else if (unit === 'liters') displayUnit = 'ltr';
-    else if (unit === 'ml') displayUnit = 'ml';
-
-    // Convert kg to grams if less than 0.5 kg
-    if (unit === 'kg' && weight < 0.5) {
-      return `${(weight * 1000).toFixed(0)} gr`;
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push('/login/dark-kitchen');
+      return;
     }
-    return `${weight.toFixed(2)} ${displayUnit}`;
+    fetchRecipes();
+    fetchDishes();
   };
 
-  // Update ingredient multiplier via percentage (e.g., 28.4 for 28.4%)
-  const updateIngredientPercentage = (ingredientId: string, percentage: number) => {
-    setEditedIngredients(prev =>
-      prev.map(ing =>
-        ing.id === ingredientId
-          ? { ...ing, multiplier: percentage / 100 }
-          : ing
-      )
-    );
+  const fetchRecipes = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('*, dishes(id, name, category)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching recipes:', error);
+      setMessage({ type: 'error', text: 'Failed to load recipes' });
+    } else {
+      setRecipes(data || []);
+    }
+    setLoading(false);
   };
 
-  const updateIngredientName = (ingredientId: string, newName: string) => {
-    setEditedIngredients(prev =>
-      prev.map(ing =>
-        ing.id === ingredientId ? { ...ing, name: newName } : ing
-      )
-    );
+  const fetchDishes = async () => {
+    const { data, error } = await supabase
+      .from('dishes')
+      .select('id, name, category')
+      .in('category', ['soup', 'hot_dish_meat', 'hot_dish_fish', 'hot_dish_veg'])
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching dishes:', error);
+    } else {
+      setDishes(data || []);
+    }
   };
 
-  const updateIngredientInstruction = (ingredientId: string, newInstruction: string) => {
-    setEditedIngredients(prev =>
-      prev.map(ing =>
-        ing.id === ingredientId
-          ? { ...ing, instruction: newInstruction || undefined }
-          : ing
-      )
-    );
-  };
-
-  const updateFinalStep = (index: number, newStep: string) => {
-    setEditedFinalSteps(prev =>
-      prev.map((step, i) => i === index ? newStep : step)
-    );
-  };
-
-  const addFinalStep = () => {
-    setEditedFinalSteps(prev => [...prev, '']);
-  };
-
-  const removeFinalStep = (index: number) => {
-    setEditedFinalSteps(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const getIngredientsByCategory = (ingredients: RecipeIngredient[], required: number) => {
-    const categories = {
-      vegetable: [] as { name: string; weight: number; unit: string }[],
-      meat: [] as { name: string; weight: number; unit: string }[],
-      fish: [] as { name: string; weight: number; unit: string }[],
-      dairy: [] as { name: string; weight: number; unit: string }[],
-      dry_store: [] as { name: string; weight: number; unit: string }[]
-    };
-
-    ingredients.forEach(ing => {
-      const weight = ing.multiplier * required;
-      categories[ing.category].push({
-        name: ing.name,
-        weight,
-        unit: ing.unit
-      });
+  const handleEdit = (recipe: Recipe) => {
+    setEditingRecipe(recipe);
+    setFormData({
+      dish_id: recipe.dish_id,
+      base_quantity: recipe.base_quantity || 25,
+      base_unit: recipe.base_unit || 'kg',
+      cooking_loss_percentage: recipe.cooking_loss_percentage,
     });
 
-    return categories;
+    const rowsWithHardValues = (recipe.rows || []).map(row => {
+      if (row.type === 'ingredient' && row.multiplier !== undefined) {
+        return {
+          ...row,
+          hardValue: row.multiplier * (recipe.base_quantity || 25)
+        };
+      }
+      return row;
+    });
+
+    setRows(rowsWithHardValues);
+    setFinalSteps(recipe.final_steps || []);
+    setShowForm(true);
   };
 
-  const grossWeight = calculateGrossWeight(editedIngredients, requiredKg);
-  const netWeight = calculateNetWeight(grossWeight, editedCookingLoss);
-  const categorizedIngredients = getIngredientsByCategory(editedIngredients, requiredKg);
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this recipe?')) return;
 
-  if (!selectedRecipe) {
-    return (
-      <div className="min-h-screen bg-[#F5F5F7]">
-        <UniversalHeader title="Recipes" backPath="/dark-kitchen" />
-        <div className="max-w-6xl mx-auto px-8 py-12">
-          <p className="text-[#86868B]">Loading recipes...</p>
-        </div>
-      </div>
-    );
-  }
+    const { error } = await supabase
+      .from('recipes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting recipe:', error);
+      setMessage({ type: 'error', text: 'Failed to delete recipe' });
+    } else {
+      setMessage({ type: 'success', text: 'Recipe deleted successfully!' });
+      fetchRecipes();
+    }
+  };
+
+  const handleDuplicate = async (recipe: Recipe) => {
+    const newName = prompt('Enter name for duplicated recipe:', `${recipe.name} (Copy)`);
+    if (!newName) return;
+
+    const { error } = await supabase
+      .from('recipes')
+      .insert({
+        dish_id: recipe.dish_id,
+        name: newName,
+        base_quantity: recipe.base_quantity,
+        base_unit: recipe.base_unit,
+        rows: recipe.rows,
+        cooking_loss_percentage: recipe.cooking_loss_percentage,
+        final_steps: recipe.final_steps,
+      });
+
+    if (error) {
+      console.error('Error duplicating recipe:', error);
+      setMessage({ type: 'error', text: 'Failed to duplicate recipe' });
+    } else {
+      setMessage({ type: 'success', text: 'Recipe duplicated successfully!' });
+      fetchRecipes();
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      soup: 'Soups',
+      hot_dish_meat: 'Hot Dishes - Meat',
+      hot_dish_fish: 'Hot Dishes - Fish',
+      hot_dish_veg: 'Hot Dishes - Vegetable',
+    };
+    return labels[category] || category.charAt(0).toUpperCase() + category.slice(1);
+  };
+
+  // Group recipes by category - default to 'soup' for recipes without dish linkage
+  const groupedRecipes: Record<string, Recipe[]> = {};
+  recipes.forEach(recipe => {
+    const category = recipe.dishes?.category || 'soup'; // Default to soup for imported recipes
+    if (!groupedRecipes[category]) {
+      groupedRecipes[category] = [];
+    }
+    groupedRecipes[category].push(recipe);
+  });
 
   return (
     <div className="min-h-screen bg-[#F5F5F7]">
       <UniversalHeader title="Recipes" backPath="/dark-kitchen" />
 
-      <main className="max-w-6xl mx-auto px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Recipe Calculator */}
-          <div className="lg:col-span-2">
-            {/* Floating Edit Button */}
-            <div className="mb-4 flex justify-end">
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className="px-5 py-2 text-[14px] font-semibold text-slate-900 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
-              >
-                {isEditing ? 'Done' : 'Edit'}
-              </button>
-            </div>
+      <main className="max-w-7xl mx-auto px-8 py-8">
+        {/* Message */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+            {message.text}
+          </div>
+        )}
 
-            <div className="bg-white border border-[#D2D2D7] rounded-lg shadow-sm overflow-hidden">
-              {/* Recipe Header with Required Quantity */}
-              <div className="bg-[#D97706] px-4 py-3 border-b border-[#E8E8ED] flex items-center justify-between gap-4">
-                <input
-                  type="text"
-                  value={editedRecipeName}
-                  onChange={(e) => setEditedRecipeName(e.target.value)}
-                  className="flex-1 bg-transparent text-[22px] font-semibold text-white placeholder-white/60 focus:outline-none"
-                  placeholder="Recipe Name"
-                />
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[15px] font-medium text-white">Required Quantity</span>
-                  <input
-                    type="number"
-                    value={requiredKg}
-                    onChange={(e) => setRequiredKg(Number(e.target.value))}
-                    className="w-16 px-2 py-1 border border-white/30 bg-white rounded-lg text-[14px] font-semibold text-[#1D1D1F] text-right focus:outline-none focus:border-white/50 focus:bg-white transition-all placeholder-[#86868B] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    min="1"
-                    step="0.1"
-                  />
-                  <span className="text-[14px] text-white/90">kg</span>
+        {/* Top Actions */}
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-[28px] font-semibold text-[#1D1D1F]">All Recipes</h1>
+            <p className="text-[13px] text-[#86868B] mt-1">{recipes.length} total recipes</p>
+          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-6 py-2.5 text-[15px] font-medium bg-[#0071E3] text-white hover:bg-[#0077ED] rounded-lg transition-colors"
+          >
+            + Add Recipe
+          </button>
+        </div>
+
+        {/* Recipes List by Category */}
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-[#86868B]">Loading recipes...</p>
+          </div>
+        ) : recipes.length === 0 ? (
+          <div className="bg-white border border-[#D2D2D7] rounded-lg p-12 text-center">
+            <p className="text-[#86868B] text-[15px]">
+              No recipes yet. Add your first recipe!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {Object.entries(groupedRecipes).map(([category, categoryRecipes]) => (
+              <div key={category}>
+                {/* Category Header */}
+                <div className="mb-4 pb-2 border-b-2 border-[#D2D2D7] flex items-center justify-between">
+                  <h2 className="text-[22px] font-semibold text-[#1D1D1F]">
+                    {getCategoryLabel(category)}
+                  </h2>
+                  <span className="text-[15px] text-[#86868B] font-medium">
+                    {categoryRecipes.length} {categoryRecipes.length === 1 ? 'recipe' : 'recipes'}
+                  </span>
+                </div>
+
+                {/* Recipes Grid - Ultra Compact */}
+                <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+                  {categoryRecipes.map((recipe) => {
+                    const categoryBadgeColors: Record<string, string> = {
+                      soup: 'bg-orange-100 text-orange-700',
+                      hot_dish_meat: 'bg-red-100 text-red-700',
+                      hot_dish_fish: 'bg-blue-100 text-blue-700',
+                      hot_dish_veg: 'bg-green-100 text-green-700',
+                    };
+                    const badgeColor = categoryBadgeColors[category] || 'bg-gray-100 text-gray-700';
+
+                    return (
+                      <div
+                        key={recipe.id}
+                        className="bg-white border border-[#D2D2D7] rounded hover:shadow-md transition-shadow group"
+                      >
+                        {/* Recipe Card */}
+                        <div className="p-2 relative">
+                          {/* Subtle Category Indicator - just a small colored dot */}
+                          <div className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full opacity-40 ${badgeColor.replace('bg-', 'bg-').split(' ')[0].replace('100', '400')}`}
+                               title={category === 'soup' ? 'Soup' : category === 'hot_dish_meat' ? 'Meat' : category === 'hot_dish_fish' ? 'Fish' : category === 'hot_dish_veg' ? 'Veg' : category}>
+                          </div>
+
+                          <h3 className="text-[11px] font-semibold text-[#1D1D1F] truncate mb-1.5 leading-tight pr-2">
+                            {recipe.name}
+                          </h3>
+
+                          <div className="text-[9px] text-[#86868B] mb-2 space-y-0.5">
+                            <div>{recipe.base_quantity}{recipe.base_unit}</div>
+                            <div>{recipe.rows?.filter(r => r.type === 'ingredient').length || 0} items</div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => setQuickViewRecipe(recipe)}
+                              className="w-full px-1.5 py-1 text-[9px] font-medium text-[#0071E3] border border-[#0071E3] rounded hover:bg-[#0071E3] hover:text-white transition-colors"
+                            >
+                              View
+                            </button>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => handleEdit(recipe)}
+                                className="flex-1 px-1.5 py-1 text-[9px] font-medium bg-[#0071E3] text-white rounded hover:bg-[#0077ED] transition-colors"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDuplicate(recipe)}
+                                className="flex-1 px-1.5 py-1 text-[9px] font-medium text-[#6E6E73] border border-[#D2D2D7] rounded hover:bg-[#F5F5F7] transition-colors"
+                                title="Duplicate"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => handleDelete(recipe.id)}
+                              className="w-full px-1.5 py-1 text-[9px] font-medium text-[#FF3B30] border border-[#FF3B30] rounded hover:bg-red-50 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+      </main>
 
-              {/* Ingredients Table */}
-              <div className="overflow-x-auto pt-4">
-                <table className="w-full">
-                  {isEditing && (
-                    <thead>
-                      <tr className="border-b border-[#D2D2D7]">
-                        <th className="px-4 py-2 text-left text-[13px] font-medium text-[#86868B] border-l border-[#D2D2D7]">Ingredient</th>
-                        <th className="px-4 py-2 text-right text-[13px] font-medium text-[#86868B] w-24 border-l border-[#D2D2D7]">%</th>
-                        <th className="px-4 py-2 text-right text-[13px] font-medium text-[#86868B] w-28 border-l border-r border-[#D2D2D7]">Calculated</th>
-                      </tr>
-                    </thead>
-                  )}
-                  <tbody>
-                    {editedIngredients.map((ingredient) => {
-                      const calculatedWeight = ingredient.multiplier * requiredKg;
-                      const percentage = ingredient.multiplier * 100;
-                      const showInstruction = ingredient.instruction;
-
-                      return (
-                        <>
-                          {/* Cooking Instruction Row - Editable */}
-                          {showInstruction && (
-                            <tr key={`instruction-${ingredient.id}`} className="border-t border-[#D2D2D7]">
-                              <td colSpan={isEditing ? 3 : 2} className="px-4 py-2 bg-[#ECECF1] border-l border-r border-[#D2D2D7]">
-                                {isEditing ? (
-                                  <input
-                                    type="text"
-                                    value={ingredient.instruction}
-                                    onChange={(e) => updateIngredientInstruction(ingredient.id, e.target.value)}
-                                    className="w-full bg-transparent text-[17px] font-bold text-[#1D1D1F] placeholder-[#86868B] focus:outline-none"
-                                    placeholder="Cooking instruction..."
-                                  />
-                                ) : (
-                                  <div className="text-[17px] font-bold text-[#1D1D1F]">
-                                    {ingredient.instruction}
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          )}
-                          {/* Ingredient Row */}
-                          <tr key={ingredient.id} className="border-t border-[#D2D2D7] hover:bg-[#FAFAFA] transition-colors">
-                            <td className="px-4 py-1.5 border-l border-[#D2D2D7]">
-                              {isEditing ? (
-                                <input
-                                  type="text"
-                                  value={ingredient.name}
-                                  onChange={(e) => updateIngredientName(ingredient.id, e.target.value)}
-                                  className="w-full bg-transparent text-[15px] text-[#86868B] placeholder-[#B3B3B3] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 rounded px-1 py-0.5 -mx-1"
-                                  placeholder="Ingredient name..."
-                                />
-                              ) : (
-                                <div className="text-[15px] text-[#86868B]">{ingredient.name}</div>
-                              )}
-                            </td>
-                            {isEditing ? (
-                              <>
-                                <td className="px-4 py-1.5 text-right w-24 border-l border-[#D2D2D7]">
-                                  <input
-                                    type="number"
-                                    value={percentage.toFixed(2)}
-                                    onChange={(e) => updateIngredientPercentage(ingredient.id, Number(e.target.value))}
-                                    className="w-20 px-2 py-0.5 text-[14px] font-semibold text-[#1D1D1F] text-right border border-[#D2D2D7] rounded-lg focus:outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all"
-                                    step="0.01"
-                                  />
-                                </td>
-                                <td className="px-4 py-1.5 text-right w-28 border-l border-r border-[#D2D2D7]">
-                                  <span className="text-[15px] font-semibold text-[#1D1D1F]">
-                                    {formatWeight(calculatedWeight, ingredient.unit)}
-                                  </span>
-                                </td>
-                              </>
-                            ) : (
-                              <td className="px-4 py-1.5 text-right border-r border-[#D2D2D7]" colSpan={2}>
-                                <div className="text-[15px] font-semibold text-[#1D1D1F]">
-                                  {formatWeight(calculatedWeight, ingredient.unit)}
-                                </div>
-                              </td>
-                            )}
-                          </tr>
-                        </>
-                      );
-                    })}
-
-                    {/* Final Steps */}
-                    <tr className="bg-[#FAFAFA] border-t-2 border-[#D2D2D7]">
-                      <td colSpan={isEditing ? 3 : 2} className="px-4 py-2 border-l border-r border-[#D2D2D7]">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <h3 className="text-[15px] font-semibold text-[#1D1D1F]">Final Steps</h3>
-                          {isEditing && (
-                            <button
-                              onClick={addFinalStep}
-                              className="text-[#D97706] hover:text-[#B45309] text-[13px] font-medium"
-                            >
-                              + Add Step
-                            </button>
-                          )}
-                        </div>
-                        {isEditing ? (
-                          <div className="space-y-2">
-                            {editedFinalSteps.map((step, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <span className="text-[14px] text-[#6E6E73]">•</span>
-                                <input
-                                  type="text"
-                                  value={step}
-                                  onChange={(e) => updateFinalStep(index, e.target.value)}
-                                  className="flex-1 bg-transparent text-[14px] text-[#1D1D1F] placeholder-[#86868B] border border-[#D2D2D7] rounded px-2 py-1 focus:outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
-                                  placeholder="Enter step..."
-                                />
-                                <button
-                                  onClick={() => removeFinalStep(index)}
-                                  className="text-red-500 hover:text-red-600 text-[13px] font-medium"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <ul className="space-y-0.5 text-[14px] text-[#6E6E73]">
-                            {editedFinalSteps.map((step, index) => (
-                              <li key={index}>• {step}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </td>
-                    </tr>
-
-                    {/* Summary Rows */}
-                    <tr className="bg-[#F5F5F7] border-t border-[#D2D2D7]">
-                      <td className="px-4 py-1.5 text-[15px] font-medium text-[#1D1D1F] border-l border-[#D2D2D7]">Gross Weight</td>
-                      <td className="px-4 py-1.5 text-right text-[15px] font-semibold text-[#1D1D1F] border-r border-[#D2D2D7]">
-                        {formatWeight(grossWeight, 'kg')}
-                      </td>
-                    </tr>
-                    <tr className="bg-[#F5F5F7] border-t border-[#D2D2D7]">
-                      <td className="px-4 py-1.5 text-[15px] font-medium text-[#1D1D1F] border-l border-[#D2D2D7]">
-                        {isEditing ? (
-                          <div className="flex items-center gap-2">
-                            <span>Cooking Loss</span>
-                            <input
-                              type="number"
-                              value={editedCookingLoss}
-                              onChange={(e) => setEditedCookingLoss(Number(e.target.value))}
-                              className="w-12 px-1.5 py-0.5 text-[14px] border border-[#D2D2D7] rounded-lg text-right focus:outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
-                              step="0.1"
-                            />
-                            <span className="text-[14px] text-[#86868B]">%</span>
-                          </div>
-                        ) : (
-                          <span>Cooking Loss ({editedCookingLoss}%)</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-1.5 text-right text-[15px] font-semibold text-[#1D1D1F] border-r border-[#D2D2D7]">
-                        {formatWeight(grossWeight * editedCookingLoss / 100, 'kg')}
-                      </td>
-                    </tr>
-
-                    <tr className="bg-[#D97706] text-white border-t border-[#D2D2D7]">
-                      <td className="px-4 py-2 text-[17px] font-semibold border-l border-[#D2D2D7]">Net Weight</td>
-                      <td className="px-4 py-2 text-right text-[17px] font-bold border-r border-[#D2D2D7]">
-                        {formatWeight(netWeight, 'kg')}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+      {/* Quick View Modal */}
+      {quickViewRecipe && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setQuickViewRecipe(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-[#FAFAFA] px-6 py-4 border-b border-[#E8E8ED] sticky top-0 z-10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-[22px] font-semibold text-[#1D1D1F]">
+                    {quickViewRecipe.name}
+                  </h3>
+                  <p className="text-[13px] text-[#86868B] mt-1">
+                    Base Quantity: {quickViewRecipe.base_quantity} {quickViewRecipe.base_unit}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setQuickViewRecipe(null)}
+                  className="text-[#86868B] hover:text-[#1D1D1F] text-[24px] leading-none"
+                >
+                  ×
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* Ingredient Aggregator */}
-          <div className="lg:col-span-1 mt-[54px]">
-            <div className="bg-white border border-[#D2D2D7] rounded-lg shadow-sm overflow-hidden">
-              <div className="bg-[#4A7DB5] px-4 py-4">
-                <h2 className="text-[16px] font-semibold text-white">Shopping List</h2>
-              </div>
+            {/* Modal Content */}
+            <div className="p-6">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-[#F5F5F7] text-left">
+                    <th className="px-4 py-2 text-[11px] font-semibold text-[#86868B] uppercase tracking-wide border border-[#D2D2D7]">
+                      Ingredient / Action
+                    </th>
+                    <th className="px-4 py-2 text-[11px] font-semibold text-[#86868B] uppercase tracking-wide text-right border border-[#D2D2D7] w-32">
+                      Quantity
+                    </th>
+                    <th className="px-4 py-2 text-[11px] font-semibold text-[#86868B] uppercase tracking-wide border border-[#D2D2D7] w-24">
+                      Unit
+                    </th>
+                    <th className="px-4 py-2 text-[11px] font-semibold text-[#86868B] uppercase tracking-wide text-right border border-[#D2D2D7] w-32">
+                      Formula (%)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Required Quantity */}
+                  <tr className="bg-[#E8F4FF]">
+                    <td className="px-4 py-2 border border-[#D2D2D7]">
+                      <div className="text-[14px] font-bold text-[#0071E3]">Required</div>
+                    </td>
+                    <td className="px-4 py-2 border border-[#D2D2D7] text-right">
+                      <div className="text-[14px] font-mono font-bold text-[#0071E3]">
+                        {quickViewRecipe.base_quantity.toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 border border-[#D2D2D7]">
+                      <div className="text-[13px] text-[#6E6E73]">{quickViewRecipe.base_unit}</div>
+                    </td>
+                    <td className="px-4 py-2 border border-[#D2D2D7]"></td>
+                  </tr>
 
-              <div className="p-3 space-y-4">
-                {Object.entries(categorizedIngredients).map(([category, items]) => {
-                  if (items.length === 0) return null;
+                  {/* Spacer */}
+                  <tr>
+                    <td colSpan={4} className="h-2 border-0"></td>
+                  </tr>
 
-                  const categoryNames = {
-                    vegetable: 'Vegetables',
-                    meat: 'Meat',
-                    fish: 'Fish',
-                    dairy: 'Dairy',
-                    dry_store: 'Dry Store'
-                  };
+                  {/* Rows */}
+                  {quickViewRecipe.rows?.map((row: any, index: number) => {
+                    if (row.type === 'action') {
+                      return (
+                        <tr key={index} className="bg-[#FAFAFA]">
+                          <td colSpan={4} className="px-4 py-3 border border-[#D2D2D7]">
+                            <div className="font-bold text-[15px] text-[#1D1D1F]">
+                              {row.text}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    } else {
+                      const multiplier = row.multiplier !== undefined ? row.multiplier : 0;
+                      let hardValue = multiplier * quickViewRecipe.base_quantity;
+                      let displayUnit = row.unit || 'kg';
+                      const percentage = (multiplier * 100).toFixed(2);
 
-                  return (
-                    <div key={category}>
-                      <h3 className="text-[12px] font-semibold text-[#86868B] uppercase tracking-wider mb-1.5">
-                        {categoryNames[category as keyof typeof categoryNames]}
-                      </h3>
-                      <ul className="space-y-1">
-                        {items
-                          .sort((a, b) => b.weight - a.weight)
-                          .map((item, idx) => (
-                            <li key={idx} className="flex justify-between items-baseline gap-2">
-                              <span className="text-[14px] text-[#1D1D1F] leading-tight">{item.name}</span>
-                              <span className="text-[14px] font-semibold text-[#D97706] whitespace-nowrap">
-                                {formatWeight(item.weight, item.unit)}
-                              </span>
-                            </li>
-                          ))}
-                      </ul>
-                    </div>
-                  );
-                })}
+                      // Convert bunches to grams for display
+                      if ((row.unit || '').toLowerCase().includes('bunch')) {
+                        const ingredientLower = (row.text || '').toLowerCase();
+                        let gramsPerBunch = 0;
+                        if (ingredientLower.includes('coriander') || ingredientLower.includes('cilantro')) {
+                          gramsPerBunch = 80;
+                        } else if (ingredientLower.includes('spring onion') || ingredientLower.includes('scallion')) {
+                          gramsPerBunch = 100;
+                        }
+                        if (gramsPerBunch > 0) {
+                          hardValue = hardValue * gramsPerBunch;
+                          displayUnit = 'gram';
+                        }
+                      }
+
+                      return (
+                        <tr key={index} className="hover:bg-[#FAFAFA]">
+                          <td className="px-4 py-2 border border-[#D2D2D7]">
+                            <div className="text-[14px] text-[#1D1D1F]">{row.text}</div>
+                          </td>
+                          <td className="px-4 py-2 border border-[#D2D2D7] text-right">
+                            <div className="text-[14px] font-mono text-[#1D1D1F]">
+                              {hardValue > 0 ? hardValue.toFixed(2) : '0.00'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 border border-[#D2D2D7]">
+                            <div className="text-[13px] text-[#6E6E73]">{displayUnit}</div>
+                          </td>
+                          <td className="px-4 py-2 border border-[#D2D2D7] text-right">
+                            <div className="text-[12px] font-mono text-[#86868B]">
+                              {percentage}%
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  })}
+                </tbody>
+              </table>
+
+              {/* Close Button */}
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setQuickViewRecipe(null)}
+                  className="px-6 py-2.5 text-[15px] font-medium bg-[#0071E3] text-white rounded-lg hover:bg-[#0077ED] transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
