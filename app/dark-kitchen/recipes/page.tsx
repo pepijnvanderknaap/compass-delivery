@@ -49,6 +49,7 @@ export default function DarkKitchenRecipesPage() {
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [quickViewRecipe, setQuickViewRecipe] = useState<Recipe | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [formData, setFormData] = useState({
     dish_id: '',
@@ -174,24 +175,11 @@ export default function DarkKitchenRecipesPage() {
     }
   };
 
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      soup: 'Soups',
-      hot_dish_meat: 'Hot Dishes - Meat',
-      hot_dish_fish: 'Hot Dishes - Fish',
-      hot_dish_veg: 'Hot Dishes - Vegetable',
-    };
-    return labels[category] || category.charAt(0).toUpperCase() + category.slice(1);
-  };
-
-  // Group recipes by category - default to 'soup' for recipes without dish linkage
-  const groupedRecipes: Record<string, Recipe[]> = {};
-  recipes.forEach(recipe => {
-    const category = recipe.dishes?.category || 'soup'; // Default to soup for imported recipes
-    if (!groupedRecipes[category]) {
-      groupedRecipes[category] = [];
-    }
-    groupedRecipes[category].push(recipe);
+  // Filter recipes based on search term
+  const filteredRecipes = recipes.filter(recipe => {
+    if (!searchTerm.trim()) return true; // Show all if no search term
+    const searchLower = searchTerm.toLowerCase();
+    return recipe.name.toLowerCase().includes(searchLower);
   });
 
   return (
@@ -206,21 +194,40 @@ export default function DarkKitchenRecipesPage() {
           </div>
         )}
 
-        {/* Top Actions */}
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-[28px] font-semibold text-[#1D1D1F]">All Recipes</h1>
-            <p className="text-[13px] text-[#86868B] mt-1">{recipes.length} total recipes</p>
+        {/* Search Box - Prominent at top */}
+        <div className="max-w-3xl mx-auto mb-8">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search recipes... (e.g., Cauliflower, Tomato, etc.)"
+              className="w-full px-6 py-4 text-[17px] border-2 border-[#D2D2D7] rounded-xl focus:outline-none focus:border-[#0071E3] focus:ring-4 focus:ring-[#0071E3]/20 transition-all"
+              autoFocus
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] text-[24px] leading-none"
+              >
+                ×
+              </button>
+            )}
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="px-6 py-2.5 text-[15px] font-medium bg-[#0071E3] text-white hover:bg-[#0077ED] rounded-lg transition-colors"
-          >
-            + Add Recipe
-          </button>
+          <div className="flex items-center justify-between mt-3 px-2">
+            <p className="text-[13px] text-[#86868B]">
+              {searchTerm ? `${filteredRecipes.length} of ${recipes.length} recipes` : `${recipes.length} total recipes`}
+            </p>
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2 text-[13px] font-medium text-[#0071E3] hover:text-[#0077ED] transition-colors"
+            >
+              + Add Recipe
+            </button>
+          </div>
         </div>
 
-        {/* Recipes List by Category */}
+        {/* Filtered Recipes Grid */}
         {loading ? (
           <div className="text-center py-12">
             <p className="text-[#86868B]">Loading recipes...</p>
@@ -231,89 +238,79 @@ export default function DarkKitchenRecipesPage() {
               No recipes yet. Add your first recipe!
             </p>
           </div>
+        ) : filteredRecipes.length === 0 ? (
+          <div className="bg-white border border-[#D2D2D7] rounded-lg p-12 text-center">
+            <p className="text-[#86868B] text-[15px]">
+              No recipes found matching "{searchTerm}"
+            </p>
+          </div>
         ) : (
-          <div className="space-y-8">
-            {Object.entries(groupedRecipes).map(([category, categoryRecipes]) => (
-              <div key={category}>
-                {/* Category Header */}
-                <div className="mb-4 pb-2 border-b-2 border-[#D2D2D7] flex items-center justify-between">
-                  <h2 className="text-[22px] font-semibold text-[#1D1D1F]">
-                    {getCategoryLabel(category)}
-                  </h2>
-                  <span className="text-[15px] text-[#86868B] font-medium">
-                    {categoryRecipes.length} {categoryRecipes.length === 1 ? 'recipe' : 'recipes'}
-                  </span>
-                </div>
+          <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+            {filteredRecipes.map((recipe) => {
+              const category = recipe.dishes?.category || 'soup';
+              const categoryBadgeColors: Record<string, string> = {
+                soup: 'bg-orange-100 text-orange-700',
+                hot_dish_meat: 'bg-red-100 text-red-700',
+                hot_dish_fish: 'bg-blue-100 text-blue-700',
+                hot_dish_veg: 'bg-green-100 text-green-700',
+              };
+              const badgeColor = categoryBadgeColors[category] || 'bg-gray-100 text-gray-700';
 
-                {/* Recipes Grid - Ultra Compact */}
-                <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
-                  {categoryRecipes.map((recipe) => {
-                    const categoryBadgeColors: Record<string, string> = {
-                      soup: 'bg-orange-100 text-orange-700',
-                      hot_dish_meat: 'bg-red-100 text-red-700',
-                      hot_dish_fish: 'bg-blue-100 text-blue-700',
-                      hot_dish_veg: 'bg-green-100 text-green-700',
-                    };
-                    const badgeColor = categoryBadgeColors[category] || 'bg-gray-100 text-gray-700';
+              return (
+                <div
+                  key={recipe.id}
+                  className="bg-white border border-[#D2D2D7] rounded hover:shadow-md transition-shadow group"
+                >
+                  {/* Recipe Card */}
+                  <div className="p-2 relative">
+                    {/* Subtle Category Indicator - just a small colored dot */}
+                    <div className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full opacity-40 ${badgeColor.replace('bg-', 'bg-').split(' ')[0].replace('100', '400')}`}
+                         title={category === 'soup' ? 'Soup' : category === 'hot_dish_meat' ? 'Meat' : category === 'hot_dish_fish' ? 'Fish' : category === 'hot_dish_veg' ? 'Veg' : category}>
+                    </div>
 
-                    return (
-                      <div
-                        key={recipe.id}
-                        className="bg-white border border-[#D2D2D7] rounded hover:shadow-md transition-shadow group"
+                    <h3 className="text-[11px] font-semibold text-[#1D1D1F] truncate mb-1.5 leading-tight pr-2">
+                      {recipe.name}
+                    </h3>
+
+                    <div className="text-[9px] text-[#86868B] mb-2 space-y-0.5">
+                      <div>{recipe.base_quantity}{recipe.base_unit}</div>
+                      <div>{recipe.rows?.filter(r => r.type === 'ingredient').length || 0} items</div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => setQuickViewRecipe(recipe)}
+                        className="w-full px-1.5 py-1 text-[9px] font-medium text-[#0071E3] border border-[#0071E3] rounded hover:bg-[#0071E3] hover:text-white transition-colors"
                       >
-                        {/* Recipe Card */}
-                        <div className="p-2 relative">
-                          {/* Subtle Category Indicator - just a small colored dot */}
-                          <div className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full opacity-40 ${badgeColor.replace('bg-', 'bg-').split(' ')[0].replace('100', '400')}`}
-                               title={category === 'soup' ? 'Soup' : category === 'hot_dish_meat' ? 'Meat' : category === 'hot_dish_fish' ? 'Fish' : category === 'hot_dish_veg' ? 'Veg' : category}>
-                          </div>
-
-                          <h3 className="text-[11px] font-semibold text-[#1D1D1F] truncate mb-1.5 leading-tight pr-2">
-                            {recipe.name}
-                          </h3>
-
-                          <div className="text-[9px] text-[#86868B] mb-2 space-y-0.5">
-                            <div>{recipe.base_quantity}{recipe.base_unit}</div>
-                            <div>{recipe.rows?.filter(r => r.type === 'ingredient').length || 0} items</div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex flex-col gap-1">
-                            <button
-                              onClick={() => setQuickViewRecipe(recipe)}
-                              className="w-full px-1.5 py-1 text-[9px] font-medium text-[#0071E3] border border-[#0071E3] rounded hover:bg-[#0071E3] hover:text-white transition-colors"
-                            >
-                              View
-                            </button>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => handleEdit(recipe)}
-                                className="flex-1 px-1.5 py-1 text-[9px] font-medium bg-[#0071E3] text-white rounded hover:bg-[#0077ED] transition-colors"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDuplicate(recipe)}
-                                className="flex-1 px-1.5 py-1 text-[9px] font-medium text-[#6E6E73] border border-[#D2D2D7] rounded hover:bg-[#F5F5F7] transition-colors"
-                                title="Duplicate"
-                              >
-                                Copy
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => handleDelete(recipe.id)}
-                              className="w-full px-1.5 py-1 text-[9px] font-medium text-[#FF3B30] border border-[#FF3B30] rounded hover:bg-red-50 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
+                        View
+                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleEdit(recipe)}
+                          className="flex-1 px-1.5 py-1 text-[9px] font-medium bg-[#0071E3] text-white rounded hover:bg-[#0077ED] transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDuplicate(recipe)}
+                          className="flex-1 px-1.5 py-1 text-[9px] font-medium text-[#6E6E73] border border-[#D2D2D7] rounded hover:bg-[#F5F5F7] transition-colors"
+                          title="Duplicate"
+                        >
+                          Copy
+                        </button>
                       </div>
-                    );
-                  })}
+                      <button
+                        onClick={() => handleDelete(recipe.id)}
+                        className="w-full px-1.5 py-1 text-[9px] font-medium text-[#FF3B30] border border-[#FF3B30] rounded hover:bg-red-50 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
