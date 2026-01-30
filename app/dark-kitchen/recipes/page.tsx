@@ -367,9 +367,6 @@ export default function DarkKitchenRecipesPage() {
                     <th className="px-4 py-2 text-[11px] font-semibold text-[#86868B] uppercase tracking-wide border border-[#D2D2D7] w-24">
                       Unit
                     </th>
-                    <th className="px-4 py-2 text-[11px] font-semibold text-[#86868B] uppercase tracking-wide text-right border border-[#D2D2D7] w-32">
-                      Formula (%)
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -386,12 +383,11 @@ export default function DarkKitchenRecipesPage() {
                     <td className="px-4 py-2 border border-[#D2D2D7]">
                       <div className="text-[13px] text-[#6E6E73]">{quickViewRecipe.base_unit}</div>
                     </td>
-                    <td className="px-4 py-2 border border-[#D2D2D7]"></td>
                   </tr>
 
                   {/* Spacer */}
                   <tr>
-                    <td colSpan={4} className="h-2 border-0"></td>
+                    <td colSpan={3} className="h-2 border-0"></td>
                   </tr>
 
                   {/* Rows */}
@@ -399,7 +395,7 @@ export default function DarkKitchenRecipesPage() {
                     if (row.type === 'action') {
                       return (
                         <tr key={index} className="bg-[#FAFAFA]">
-                          <td colSpan={4} className="px-4 py-3 border border-[#D2D2D7]">
+                          <td colSpan={3} className="px-4 py-3 border border-[#D2D2D7]">
                             <div className="font-bold text-[15px] text-[#1D1D1F]">
                               {row.text}
                             </div>
@@ -410,7 +406,6 @@ export default function DarkKitchenRecipesPage() {
                       const multiplier = row.multiplier !== undefined ? row.multiplier : 0;
                       let hardValue = multiplier * quickViewRecipe.base_quantity;
                       let displayUnit = row.unit || 'kg';
-                      const percentage = (multiplier * 100).toFixed(2);
 
                       // Convert bunches to grams for display
                       if ((row.unit || '').toLowerCase().includes('bunch')) {
@@ -439,11 +434,6 @@ export default function DarkKitchenRecipesPage() {
                           </td>
                           <td className="px-4 py-2 border border-[#D2D2D7]">
                             <div className="text-[13px] text-[#6E6E73]">{displayUnit}</div>
-                          </td>
-                          <td className="px-4 py-2 border border-[#D2D2D7] text-right">
-                            <div className="text-[12px] font-mono text-[#86868B]">
-                              {percentage}%
-                            </div>
                           </td>
                         </tr>
                       );
