@@ -38,7 +38,7 @@ export default function KitchenDailyOverviewPage() {
           .single();
 
         if (profileData?.role !== 'kitchen') {
-          router.push('/dashboard');
+          router.push('/home');
           return;
         }
 
@@ -111,7 +111,7 @@ export default function KitchenDailyOverviewPage() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-bold text-gray-900">Kitchen Daily Overview</h1>
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/home')}
               className="text-gray-600 hover:text-gray-900"
             >
               Back to Dashboard

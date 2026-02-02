@@ -40,7 +40,7 @@ export default function AdminLocationsPage() {
           .single();
 
         if (profileData?.role !== 'admin') {
-          router.push('/dashboard');
+          router.push('/home');
           return;
         }
 
@@ -148,7 +148,7 @@ export default function AdminLocationsPage() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-bold text-gray-900">Manage Locations</h1>
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/home')}
               className="text-slate-700 hover:text-slate-900"
             >
               Back

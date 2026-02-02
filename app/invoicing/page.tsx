@@ -37,7 +37,7 @@ export default function InvoicingPage() {
           .single();
 
         if (profileData?.role !== 'admin') {
-          router.push('/dashboard');
+          router.push('/home');
           return;
         }
 
@@ -135,7 +135,7 @@ export default function InvoicingPage() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-bold text-gray-900">Invoicing</h1>
             <button
-              onClick={() => router.push('/regional-management')}
+              onClick={() => router.push('/management/dashboard')}
               className="text-blue-700 hover:text-blue-900"
             >
               Back

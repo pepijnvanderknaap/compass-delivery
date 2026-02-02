@@ -101,7 +101,7 @@ export default function NewOrderPage() {
           .single();
 
         if (profileData?.role !== 'manager') {
-          router.push('/dashboard');
+          router.push('/home');
           return;
         }
 
@@ -248,7 +248,7 @@ export default function NewOrderPage() {
       }
 
       console.log('Order submitted successfully, redirecting...');
-      router.push('/dashboard?success=order_submitted');
+      router.push('/home?success=order_submitted');
 
     } catch (err: any) {
       console.error('Error submitting order:', err);

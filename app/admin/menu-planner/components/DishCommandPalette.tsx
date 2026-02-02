@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useDishSearch } from '../hooks/useDishSearch';
 import { useRecentDishes } from '../hooks/useRecentDishes';
 import { format } from 'date-fns';
-import MainDishForm from '../../dishes/MainDishForm';
+import MainDishForm from '../../../kitchen/dishes/MainDishForm';
 
 interface DishCommandPaletteProps {
   category: string;
@@ -124,6 +124,7 @@ export default function DishCommandPalette({
         onClose={() => setShowCreateForm(false)}
         onSave={handleDishCreated}
         contextCategory={category}
+        initialName={searchQuery.trim()}
       />
     );
   }
@@ -159,17 +160,17 @@ export default function DishCommandPalette({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${getCategoryLabel()}...`}
-              className="w-full pl-12 pr-20 py-3 text-[17px] border border-[#D2D2D7] rounded-sm focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all bg-white text-[#1D1D1F] placeholder:text-[#86868B]"
+              className="w-full pl-12 pr-20 py-3 text-[17px] border border-[#D2D2D7] rounded-sm focus:border-[#0078D4] focus:ring-2 focus:ring-[#0078D4]/20 outline-none transition-all bg-white text-[#1D1D1F] placeholder:text-[#86868B]"
             />
             <button
               onClick={onClose}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[15px] text-[#0071E3] hover:text-[#0077ED] font-medium transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[15px] text-[#0078D4] hover:text-[#0077ED] font-medium transition-colors"
             >
               Cancel
             </button>
           </div>
           <p className="mt-3 text-[13px] text-[#86868B]">
-            Start typing to find a dish, or create a new one below
+            Type to search existing dishes before creating new ones
           </p>
         </div>
 
@@ -179,13 +180,32 @@ export default function DishCommandPalette({
             <div className="p-12 text-center text-[#86868B] text-[15px]">Loading...</div>
           ) : !searchQuery ? (
             /* Empty state - no search entered yet */
-            <div className="p-12"></div>
+            <div className="p-12 text-center">
+              <p className="text-[#86868B] text-[15px] mb-2">Start typing to search</p>
+              <p className="text-[#86868B] text-[13px]">This helps prevent duplicate dishes</p>
+            </div>
           ) : dishes.length === 0 ? (
-            <div className="p-12 text-center text-[#86868B] text-[15px]">
-              No {getCategoryLabel()} found matching "{searchQuery}"
+            <div className="p-12 text-center">
+              <p className="text-[#86868B] text-[15px] mb-2">
+                No {getCategoryLabel()} found matching "{searchQuery}"
+              </p>
+              <p className="text-[#6E6E73] text-[13px]">
+                You can create it as a new dish below
+              </p>
             </div>
           ) : (
-            <div className="space-y-1">
+            <div>
+              {/* Results Header */}
+              <div className="px-4 py-3 border-b border-[#E8E8ED] bg-[#FAFAFA]">
+                <p className="text-[13px] font-semibold text-[#6E6E73] uppercase tracking-wide">
+                  Found {dishes.length} {dishes.length === 1 ? 'match' : 'matches'}
+                </p>
+                <p className="text-[12px] text-[#86868B] mt-1">
+                  Click to use existing dish, or create from scratch below
+                </p>
+              </div>
+
+              <div className="space-y-1 p-2">
               {dishes.map((dish, index) => {
                 const usage = usedDishes.get(dish.id);
 
@@ -224,34 +244,39 @@ export default function DishCommandPalette({
                   </button>
                 );
               })}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Create New Button */}
-        <div className="border-t border-[#E8E8ED] p-4">
-          <button
-            onClick={handleCreateNewDish}
-            className="w-full px-4 py-3 flex items-center justify-center gap-2 text-[#0071E3] hover:text-[#0077ED] font-medium text-[15px] transition-colors"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Create New Button - Only show after user has typed */}
+        {searchQuery.trim().length > 0 && (
+          <div className="border-t border-[#E8E8ED] p-4">
+            <button
+              onClick={handleCreateNewDish}
+              className="w-full px-4 py-3 flex items-center justify-center gap-2 text-[#0078D4] hover:text-[#0077ED] font-medium text-[15px] transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            <span>
-              Create new {category === 'soup' ? 'soup' : 'dish'}
-            </span>
-          </button>
-        </div>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              <span>
+                {dishes.length > 0
+                  ? `Create "${searchQuery}" from scratch`
+                  : `Create new "${searchQuery}"`}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -47,50 +47,83 @@ export default function AdminQuickNav() {
 
   const sections = [
     {
+      label: 'Snap119',
+      fullName: 'SnapChat Building 119',
+      href: '/snapchat/dashboard',
+      activeColor: 'bg-yellow-400 text-black',
+      inactiveColor: 'bg-yellow-400/10 text-yellow-600 hover:bg-yellow-400/20',
+    },
+    {
+      label: 'Snap165',
+      fullName: 'SnapChat Building 165',
+      href: '/snapchat/dashboard',
+      activeColor: 'bg-yellow-400 text-black',
+      inactiveColor: 'bg-yellow-400/10 text-yellow-600 hover:bg-yellow-400/20',
+    },
+    {
+      label: 'Sym',
+      fullName: 'Symphony Offices',
+      href: '/symphony/dashboard',
+      activeColor: 'bg-blue-600 text-white',
+      inactiveColor: 'bg-blue-600/10 text-blue-600 hover:bg-blue-600/20',
+    },
+    {
+      label: 'Atlas',
+      fullName: 'Atlassian',
+      href: '/atlassian/dashboard',
+      activeColor: 'bg-blue-500 text-white',
+      inactiveColor: 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20',
+    },
+    {
+      label: 'Snow',
+      fullName: 'Snowflake',
+      href: '/snowflake/dashboard',
+      activeColor: 'bg-cyan-400 text-black',
+      inactiveColor: 'bg-cyan-400/10 text-cyan-600 hover:bg-cyan-400/20',
+    },
+    {
+      label: 'JAA',
+      fullName: 'JAA Training',
+      href: '/jaa/dashboard',
+      activeColor: 'bg-orange-500 text-white',
+      inactiveColor: 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20',
+    },
+    {
       label: 'DK',
       fullName: 'Dark Kitchen',
-      href: '/dark-kitchen',
+      href: '/kitchen/dashboard',
       activeColor: 'bg-[#4A7DB5] text-white',
       inactiveColor: 'bg-[#4A7DB5]/10 text-[#4A7DB5] hover:bg-[#4A7DB5]/20',
     },
     {
-      label: 'LM',
-      fullName: 'Location Management',
-      href: '/location-management',
-      activeColor: 'bg-[#0F766E] text-white',
-      inactiveColor: 'bg-[#0F766E]/10 text-[#0F766E] hover:bg-[#0F766E]/20',
-    },
-    {
       label: 'RM',
       fullName: 'Regional Management',
-      href: '/regional-management',
+      href: '/management/dashboard',
       activeColor: 'bg-[#7E22CE] text-white',
       inactiveColor: 'bg-[#7E22CE]/10 text-[#7E22CE] hover:bg-[#7E22CE]/20',
     },
   ];
 
-  const isActive = (href: string) => pathname?.startsWith(href);
+  const isActive = (href: string) => {
+    return pathname?.startsWith(href);
+  };
 
   return (
-    <div className="w-full bg-white border-b border-gray-200 py-3 z-50">
-      <div className="max-w-7xl mx-auto px-8 flex justify-center">
-        <div className="inline-flex gap-3 bg-gray-50 rounded-sm p-2">
-          {sections.map((section) => (
-            <button
-              key={section.href}
-              onClick={() => router.push(section.href)}
-              className={`px-6 py-2.5 text-sm font-semibold rounded-sm transition-all ${
-                isActive(section.href)
-                  ? section.activeColor
-                  : section.inactiveColor
-              }`}
-              title={section.fullName}
-            >
-              {section.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="fixed right-4 top-24 z-50 flex flex-col gap-2 bg-gray-50 rounded-lg p-2 shadow-lg border border-[#E8E8ED]">
+      {sections.map((section) => (
+        <button
+          key={section.href}
+          onClick={() => router.push(section.href)}
+          className={`px-4 py-2.5 text-sm font-semibold rounded-sm transition-all ${
+            isActive(section.href)
+              ? section.activeColor
+              : section.inactiveColor
+          }`}
+          title={section.fullName}
+        >
+          {section.label}
+        </button>
+      ))}
     </div>
   );
 }

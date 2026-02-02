@@ -41,19 +41,19 @@ export default function LoginPage() {
         if (profile) {
           switch (profile.role) {
             case 'admin':
-              router.push('/dashboard'); // Admins see all 3 sections
+              router.push('/home'); // Admins see all 3 sections
               break;
             case 'kitchen':
-              router.push('/dark-kitchen'); // Kitchen goes directly to Dark Kitchen
+              router.push('/kitchen/dashboard'); // Kitchen goes directly to Kitchen Dashboard
               break;
             case 'manager':
-              router.push('/location-management'); // Managers go directly to Location Management
+              router.push('/home'); // Managers go to home to select their location
               break;
             default:
-              router.push('/dashboard');
+              router.push('/home');
           }
         } else {
-          router.push('/dashboard');
+          router.push('/home');
         }
         router.refresh();
       }

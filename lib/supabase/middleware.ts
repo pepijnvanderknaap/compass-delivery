@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Public paths (no auth required)
-  if (path === '/login' || path === '/' || path === '/access' || path === '/demo') {
+  if (path === '/login' || path === '/' || path === '/home' || path === '/access' || path === '/demo' || path === '/symphony' || path === '/symphony/catering' || path === '/symphony/menu') {
     return supabaseResponse;
   }
 

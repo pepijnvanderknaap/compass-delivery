@@ -38,13 +38,17 @@ export function useDishSearch({ category, usedDishes }: UseDishSearchOptions) {
 
   const fetchDishes = async () => {
     try {
-      // Fetch ALL active dishes - don't filter by category
-      // Users should be able to add any dish to any slot
-      const query = supabase
+      // Fetch dishes filtered by category to prevent wrong dish types in slots
+      let query = supabase
         .from('dishes')
         .select('*')
         .eq('is_active', true)
         .neq('category', 'component'); // Exclude components
+
+      // Filter by category if provided
+      if (category) {
+        query = query.eq('category', category);
+      }
 
       const { data, error } = await query.order('name');
 
@@ -64,17 +68,28 @@ export function useDishSearch({ category, usedDishes }: UseDishSearchOptions) {
   // Configure Fuse.js for fuzzy search
   const fuse = useMemo(() => {
     return new Fuse(dishes, {
-      keys: ['name', 'description'],
-      threshold: 0.3, // Lower = stricter matching
+      keys: ['name'], // Only search in dish name, not description
+      threshold: 0.1, // Very strict matching (only 10% difference allowed)
       includeScore: true,
+      ignoreLocation: true, // Match anywhere in the string
     });
   }, [dishes]);
 
   // Smart ranking algorithm
   const rankedDishes = useMemo(() => {
-    let results = searchQuery.trim()
-      ? fuse.search(searchQuery).map((result) => result.item)
-      : dishes;
+    const trimmedQuery = searchQuery.trim();
+
+    let results;
+    if (!trimmedQuery) {
+      results = dishes;
+    } else {
+      // Use simple case-insensitive substring matching
+      // More predictable and prevents false positives
+      const lowerQuery = trimmedQuery.toLowerCase();
+      results = dishes.filter(dish =>
+        dish.name.toLowerCase().includes(lowerQuery)
+      );
+    }
 
     // Sort by priority:
     // 1. Favorites (if we implement favorites later)

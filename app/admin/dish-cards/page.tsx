@@ -78,7 +78,7 @@ export default function DishCardsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-apple">
-      <UniversalHeader title="Dish Cards" backPath="/dark-kitchen" />
+      <UniversalHeader title="Dish Cards" backPath="/kitchen/dashboard" />
 
       <main className="max-w-7xl mx-auto px-8 lg:px-12 py-10">
         <div className="mb-8">
