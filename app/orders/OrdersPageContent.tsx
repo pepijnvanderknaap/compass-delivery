@@ -28,6 +28,71 @@ interface OrderWithItems {
   }[];
 }
 
+interface Dish {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  allergen_gluten?: boolean;
+  allergen_soy?: boolean;
+  allergen_lactose?: boolean;
+  allergen_sesame?: boolean;
+  allergen_sulphites?: boolean;
+  allergen_egg?: boolean;
+  allergen_mustard?: boolean;
+  allergen_celery?: boolean;
+  is_vegetarian?: boolean;
+  is_vegan?: boolean;
+  contains_pork?: boolean;
+  contains_beef?: boolean;
+  contains_lamb?: boolean;
+  topping_components?: ToppingComponent[];
+  carb_components?: CarbComponent[];
+  warm_veggie_components?: WarmVeggieComponent[];
+  salad_components?: SaladComponent[];
+}
+
+interface ComponentDish {
+  id: string;
+  name: string;
+  category?: string;
+}
+
+interface ToppingComponent {
+  component_dish: ComponentDish;
+  component_type: string;
+}
+
+interface CarbComponent {
+  component_dish: ComponentDish;
+  component_type: string;
+}
+
+interface WarmVeggieComponent {
+  component_dish: ComponentDish;
+  percentage: number;
+}
+
+interface SaladComponent {
+  component_dish: ComponentDish;
+  percentage: number;
+}
+
+interface MenuItem {
+  id: string;
+  menu_id: string;
+  dish_id: string;
+  day_of_week: number;
+  meal_type: 'soup' | 'hot_meat' | 'hot_veg';
+  dish: Dish;
+}
+
+interface WeeklyMenu {
+  id: string;
+  week_start_date: string;
+  menu_items: MenuItem[];
+}
+
 interface OrdersPageContentProps {
   forcedLocation?: string;
 }
@@ -43,6 +108,9 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [showDefaultWeekModal, setShowDefaultWeekModal] = useState(false);
+  const [viewingMenuWeek, setViewingMenuWeek] = useState<string | null>(null);
+  const [weeklyMenus, setWeeklyMenus] = useState<Record<string, WeeklyMenu | null>>({});
+  const [loadingMenu, setLoadingMenu] = useState<Record<string, boolean>>({});
   const router = useRouter();
   const supabase = createClient();
   const searchParams = useSearchParams();
@@ -550,6 +618,152 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
     }
   };
 
+  const fetchWeeklyMenu = async (weekStartDate: string) => {
+    setLoadingMenu({ ...loadingMenu, [weekStartDate]: true });
+
+    const { data: menuData, error: menuError } = await supabase
+      .from('weekly_menus')
+      .select('*')
+      .eq('week_start_date', weekStartDate)
+      .maybeSingle();
+
+    if (menuError || !menuData) {
+      console.error('Error fetching menu:', menuError);
+      setWeeklyMenus({ ...weeklyMenus, [weekStartDate]: null });
+      setLoadingMenu({ ...loadingMenu, [weekStartDate]: false });
+      return;
+    }
+
+    // Fetch menu items
+    const { data: itemsData, error: itemsError } = await supabase
+      .from('menu_items')
+      .select('*')
+      .eq('menu_id', menuData.id)
+      .order('day_of_week')
+      .order('meal_type');
+
+    if (itemsError) {
+      console.error('Error fetching menu items:', itemsError);
+      setLoadingMenu({ ...loadingMenu, [weekStartDate]: false });
+      return;
+    }
+
+    // Fetch dish details for each menu item
+    const itemsWithDishes = await Promise.all(
+      (itemsData || []).map(async (item: any) => {
+        const { data: dishData } = await supabase
+          .from('dishes')
+          .select('*')
+          .eq('id', item.dish_id)
+          .single();
+
+        // Fetch components
+        const { data: warmVeggieComponents } = await supabase
+          .from('warm_veggie_components')
+          .select('percentage, component_dish:component_dish_id(id, name, category)')
+          .eq('main_dish_id', item.dish_id);
+
+        const { data: saladComponents } = await supabase
+          .from('salad_components')
+          .select('percentage, component_dish:component_dish_id(id, name, category)')
+          .eq('main_dish_id', item.dish_id);
+
+        const { data: toppingComponents } = await supabase
+          .from('dish_components')
+          .select('component_type, component_dish:dishes!component_dish_id(id, name, category)')
+          .eq('main_dish_id', item.dish_id)
+          .eq('component_type', 'topping');
+
+        const { data: carbComponents } = await supabase
+          .from('dish_components')
+          .select('component_type, component_dish:dishes!component_dish_id(id, name, category)')
+          .eq('main_dish_id', item.dish_id)
+          .eq('component_type', 'carb');
+
+        return {
+          ...item,
+          dish: {
+            ...dishData,
+            warm_veggie_components: warmVeggieComponents || [],
+            salad_components: saladComponents || [],
+            topping_components: toppingComponents || [],
+            carb_components: carbComponents || [],
+          },
+        };
+      })
+    );
+
+    setWeeklyMenus({
+      ...weeklyMenus,
+      [weekStartDate]: {
+        ...menuData,
+        menu_items: itemsWithDishes,
+      },
+    });
+    setLoadingMenu({ ...loadingMenu, [weekStartDate]: false });
+  };
+
+  const handleToggleMenu = async (weekStartDate: string) => {
+    if (viewingMenuWeek === weekStartDate) {
+      // Close menu
+      setViewingMenuWeek(null);
+    } else {
+      // Open menu - fetch if not already loaded
+      if (!weeklyMenus[weekStartDate] && !loadingMenu[weekStartDate]) {
+        await fetchWeeklyMenu(weekStartDate);
+      }
+      setViewingMenuWeek(weekStartDate);
+
+      // Scroll to top smoothly after state updates
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
+  const getAllergensForDish = (dish: Dish) => {
+    const allergens = [];
+    if (dish.allergen_gluten) allergens.push('Gluten');
+    if (dish.allergen_soy) allergens.push('Soy');
+    if (dish.allergen_lactose) allergens.push('Lactose');
+    if (dish.allergen_sesame) allergens.push('Sesame');
+    if (dish.allergen_sulphites) allergens.push('Sulphites');
+    if (dish.allergen_egg) allergens.push('Egg');
+    if (dish.allergen_mustard) allergens.push('Mustard');
+    if (dish.allergen_celery) allergens.push('Celery');
+    return allergens;
+  };
+
+  const getDietaryInfo = (dish: Dish) => {
+    const info = [];
+    if (dish.is_vegetarian) info.push('🌱 Vegetarian');
+    if (dish.is_vegan) info.push('🌿 Vegan');
+    if (dish.contains_pork) info.push('Pork');
+    if (dish.contains_beef) info.push('Beef');
+    if (dish.contains_lamb) info.push('Lamb');
+    return info;
+  };
+
+  const getSoupToppings = (dish: Dish) => {
+    if (!dish.topping_components) return [];
+    return dish.topping_components.map(tc => tc.component_dish.name);
+  };
+
+  const getCarbs = (dish: Dish) => {
+    if (!dish.carb_components) return [];
+    return dish.carb_components.map(cc => cc.component_dish.name);
+  };
+
+  const getWarmVeggies = (dish: Dish) => {
+    if (!dish.warm_veggie_components) return [];
+    return dish.warm_veggie_components.map(wvc => wvc.component_dish.name);
+  };
+
+  const hasSalad = (dish: Dish) => {
+    if (!dish.salad_components) return false;
+    return dish.salad_components.length > 0;
+  };
+
   const formatWeekRange = (weekStartDate: string) => {
     const startDate = new Date(weekStartDate);
     const endDate = addDays(startDate, 4);
@@ -586,7 +800,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
         locationSubtitle={currentLocation?.subtitle}
       />
 
-      {selectedLocationId && (
+      {selectedLocationId && !viewingMenuWeek && (
         <div className="max-w-6xl mx-auto px-8 lg:px-12 pt-6 pb-2">
           <div className="flex items-center justify-end">
             <button
@@ -599,7 +813,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
         </div>
       )}
 
-      <main className="max-w-6xl mx-auto px-8 lg:px-12 py-10">
+      <main className={`max-w-6xl mx-auto px-8 lg:px-12 ${viewingMenuWeek ? 'py-4' : 'py-10'}`}>
         {orders.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-apple-body text-slate-600 mb-4">No orders found</p>
@@ -612,7 +826,9 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
           </div>
         ) : (
           <div className="space-y-8">
-            {orders.map((order) => {
+            {orders
+              .filter(order => !viewingMenuWeek || order.week_start_date === viewingMenuWeek)
+              .map((order) => {
               const isEditing = editingOrder === order.id;
               const groupedItems: Record<string, Record<string, number>> = {};
 
@@ -669,6 +885,14 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                         (Week {getWeek(new Date(order.week_start_date), { weekStartsOn: 1 })})
                       </span>
                       <div className="flex gap-2 ml-auto items-center">
+                        {!isEditing && (
+                          <button
+                            onClick={() => handleToggleMenu(order.week_start_date)}
+                            className="px-3 py-1.5 text-apple-subheadline font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] hover:bg-[#F5F5F7] rounded-sm transition-colors"
+                          >
+                            {viewingMenuWeek === order.week_start_date ? 'Hide Menu' : 'View Menu'}
+                          </button>
+                        )}
                         {isEditing ? (
                           <>
                             {saving && (
@@ -706,6 +930,186 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                     </div>
                   </div>
 
+                  {/* Weekly Menu Display */}
+                  {viewingMenuWeek === order.week_start_date && (
+                    <div className="mb-6">
+                      {loadingMenu[order.week_start_date] ? (
+                        <div className="text-center py-12 text-[#86868B]">Loading menu...</div>
+                      ) : !weeklyMenus[order.week_start_date] ? (
+                        <div className="bg-white border border-[#E8E8ED] rounded-sm p-12 text-center">
+                          <p className="text-[15px] text-[#86868B]">No menu found for this week.</p>
+                        </div>
+                      ) : (
+                        <div className="bg-white border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm">
+                          <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
+                            <colgroup>
+                              <col className="w-64" />
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <col key={i} className="w-44" />
+                              ))}
+                            </colgroup>
+                            <thead>
+                              <tr className="bg-[#0078D4]">
+                                <th className="px-5 py-4 text-left text-[13px] font-semibold text-white uppercase tracking-wide">
+                                  Menu
+                                </th>
+                                {Array.from({ length: 5 }, (_, i) => addDays(new Date(order.week_start_date), i)).map((day, dayIndex) => (
+                                  <th key={dayIndex} className="py-4">
+                                    <div className="flex items-baseline justify-center gap-1">
+                                      <span className="text-apple-footnote font-medium uppercase tracking-wide text-white">
+                                        {format(day, 'EEE').toUpperCase()}
+                                      </span>
+                                      <span className="text-apple-caption font-light text-white">
+                                        {format(day, 'd MMM')}
+                                      </span>
+                                    </div>
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                          {/* Soup Row */}
+                          <tr className="border-b border-[#D2D2D7]">
+                            <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
+                              <div className="text-[15px] font-semibold text-[#1D1D1F]">Soup</div>
+                            </td>
+                            {Array.from({ length: 5 }).map((_, dayIndex) => {
+                              const soupItem = weeklyMenus[order.week_start_date]?.menu_items.find(
+                                (item) => item.day_of_week === dayIndex && item.meal_type === 'soup'
+                              );
+                              return (
+                                <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                                  {soupItem ? (
+                                    <div>
+                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                                        {soupItem.dish.name}
+                                      </h3>
+                                      {soupItem.dish.description && (
+                                        <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
+                                          {soupItem.dish.description}
+                                        </p>
+                                      )}
+                                      {getSoupToppings(soupItem.dish).length > 0 && (
+                                        <div className="mb-2">
+                                          <p className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wide mb-1">Toppings</p>
+                                          <p className="text-[12px] text-[#1D1D1F]">
+                                            {getSoupToppings(soupItem.dish).join(', ')}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="text-[13px] text-[#86868B] italic">Not available</p>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+
+                          {/* Meat/Fish Row */}
+                          <tr className="border-b border-[#D2D2D7]">
+                            <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
+                              <div className="text-[15px] font-semibold text-[#1D1D1F]">Meat/Fish</div>
+                            </td>
+                            {Array.from({ length: 5 }).map((_, dayIndex) => {
+                              const meatItem = weeklyMenus[order.week_start_date]?.menu_items.find(
+                                (item) => item.day_of_week === dayIndex && item.meal_type === 'hot_meat'
+                              );
+                              return (
+                                <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                                  {meatItem ? (
+                                    <div>
+                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                                        {meatItem.dish.name}
+                                      </h3>
+                                      {meatItem.dish.description && (
+                                        <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
+                                          {meatItem.dish.description}
+                                        </p>
+                                      )}
+                                      {(getCarbs(meatItem.dish).length > 0 || getWarmVeggies(meatItem.dish).length > 0 || hasSalad(meatItem.dish)) && (
+                                        <div className="mb-2 space-y-1">
+                                          {getCarbs(meatItem.dish).length > 0 && (
+                                            <p className="text-[12px] text-[#1D1D1F]">
+                                              <span className="font-medium">Carbs:</span> {getCarbs(meatItem.dish).join(', ')}
+                                            </p>
+                                          )}
+                                          {getWarmVeggies(meatItem.dish).length > 0 && (
+                                            <p className="text-[12px] text-[#1D1D1F]">
+                                              <span className="font-medium">Veggies:</span> {getWarmVeggies(meatItem.dish).join(', ')}
+                                            </p>
+                                          )}
+                                          {hasSalad(meatItem.dish) && (
+                                            <p className="text-[12px] text-[#1D1D1F]">
+                                              <span className="font-medium">Side:</span> Salad
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="text-[13px] text-[#86868B] italic">Not available</p>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+
+                          {/* Veg Row */}
+                          <tr>
+                            <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
+                              <div className="text-[15px] font-semibold text-[#1D1D1F]">Veg Option</div>
+                            </td>
+                            {Array.from({ length: 5 }).map((_, dayIndex) => {
+                              const vegItem = weeklyMenus[order.week_start_date]?.menu_items.find(
+                                (item) => item.day_of_week === dayIndex && item.meal_type === 'hot_veg'
+                              );
+                              return (
+                                <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                                  {vegItem ? (
+                                    <div>
+                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                                        {vegItem.dish.name}
+                                      </h3>
+                                      {vegItem.dish.description && (
+                                        <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
+                                          {vegItem.dish.description}
+                                        </p>
+                                      )}
+                                      {(getCarbs(vegItem.dish).length > 0 || getWarmVeggies(vegItem.dish).length > 0 || hasSalad(vegItem.dish)) && (
+                                        <div className="mb-2 space-y-1">
+                                          {getCarbs(vegItem.dish).length > 0 && (
+                                            <p className="text-[12px] text-[#1D1D1F]">
+                                              <span className="font-medium">Carbs:</span> {getCarbs(vegItem.dish).join(', ')}
+                                            </p>
+                                          )}
+                                          {getWarmVeggies(vegItem.dish).length > 0 && (
+                                            <p className="text-[12px] text-[#1D1D1F]">
+                                              <span className="font-medium">Veggies:</span> {getWarmVeggies(vegItem.dish).join(', ')}
+                                            </p>
+                                          )}
+                                          {hasSalad(vegItem.dish) && (
+                                            <p className="text-[12px] text-[#1D1D1F]">
+                                              <span className="font-medium">Side:</span> Salad
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="text-[13px] text-[#86868B] italic">Not available</p>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <div className={`border rounded-sm overflow-hidden ${isCurrentWeek ? "border-[#0d9488] border-2 bg-[#0d9488]" : "border-slate-300 bg-slate-200"}`}>
                       <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
@@ -713,19 +1117,19 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                           <col className="w-48" />
                           <col className="w-16" />
                           {Object.keys(currentPortions || {}).map((date) => (
-                            <col key={date} className="w-32" />
+                            <col key={date} className="w-44" />
                           ))}
                         </colgroup>
                         <thead>
                           <tr>
-                            <th className={`px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide ${isCurrentWeek ? 'text-white' : 'text-slate-600'}`}>
+                            <th className={`px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide border-r ${isCurrentWeek ? 'text-white border-white/20' : 'text-slate-600 border-slate-300'}`}>
                               Item
                             </th>
-                            <th></th>
+                            <th className={`border-r ${isCurrentWeek ? 'border-white/20' : 'border-slate-300'}`}></th>
                             {Object.entries(currentPortions || {})
                               .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                              .map(([date]) => (
-                                <th key={date} className="py-4">
+                              .map(([date], index, array) => (
+                                <th key={date} className={`py-4 ${index < array.length - 1 ? (isCurrentWeek ? 'border-r border-white/20' : 'border-r border-slate-300') : ''}`}>
                                   <div className={`flex items-baseline justify-center gap-1 ${isCurrentWeek ? 'text-white' : 'text-slate-600'}`}>
                                     <span className="text-apple-footnote font-medium uppercase tracking-wide">
                                       {format(new Date(date), 'EEE')}
@@ -747,7 +1151,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                         <col className="w-48" />
                         <col className="w-16" />
                         {Object.keys(currentPortions || {}).map((date, i) => (
-                          <col key={date} className="w-32" />
+                          <col key={date} className="w-44" />
                         ))}
                       </colgroup>
                       <tbody className="divide-y divide-slate-100">
@@ -758,14 +1162,14 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                           { key: 'hot_dish_veg', label: 'Hot Dish Veg' }
                         ].map(({ key, label }) => (
                           <tr key={key} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700">
+                            <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700 border-r border-slate-300">
                               {label}
                             </td>
-                            <td></td>
+                            <td className="border-r border-slate-300"></td>
                             {Object.entries(currentPortions || {})
                               .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                              .map(([date, items]) => (
-                                <td key={date} className="py-4 text-center">
+                              .map(([date, items], index, array) => (
+                                <td key={date} className={`py-4 text-center ${index < array.length - 1 ? 'border-r border-slate-300' : ''}`}>
                                   {isEditing ? (
                                     <div className="flex justify-center">
                                       <HoverNumberInput
@@ -782,14 +1186,14 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                         ))}
                         {hasOffMenuItems && Object.entries(offMenuItems).map(([dishName, portions]) => (
                           <tr key={dishName} className="hover:bg-slate-50 transition-colors bg-slate-50/50">
-                            <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700 italic">
+                            <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700 italic border-r border-slate-300">
                               {dishName}
                             </td>
-                            <td></td>
+                            <td className="border-r border-slate-300"></td>
                             {Object.entries(currentPortions || {})
                               .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                              .map(([date]) => (
-                                <td key={date} className="py-4 text-center">
+                              .map(([date], index, array) => (
+                                <td key={date} className={`py-4 text-center ${index < array.length - 1 ? 'border-r border-slate-300' : ''}`}>
                                   <span className="text-apple-subheadline text-slate-600">{portions[date] || 0}</span>
                                 </td>
                               ))}
