@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { format } from 'date-fns';
 import type { Dish, DishWithComponents, DishSubcategory } from '@/lib/types';
 import QuickComponentForm from './QuickComponentForm';
 import SaladSelectionModal from './SaladSelectionModal';
@@ -14,9 +15,14 @@ interface MainDishFormProps {
   onSave: (dishId?: string) => void;
   contextCategory?: string; // Category from menu planner context (soup, hot_meat, hot_veg)
   initialName?: string; // Pre-fill dish name from search query
+  menuContext?: {
+    weekStartDate: string; // Format: 'yyyy-MM-dd'
+    dayIndex: number; // 0-4 for Mon-Fri
+    mealType: 'soup' | 'hot_meat' | 'hot_veg';
+  };
 }
 
-export default function MainDishForm({ dish, onClose, onSave, contextCategory, initialName }: MainDishFormProps) {
+export default function MainDishForm({ dish, onClose, onSave, contextCategory, initialName, menuContext }: MainDishFormProps) {
   const supabase = createClient();
   const [formData, setFormData] = useState({
     name: initialName || '',
@@ -538,6 +544,98 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
 
       // Update components
       if (dishId) {
+        // Prepare collections for components (will include both selected and copied)
+        let finalCarbs = [...selectedComponents.carb];
+        let finalCondiments = [...selectedComponents.condiment];
+        let finalWarmVeggies = [...warmVeggies];
+        let finalSaladComboId = selectedSaladComboId;
+        let finalSaladPortionG = formData.salad_total_portion_g;
+
+        // Handle "Copy from other Hot Dish" functionality
+        if (menuContext && (copyAllSideDishes || copyCarbFromOther || copyWarmVeggieFromOther || copySaladFromOther || copyCondimentFromOther)) {
+          try {
+            // Find the weekly menu for this date
+            const { data: weeklyMenu } = await supabase
+              .from('weekly_menus')
+              .select('id')
+              .eq('week_start_date', menuContext.weekStartDate)
+              .single();
+
+            if (weeklyMenu) {
+              // Determine which meal type to copy from (if we're hot_veg, copy from hot_meat and vice versa)
+              const copyFromMealType = menuContext.mealType === 'hot_veg' ? 'hot_meat' : 'hot_veg';
+
+              // Find the other hot dish on this day
+              const { data: otherMenuItem } = await supabase
+                .from('menu_items')
+                .select('dish_id')
+                .eq('menu_id', weeklyMenu.id)
+                .eq('day_of_week', menuContext.dayIndex)
+                .eq('meal_type', copyFromMealType)
+                .maybeSingle();
+
+              if (otherMenuItem && otherMenuItem.dish_id) {
+                // Fetch and merge carbs
+                if (copyCarbFromOther || copyAllSideDishes) {
+                  const { data: carbs } = await supabase
+                    .from('dish_components')
+                    .select('component_dish_id')
+                    .eq('main_dish_id', otherMenuItem.dish_id)
+                    .eq('component_type', 'carb');
+
+                  if (carbs && carbs.length > 0) {
+                    finalCarbs = [...new Set([...finalCarbs, ...carbs.map(c => c.component_dish_id)])];
+                  }
+                }
+
+                // Fetch and merge condiments
+                if (copyCondimentFromOther || copyAllSideDishes) {
+                  const { data: condiments } = await supabase
+                    .from('dish_components')
+                    .select('component_dish_id')
+                    .eq('main_dish_id', otherMenuItem.dish_id)
+                    .eq('component_type', 'condiment');
+
+                  if (condiments && condiments.length > 0) {
+                    finalCondiments = [...new Set([...finalCondiments, ...condiments.map(c => c.component_dish_id)])];
+                  }
+                }
+
+                // Fetch and merge warm veggies
+                if (copyWarmVeggieFromOther || copyAllSideDishes) {
+                  const { data: warmVeggieComps } = await supabase
+                    .from('warm_veggie_components')
+                    .select('component_dish_id, percentage')
+                    .eq('main_dish_id', otherMenuItem.dish_id);
+
+                  if (warmVeggieComps && warmVeggieComps.length > 0) {
+                    finalWarmVeggies = warmVeggieComps.map(wv => ({
+                      component_dish_id: wv.component_dish_id,
+                      percentage: wv.percentage
+                    }));
+                  }
+                }
+
+                // Fetch and use salad
+                if (copySaladFromOther || copyAllSideDishes) {
+                  const { data: saladLink } = await supabase
+                    .from('dish_salad_combinations')
+                    .select('salad_combination_id, total_portion_g')
+                    .eq('main_dish_id', otherMenuItem.dish_id)
+                    .maybeSingle();
+
+                  if (saladLink) {
+                    finalSaladComboId = saladLink.salad_combination_id;
+                    finalSaladPortionG = saladLink.total_portion_g.toString();
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Error copying components from other dish:', err);
+          }
+        }
+
         // Delete existing components
         await supabase
           .from('dish_components')
@@ -554,9 +652,12 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
         const componentsToInsert: any[] = [];
 
         // Add regular components (toppings, condiments, carbs, etc.)
+        // Use finalCarbs and finalCondiments which include copied components
         Object.entries(selectedComponents).forEach(([type, ids]) => {
           if (type !== 'salad' && type !== 'warm_veggie') {
-            ids.forEach(id => {
+            // Use the final merged arrays for carbs and condiments
+            const idsToUse = type === 'carb' ? finalCarbs : type === 'condiment' ? finalCondiments : ids;
+            idsToUse.forEach(id => {
               componentsToInsert.push({
                 main_dish_id: dishId,
                 component_dish_id: id,
@@ -568,14 +669,14 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
         });
 
         // Handle salad combination (NEW SYSTEM)
-        // If user selected an existing salad combo, link it
-        if (selectedSaladComboId && formData.salad_total_portion_g) {
+        // Use finalSaladComboId which may include copied salad
+        if (finalSaladComboId && finalSaladPortionG) {
           const { error: saladLinkError } = await supabase
             .from('dish_salad_combinations')
             .insert({
               main_dish_id: dishId,
-              salad_combination_id: selectedSaladComboId,
-              total_portion_g: parseInt(formData.salad_total_portion_g),
+              salad_combination_id: finalSaladComboId,
+              total_portion_g: parseInt(finalSaladPortionG),
             });
 
           if (saladLinkError) {
@@ -595,20 +696,20 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
         // Handle warm veggies (SIMPLIFIED SYSTEM - direct vegetable links)
         // Delete existing warm veggie components
         await supabase
-          .from('dish_warm_veggie_components')
+          .from('warm_veggie_components')
           .delete()
-          .eq('dish_id', dishId);
+          .eq('main_dish_id', dishId);
 
-        // Insert new warm veggie components
-        if (warmVeggies.length > 0 && formData.warm_veggie_total_portion_g) {
-          const warmVeggieInserts = warmVeggies.map(v => ({
-            dish_id: dishId,
+        // Insert new warm veggie components - use finalWarmVeggies which may include copied veggies
+        if (finalWarmVeggies.length > 0 && formData.warm_veggie_total_portion_g) {
+          const warmVeggieInserts = finalWarmVeggies.map(v => ({
+            main_dish_id: dishId,
             component_dish_id: v.component_dish_id,
             percentage: v.percentage,
           }));
 
           const { error: warmVeggieError } = await supabase
-            .from('dish_warm_veggie_components')
+            .from('warm_veggie_components')
             .insert(warmVeggieInserts);
 
           if (warmVeggieError) {
@@ -1072,8 +1173,8 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
             {/* Components Selection - Only show for soups and hot dishes */}
             {formData.category !== 'component' && (
               <div>
-                {/* Copy all side dishes checkbox - Only for hot dishes */}
-                {formData.category !== 'soup' && (
+                {/* Copy all side dishes checkbox - Only for hot dishes AND when editing from menu planner */}
+                {formData.category !== 'soup' && menuContext && (
                   <div className="mb-6 p-5 bg-[#0078D4]/5 border-2 border-[#0078D4] rounded-sm">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
@@ -1102,17 +1203,19 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
                             <h4 className="text-apple-subheadline font-medium text-apple-gray1">
                               {subcat.label}
                             </h4>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={copySaladFromOther}
-                                onChange={(e) => setCopySaladFromOther(e.target.checked)}
-                                className="w-4 h-4 text-[#0078D4] border-apple-gray4 rounded focus:ring-[#0078D4]/20"
-                              />
-                              <span className="text-apple-footnote text-apple-gray2">
-                                Copy from other Hot Dish
-                              </span>
-                            </label>
+                            {menuContext && (
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={copySaladFromOther}
+                                  onChange={(e) => setCopySaladFromOther(e.target.checked)}
+                                  className="w-4 h-4 text-[#0078D4] border-apple-gray4 rounded focus:ring-[#0078D4]/20"
+                                />
+                                <span className="text-apple-footnote text-apple-gray2">
+                                  Copy from other Hot Dish
+                                </span>
+                              </label>
+                            )}
                           </div>
 
                           {/* Salad Selection Buttons */}
@@ -1195,17 +1298,19 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
                             <h4 className="text-apple-subheadline font-medium text-apple-gray1">
                               {subcat.label}
                             </h4>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={copyWarmVeggieFromOther}
-                                onChange={(e) => setCopyWarmVeggieFromOther(e.target.checked)}
-                                className="w-4 h-4 text-[#0078D4] border-apple-gray4 rounded focus:ring-[#0078D4]/20"
-                              />
-                              <span className="text-apple-footnote text-apple-gray2">
-                                Copy from other Hot Dish
-                              </span>
-                            </label>
+                            {menuContext && (
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={copyWarmVeggieFromOther}
+                                  onChange={(e) => setCopyWarmVeggieFromOther(e.target.checked)}
+                                  className="w-4 h-4 text-[#0078D4] border-apple-gray4 rounded focus:ring-[#0078D4]/20"
+                                />
+                                <span className="text-apple-footnote text-apple-gray2">
+                                  Copy from other Hot Dish
+                                </span>
+                              </label>
+                            )}
                           </div>
 
                           {/* Add Warm Vegetables Button */}
@@ -1251,8 +1356,8 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
                                 (Showing {components.length} of {totalCount})
                               </span>
                             </h4>
-                            {/* Add copy checkbox for carbs and condiments */}
-                            {(subcat.key === 'carb' || subcat.key === 'condiment') && (
+                            {/* Add copy checkbox for carbs and condiments - only when editing from menu planner */}
+                            {menuContext && (subcat.key === 'carb' || subcat.key === 'condiment') && (
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"

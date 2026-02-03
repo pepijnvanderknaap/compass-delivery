@@ -709,6 +709,11 @@ export default function AdminMenusPage() {
             onSelect={handleDishSelect}
             onClose={() => setPaletteState(null)}
             isOpen={paletteState.isOpen}
+            menuContext={{
+              weekStartDate: format(weeks[paletteState.weekIndex], 'yyyy-MM-dd'),
+              dayIndex: paletteState.dayIndex,
+              mealType: paletteState.slot as 'soup' | 'hot_meat' | 'hot_veg'
+            }}
           />
         )}
 
@@ -729,6 +734,11 @@ export default function AdminMenusPage() {
             dish={editDishState.dish}
             onClose={() => setEditDishState(null)}
             onSave={handleSaveEdit}
+            menuContext={{
+              weekStartDate: format(weeks[editDishState.weekIndex], 'yyyy-MM-dd'),
+              dayIndex: editDishState.dayIndex,
+              mealType: editDishState.slot as 'soup' | 'hot_meat' | 'hot_veg'
+            }}
           />
         )}
 

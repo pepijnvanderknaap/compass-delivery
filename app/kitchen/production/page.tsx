@@ -2121,21 +2121,21 @@ export default function ProductionSheetsPage() {
                             {getAbbreviatedLocationName(location.name)}
                           </th>
                         ))}
-                        <th className="px-3 py-4 text-center text-xs font-bold text-amber-50 uppercase tracking-wider bg-amber-900/30">Total</th>
+                        <th className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Total</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
                       {saladBarData.map((row, idx) => {
                         const isEven = idx % 2 === 0;
                         return (
-                          <tr key={idx} className="border-b border-gray-300">
-                            <td className={`px-3 py-2.5 text-center border-r border-b border-gray-300 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
+                          <tr key={idx} className="border-b border-[#D2D2D7]">
+                            <td className={`px-3 py-2.5 text-center border-r border-b border-[#D2D2D7] ${isEven ? 'bg-[#F5F5F7]' : 'bg-white'}`}>
                               <input
                                 type="checkbox"
-                                className="w-5 h-5 border-2 border-gray-400 rounded cursor-pointer"
+                                className="w-5 h-5 border-2 border-[#D2D2D7] rounded cursor-pointer"
                               />
                             </td>
-                            <td className={`px-5 py-2.5 text-sm font-medium text-gray-900 border-r border-b border-gray-300 ${isEven ? 'bg-gray-200' : 'bg-white'}`}>
+                            <td className={`px-5 py-2.5 text-sm font-medium text-[#1D1D1F] border-r border-b border-[#D2D2D7] ${isEven ? 'bg-[#F5F5F7]' : 'bg-white'}`}>
                               {row.ingredient}
                             </td>
                             {locations.map(location => {
@@ -2144,12 +2144,12 @@ export default function ProductionSheetsPage() {
                                 ? `${(weightG / 1000).toFixed(1)}kg`
                                 : `${Math.round(weightG)}g`;
                               return (
-                                <td key={location.id} className={`px-3 py-2.5 text-sm text-center text-gray-700 font-medium border-r border-b border-gray-300 ${isEven ? 'bg-slate-200' : 'bg-white'}`}>
+                                <td key={location.id} className={`px-3 py-2.5 text-sm text-center text-[#6E6E73] font-medium border-r border-b border-[#D2D2D7] ${isEven ? 'bg-[#F5F5F7]' : 'bg-white'}`}>
                                   {weightG > 0 ? displayWeight : '-'}
                                 </td>
                               );
                             })}
-                            <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-gray-300 bg-white`}>
+                            <td className={`px-3 py-2.5 text-sm text-center font-bold text-red-700 border-b border-[#D2D2D7] bg-white`}>
                               {row.totalWeight >= 1000
                                 ? `${(row.totalWeight / 1000).toFixed(1)}kg`
                                 : `${Math.round(row.totalWeight)}g`}
@@ -2158,9 +2158,9 @@ export default function ProductionSheetsPage() {
                         );
                       })}
                       {/* Total Row */}
-                      <tr className="border-b-[2px] border-b-gray-400 bg-slate-100">
-                        <td className="px-3 py-3 text-center border-r border-gray-300"></td>
-                        <td className="px-5 py-3 text-sm font-bold text-slate-700 uppercase tracking-wide border-r border-gray-300">
+                      <tr className="border-b-[2px] border-b-[#D2D2D7] bg-[#F5F5F7]">
+                        <td className="px-3 py-3 text-center border-r border-[#D2D2D7]"></td>
+                        <td className="px-5 py-3 text-sm font-bold text-[#1D1D1F] uppercase tracking-wide border-r border-[#D2D2D7]">
                           Total
                         </td>
                         {locations.map(location => {
@@ -2169,7 +2169,7 @@ export default function ProductionSheetsPage() {
                             ? `${(locationTotal / 1000).toFixed(1)}kg`
                             : `${Math.round(locationTotal)}g`;
                           return (
-                            <td key={location.id} className="px-3 py-3 text-sm text-center font-bold text-gray-900 border-r border-gray-300">
+                            <td key={location.id} className="px-3 py-3 text-sm text-center font-bold text-[#1D1D1F] border-r border-[#D2D2D7]">
                               {displayWeight}
                             </td>
                           );

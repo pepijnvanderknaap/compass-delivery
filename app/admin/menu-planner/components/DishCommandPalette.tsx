@@ -11,6 +11,11 @@ interface DishCommandPaletteProps {
   onSelect: (dishId: string) => void;
   onClose: () => void;
   isOpen: boolean;
+  menuContext?: {
+    weekStartDate: string;
+    dayIndex: number;
+    mealType: 'soup' | 'hot_meat' | 'hot_veg';
+  };
 }
 
 export default function DishCommandPalette({
@@ -18,6 +23,7 @@ export default function DishCommandPalette({
   onSelect,
   onClose,
   isOpen,
+  menuContext,
 }: DishCommandPaletteProps) {
   const { usedDishes, loading: loadingUsage } = useRecentDishes();
   const { dishes, searchQuery, setSearchQuery, loading: loadingDishes } = useDishSearch({
@@ -125,6 +131,7 @@ export default function DishCommandPalette({
         onSave={handleDishCreated}
         contextCategory={category}
         initialName={searchQuery.trim()}
+        menuContext={menuContext}
       />
     );
   }
