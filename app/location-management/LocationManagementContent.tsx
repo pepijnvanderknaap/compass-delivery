@@ -8,7 +8,7 @@ import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
-import UserProfile from '@/components/UserProfile';
+import UserProfileComponent from '@/components/UserProfile';
 
 export default function LocationManagementContent() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
