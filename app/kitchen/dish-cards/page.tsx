@@ -157,7 +157,7 @@ export default function DishCardsPage() {
                   dish.allergen_egg && 'Egg',
                   dish.allergen_mustard && 'Mustard',
                   dish.allergen_celery && 'Celery',
-                ].filter(Boolean);
+                ].filter((x): x is string => Boolean(x));
 
                 // Get dietary info
                 const dietaryInfo = [
@@ -166,7 +166,7 @@ export default function DishCardsPage() {
                   dish.contains_lamb && 'Lamb',
                   dish.is_vegetarian && 'Vegetarian',
                   dish.is_vegan && 'Vegan',
-                ].filter(Boolean);
+                ].filter((x): x is string => Boolean(x));
 
                 return (
                   <button
