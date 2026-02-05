@@ -42,6 +42,7 @@ interface MenuItem {
   dish: Dish & {
     warm_veggie_components?: WarmVeggieComponent[];
     salad_components?: SaladComponent[];
+    salad_name?: string | null;
     topping_components?: ToppingComponent[];
     carb_components?: CarbComponent[];
   };
