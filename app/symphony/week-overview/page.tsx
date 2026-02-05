@@ -70,102 +70,108 @@ export default function SymphonyWeekOverviewPage() {
     setLoading(true);
     const weekStartString = format(currentWeekStart, 'yyyy-MM-dd');
 
+    // OPTIMIZED: Fetch all data in 2 queries instead of 75-90
     const { data: menuData, error: menuError } = await supabase
       .from('weekly_menus')
-      .select('*')
+      .select(`
+        *,
+        menu_items (
+          *,
+          dishes (*)
+        )
+      `)
       .eq('week_start_date', weekStartString)
+      .order('day_of_week', { foreignTable: 'menu_items' })
+      .order('meal_type', { foreignTable: 'menu_items' })
       .maybeSingle();
 
     if (menuError) {
       console.error('Error fetching menu:', menuError);
+      setLoading(false);
+      return;
     }
 
-    if (menuData) {
-      // Fetch menu items
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('menu_items')
-        .select('*')
-        .eq('menu_id', menuData.id)
-        .order('day_of_week')
-        .order('meal_type');
+    if (menuData && menuData.menu_items) {
+      // Fetch all component data in parallel for all dishes
+      const dishIds = menuData.menu_items.map((item: any) => item.dish_id);
 
-      if (itemsError) {
-        console.error('Error fetching menu items:', itemsError);
-      }
+      const [warmVeggiesData, dishSaladData, toppingsData, carbsData] = await Promise.all([
+        supabase
+          .from('warm_veggie_components')
+          .select('main_dish_id, percentage, component_dish:component_dish_id(id, name, category)')
+          .in('main_dish_id', dishIds),
+        supabase
+          .from('dish_salad_combinations')
+          .select('main_dish_id, salad_combinations(id, custom_name, salad_combination_items(percentage, component_dish:component_dish_id(id, name, category)))')
+          .in('main_dish_id', dishIds),
+        supabase
+          .from('dish_components')
+          .select('main_dish_id, component_type, component_dish:dishes!component_dish_id(id, name, category)')
+          .in('main_dish_id', dishIds)
+          .eq('component_type', 'topping'),
+        supabase
+          .from('dish_components')
+          .select('main_dish_id, component_type, component_dish:dishes!component_dish_id(id, name, category)')
+          .in('main_dish_id', dishIds)
+          .eq('component_type', 'carb'),
+      ]);
 
-      // Fetch dish details for each menu item
-      const itemsWithDishes = await Promise.all(
-        (itemsData || []).map(async (item: any) => {
-          const { data: dishData } = await supabase
-            .from('dishes')
-            .select('*')
-            .eq('id', item.dish_id)
-            .single();
+      // Build lookup maps for fast access
+      const warmVeggiesByDish = new Map();
+      const saladsByDish = new Map();
+      const toppingsByDish = new Map();
+      const carbsByDish = new Map();
 
-          // Fetch warm veggie components
-          const { data: warmVeggieComponents } = await supabase
-            .from('warm_veggie_components')
-            .select('percentage, component_dish:component_dish_id(id, name, category)')
-            .eq('main_dish_id', item.dish_id);
+      warmVeggiesData.data?.forEach((item: any) => {
+        if (!warmVeggiesByDish.has(item.main_dish_id)) {
+          warmVeggiesByDish.set(item.main_dish_id, []);
+        }
+        warmVeggiesByDish.get(item.main_dish_id).push(item);
+      });
 
-          // Fetch salad components (new system)
-          let saladComponents: any[] = [];
-          let saladName: string | null = null;
-          const { data: dishSaladLink } = await supabase
-            .from('dish_salad_combinations')
-            .select('salad_combination_id')
-            .eq('main_dish_id', item.dish_id)
-            .maybeSingle();
+      dishSaladData.data?.forEach((item: any) => {
+        if (item.salad_combinations) {
+          saladsByDish.set(item.main_dish_id, {
+            name: item.salad_combinations.custom_name,
+            items: item.salad_combinations.salad_combination_items || []
+          });
+        }
+      });
 
-          if (dishSaladLink) {
-            // Get salad combination name
-            const { data: saladCombo } = await supabase
-              .from('salad_combinations')
-              .select('custom_name')
-              .eq('id', dishSaladLink.salad_combination_id)
-              .single();
+      toppingsData.data?.forEach((item: any) => {
+        if (!toppingsByDish.has(item.main_dish_id)) {
+          toppingsByDish.set(item.main_dish_id, []);
+        }
+        toppingsByDish.get(item.main_dish_id).push(item);
+      });
 
-            saladName = saladCombo?.custom_name || null;
+      carbsData.data?.forEach((item: any) => {
+        if (!carbsByDish.has(item.main_dish_id)) {
+          carbsByDish.set(item.main_dish_id, []);
+        }
+        carbsByDish.get(item.main_dish_id).push(item);
+      });
 
-            // Get salad items
-            const { data: saladItems } = await supabase
-              .from('salad_combination_items')
-              .select('percentage, component_dish:component_dish_id(id, name, category)')
-              .eq('salad_combination_id', dishSaladLink.salad_combination_id);
+      // Combine all data
+      const itemsWithDishes = menuData.menu_items.map((item: any) => {
+        const salad = saladsByDish.get(item.dish_id);
 
-            saladComponents = saladItems || [];
-          }
-
-          // Fetch soup toppings (from dish_components table)
-          const { data: toppingComponents } = await supabase
-            .from('dish_components')
-            .select('component_type, component_dish:dishes!component_dish_id(id, name, category)')
-            .eq('main_dish_id', item.dish_id)
-            .eq('component_type', 'topping');
-
-          // Fetch carbs (from dish_components table)
-          const { data: carbComponents } = await supabase
-            .from('dish_components')
-            .select('component_type, component_dish:dishes!component_dish_id(id, name, category)')
-            .eq('main_dish_id', item.dish_id)
-            .eq('component_type', 'carb');
-
-          return {
-            ...item,
-            dish: {
-              ...dishData,
-              warm_veggie_components: warmVeggieComponents || [],
-              salad_components: saladComponents || [],
-              salad_name: saladName,
-              topping_components: toppingComponents || [],
-              carb_components: carbComponents || [],
-            },
-          };
-        })
-      );
+        return {
+          ...item,
+          dish: {
+            ...item.dishes,
+            warm_veggie_components: warmVeggiesByDish.get(item.dish_id) || [],
+            salad_components: salad?.items || [],
+            salad_name: salad?.name || null,
+            topping_components: toppingsByDish.get(item.dish_id) || [],
+            carb_components: carbsByDish.get(item.dish_id) || [],
+          },
+        };
+      });
 
       setWeeklyMenu({
-        ...menuData,
+        id: menuData.id,
+        week_start_date: menuData.week_start_date,
         menu_items: itemsWithDishes,
       });
     } else {
@@ -248,7 +254,19 @@ export default function SymphonyWeekOverviewPage() {
 
       {/* Header - Hidden when printing */}
       <div className="no-print">
-        <UniversalHeader title="Week Overview" backPath="/symphony/dashboard" />
+        <UniversalHeader
+          title=""
+          backPath=""
+          locationLogo="/locations/symphony-offices.png"
+          locationName="Symphony Offices"
+          navItems={[
+            { label: 'Menu Overview', href: '/symphony/week-overview', active: true },
+            { label: 'Orders', href: '/symphony/orders', active: false },
+            { label: 'Soup & Salad Bar', href: '/symphony/soup-salad-bar', active: false },
+            { label: 'Banqueting', href: '/admin/banqueting', active: false },
+            { label: 'Settings', href: '/location-management/settings', active: false },
+          ]}
+        />
       </div>
 
       {/* Main Content */}
@@ -283,12 +301,9 @@ export default function SymphonyWeekOverviewPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <h3 className="text-apple-headline font-medium italic text-[#1D1D1F]">
-                  {format(currentWeekStart, 'd MMM')} - {format(addDays(currentWeekStart, 4), 'd MMM yyyy')}
+                <h3 className="text-apple-headline font-medium text-[#6E6E73]">
+                  Week {format(currentWeekStart, 'w')}
                 </h3>
-                <span className="text-apple-footnote font-medium italic tracking-wider text-[#6E6E73]">
-                  (Week {format(currentWeekStart, 'w')})
-                </span>
                 <button
                   onClick={nextWeek}
                   className="p-1.5 text-[#6E6E73] hover:text-[#1D1D1F] rounded-sm transition-colors no-print"
@@ -320,16 +335,16 @@ export default function SymphonyWeekOverviewPage() {
                 </colgroup>
                 <thead>
                   <tr className="bg-[#0078D4]">
-                    <th className="px-5 py-4 text-left text-[13px] font-semibold text-white uppercase tracking-wide">
+                    <th className="px-5 py-4 text-left text-apple-footnote font-medium text-white border-r border-white/20">
                       Menu
                     </th>
                     {daysOfWeek.map((day, dayIndex) => (
-                      <th key={dayIndex} className="py-4">
+                      <th key={dayIndex} className={`py-4 ${dayIndex < daysOfWeek.length - 1 ? 'border-r border-white/20' : ''}`}>
                         <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-apple-footnote font-medium uppercase tracking-wide text-white">
-                            {format(day, 'EEE').toUpperCase()}
+                          <span className="text-apple-footnote font-medium text-white">
+                            {format(day, 'EEE')}
                           </span>
-                          <span className="text-apple-caption font-light text-white">
+                          <span className="text-apple-footnote font-medium text-white">
                             {format(day, 'd MMM')}
                           </span>
                         </div>
@@ -340,19 +355,28 @@ export default function SymphonyWeekOverviewPage() {
                 <tbody>
               {/* Soup Row */}
               <tr className="border-b border-[#D2D2D7]">
-                <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
-                  <div className="text-[15px] font-semibold text-[#1D1D1F]">Soup</div>
+                <td className="px-5 pt-5 pb-3 bg-gray-200 border-r border-[#D2D2D7] align-top">
+                  <div className="text-[15px] font-medium text-[#1D1D1F]">Soup</div>
                 </td>
                 {daysOfWeek.map((day, dayIndex) => {
                   const soupItem = getMenuForDay(dayIndex, 'soup');
+                  // Monday (0), Wednesday (2), Friday (4) = white
+                  // Tuesday (1), Thursday (3) = light blue
+                  const isEven = dayIndex % 2 === 0;
                   return (
-                    <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                    <td
+                      key={dayIndex}
+                      className="px-4 pt-5 pb-3 border-r border-[#D2D2D7] last:border-r-0 text-center align-top h-[210px]"
+                      style={{ backgroundColor: isEven ? '#FFFFFF' : '#E2E8F0' }}
+                    >
                     {soupItem ? (
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {/* Line 1-2: Dish Name (fixed height) */}
-                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
-                          {soupItem.dish.name}
-                        </h3>
+                        <div className="h-[3rem]">
+                          <h3 className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] line-clamp-2">
+                            {soupItem.dish.name}
+                          </h3>
+                        </div>
 
                         {/* Line 3-4-5: Toppings (3 lines) */}
                         <p className="text-[12px] text-[#1D1D1F] min-h-[3.75rem]">
@@ -365,17 +389,21 @@ export default function SymphonyWeekOverviewPage() {
 
                         {/* Line 6-7: Allergens (2 lines) */}
                         <div className="flex flex-wrap gap-1 justify-center min-h-[2.5rem]">
-                          {getAllergensForDish(soupItem.dish).map((allergen) => (
-                            <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#FF3B30]/10 text-[#FF3B30] rounded-sm">
-                              {allergen}
-                            </span>
-                          ))}
+                          {getAllergensForDish(soupItem.dish).length > 0 ? (
+                            getAllergensForDish(soupItem.dish).map((allergen) => (
+                              <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 text-[#FF3B30] rounded-sm">
+                                {allergen}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[12px] text-[#86868B] italic">No allergens</span>
+                          )}
                         </div>
 
                         {/* Line 8: Dietary Info */}
                         <div className="flex flex-nowrap gap-1 justify-center min-h-[1.25rem] overflow-hidden">
                           {getDietaryInfo(soupItem.dish).map((info) => (
-                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm whitespace-nowrap">
+                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 text-[#34C759] rounded-sm whitespace-nowrap">
                               {info}
                             </span>
                           ))}
@@ -391,26 +419,33 @@ export default function SymphonyWeekOverviewPage() {
 
             {/* Meat/Fish Row */}
             <tr className="border-b border-[#D2D2D7]">
-              <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
-                <div className="text-[15px] font-semibold text-[#1D1D1F]">Meat/Fish</div>
+              <td className="px-5 py-3 bg-gray-200 border-r border-[#D2D2D7] align-top">
+                <div className="text-[15px] font-medium text-[#1D1D1F]">Hot Dish Meat/Fish</div>
               </td>
               {daysOfWeek.map((day, dayIndex) => {
                 const meatItem = getMenuForDay(dayIndex, 'hot_meat');
+                const isEven = dayIndex % 2 === 0;
                 return (
-                  <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                  <td
+                    key={dayIndex}
+                    className="px-4 py-3 border-r border-[#D2D2D7] last:border-r-0 text-center align-top h-[210px]"
+                    style={{ backgroundColor: isEven ? '#FFFFFF' : '#E2E8F0' }}
+                  >
                     {meatItem ? (
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {/* Line 1-2: Dish Name (fixed height) */}
-                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
-                          {meatItem.dish.name}
-                        </h3>
+                        <div className="h-[3rem]">
+                          <h3 className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] line-clamp-2">
+                            {meatItem.dish.name}
+                          </h3>
+                        </div>
 
                         {/* Line 3: Carbs (always visible) */}
                         <p className="text-[12px] text-[#1D1D1F] min-h-[1.25rem]">
                           {getCarbs(meatItem.dish).length > 0 ? (
                             <><span className="font-medium">Carbs:</span> {getCarbs(meatItem.dish).join(', ')}</>
                           ) : (
-                            <span className="text-transparent">-</span>
+                            <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                           )}
                         </p>
 
@@ -431,17 +466,21 @@ export default function SymphonyWeekOverviewPage() {
 
                         {/* Line 6-7: Allergens (2 lines) */}
                         <div className="flex flex-wrap gap-1 justify-center min-h-[2.5rem]">
-                          {getAllergensForDish(meatItem.dish).map((allergen) => (
-                            <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#FF3B30]/10 text-[#FF3B30] rounded-sm">
-                              {allergen}
-                            </span>
-                          ))}
+                          {getAllergensForDish(meatItem.dish).length > 0 ? (
+                            getAllergensForDish(meatItem.dish).map((allergen) => (
+                              <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 text-[#FF3B30] rounded-sm">
+                                {allergen}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[12px] text-[#86868B] italic">No allergens</span>
+                          )}
                         </div>
 
                         {/* Line 8: Dietary Info */}
                         <div className="flex flex-nowrap gap-1 justify-center min-h-[1.25rem] overflow-hidden">
                           {getDietaryInfo(meatItem.dish).map((info) => (
-                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm whitespace-nowrap">
+                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 text-[#34C759] rounded-sm whitespace-nowrap">
                               {info}
                             </span>
                           ))}
@@ -457,26 +496,33 @@ export default function SymphonyWeekOverviewPage() {
 
             {/* Veg Row */}
             <tr>
-              <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
-                <div className="text-[15px] font-semibold text-[#1D1D1F]">Veg Option</div>
+              <td className="px-5 py-3 bg-gray-200 border-r border-[#D2D2D7] align-top">
+                <div className="text-[15px] font-medium text-[#1D1D1F]">Hot Dish Veg</div>
               </td>
               {daysOfWeek.map((day, dayIndex) => {
                 const vegItem = getMenuForDay(dayIndex, 'hot_veg');
+                const isEven = dayIndex % 2 === 0;
                 return (
-                  <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                  <td
+                    key={dayIndex}
+                    className="px-4 py-3 border-r border-[#D2D2D7] last:border-r-0 text-center align-top h-[210px]"
+                    style={{ backgroundColor: isEven ? '#FFFFFF' : '#E2E8F0' }}
+                  >
                     {vegItem ? (
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {/* Line 1-2: Dish Name (fixed height) */}
-                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
-                          {vegItem.dish.name}
-                        </h3>
+                        <div className="h-[3rem]">
+                          <h3 className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] line-clamp-2">
+                            {vegItem.dish.name}
+                          </h3>
+                        </div>
 
                         {/* Line 3: Carbs (always visible) */}
                         <p className="text-[12px] text-[#1D1D1F] min-h-[1.25rem]">
                           {getCarbs(vegItem.dish).length > 0 ? (
                             <><span className="font-medium">Carbs:</span> {getCarbs(vegItem.dish).join(', ')}</>
                           ) : (
-                            <span className="text-transparent">-</span>
+                            <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                           )}
                         </p>
 
@@ -497,17 +543,21 @@ export default function SymphonyWeekOverviewPage() {
 
                         {/* Line 6-7: Allergens (2 lines) */}
                         <div className="flex flex-wrap gap-1 justify-center min-h-[2.5rem]">
-                          {getAllergensForDish(vegItem.dish).map((allergen) => (
-                            <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#FF3B30]/10 text-[#FF3B30] rounded-sm">
-                              {allergen}
-                            </span>
-                          ))}
+                          {getAllergensForDish(vegItem.dish).length > 0 ? (
+                            getAllergensForDish(vegItem.dish).map((allergen) => (
+                              <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 text-[#FF3B30] rounded-sm">
+                                {allergen}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[12px] text-[#86868B] italic">No allergens</span>
+                          )}
                         </div>
 
                         {/* Line 8: Dietary Info */}
                         <div className="flex flex-nowrap gap-1 justify-center min-h-[1.25rem] overflow-hidden">
                           {getDietaryInfo(vegItem.dish).map((info) => (
-                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm whitespace-nowrap">
+                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 text-[#34C759] rounded-sm whitespace-nowrap">
                               {info}
                             </span>
                           ))}
@@ -525,12 +575,6 @@ export default function SymphonyWeekOverviewPage() {
             </div>
           </div>
         )}
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-[13px] text-[#86868B] print:mt-12">
-          <p>For allergen information and dietary requirements, please consult with our kitchen staff.</p>
-          <p className="mt-1">Menu subject to availability and may change without notice.</p>
-        </div>
       </main>
 
       {/* Print-specific styles */}

@@ -63,7 +63,27 @@ export default function AllergenMatrixPage() {
 
       {/* Header - Hidden when printing */}
       <div className="no-print">
-        <UniversalHeader title="Allergen Matrix" backPath="/kitchen/dashboard" />
+        <UniversalHeader
+          title=""
+          backPath=""
+          locationLogo=""
+          locationName="Kitchen"
+        navItems={[
+          { label: 'Week Overview', href: '/kitchen/week-overview', active: false },
+          {
+            label: 'Dishes',
+            href: '/kitchen/dishes',
+            active: true,
+            subItems: [
+              { label: 'Dish Library', href: '/kitchen/dishes', active: false },
+              { label: 'Dish Cards', href: '/kitchen/dish-cards', active: false },
+              { label: 'Allergens', href: '/kitchen/allergens', active: true },
+            ]
+          },
+          { label: 'Menu Planner', href: '/kitchen/menus', active: false },
+          { label: 'Recipes', href: '/kitchen/recipes', active: false },
+          { label: 'Production', href: '/kitchen/production', active: false },
+        ]}        />
 
         <div className="max-w-7xl mx-auto px-8 lg:px-12 py-6">
           <div className="bg-white border border-slate-300 rounded-sm p-6 mb-6">

@@ -1,3 +1,7 @@
+/*
+ * TO REVERT TO OLD GRID LAYOUT:
+ * Uncomment the code below and delete everything after the "NEW APPLE-STYLE LAYOUT" comment
+ *
 import LocationDashboard from '@/components/LocationDashboard';
 
 export default function KitchenDashboardPage() {
@@ -11,6 +15,20 @@ export default function KitchenDashboardPage() {
         <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/>
           <path d="M12 3v9l6 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      )
+    },
+    {
+      title: 'Dish Cards',
+      href: '/kitchen/dish-cards',
+      description: 'Print dish cards with photos and ingredients',
+      available: true,
+      icon: (
+        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
         </svg>
       )
     },
@@ -82,4 +100,19 @@ export default function KitchenDashboardPage() {
       customSections={kitchenSections}
     />
   );
+}
+*/
+
+// ===== NEW APPLE-STYLE LAYOUT =====
+
+'use client';
+
+import { redirect } from 'next/navigation';
+
+export default function KitchenDashboardPage() {
+  // Page names kept handy for later placement:
+  // Week Overview, Dishes, Dish Cards, Menu Planner, Recipes, Allergens, Production
+
+  // Redirect to week overview which will have the proper header
+  redirect('/kitchen/week-overview');
 }

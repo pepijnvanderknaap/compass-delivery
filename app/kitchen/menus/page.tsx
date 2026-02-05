@@ -640,9 +640,26 @@ export default function AdminMenusPage() {
       <AdminQuickNav />
 
       <UniversalHeader
-        title="Menu Planner"
-        backPath="/kitchen/dashboard"
-      />
+        title=""
+        backPath=""
+        locationLogo=""
+        locationName="Kitchen"
+        navItems={[
+          { label: 'Week Overview', href: '/kitchen/week-overview', active: false },
+          {
+            label: 'Dishes',
+            href: '/kitchen/dishes',
+            active: false,
+            subItems: [
+              { label: 'Dish Library', href: '/kitchen/dishes', active: false },
+              { label: 'Dish Cards', href: '/kitchen/dish-cards', active: false },
+              { label: 'Allergens', href: '/kitchen/allergens', active: false },
+            ]
+          },
+          { label: 'Menu Planner', href: '/kitchen/menus', active: true },
+          { label: 'Recipes', href: '/kitchen/recipes', active: false },
+          { label: 'Production', href: '/kitchen/production', active: false },
+        ]}      />
 
       <main className="max-w-7xl mx-auto py-24">
         {/* Week Navigation */}
@@ -749,7 +766,7 @@ export default function AdminMenusPage() {
               return (
               <div key={weekIndex} className={weekIndex % 2 === 1 ? 'print-page-break' : ''}>
                 {/* Floating header text above the box */}
-                <div className="px-5 py-2">
+                <div className="py-2 flex items-center">
                   <div className="flex items-center gap-3">
                     <h3 className="text-apple-headline font-medium italic text-[#1D1D1F]">
                       {format(weekStart, 'd MMM')} - {format(addDays(weekStart, 4), 'd MMM yyyy')}
@@ -757,9 +774,11 @@ export default function AdminMenusPage() {
                     <span className="text-apple-footnote font-medium italic tracking-wider text-[#6E6E73]">
                       (Week {getWeek(weekStart, { weekStartsOn: 1 })})
                     </span>
+                  </div>
+                  <div className="flex-1 flex justify-end gap-2 items-center">
                     <button
                       onClick={() => window.print()}
-                      className="px-3 py-1.5 text-apple-subheadline font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] hover:bg-[#F5F5F7] rounded-sm transition-colors ml-auto no-print"
+                      className="px-3 py-1.5 text-apple-subheadline font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] hover:bg-[#F5F5F7] rounded-sm transition-colors no-print"
                     >
                       Print
                     </button>
@@ -767,7 +786,7 @@ export default function AdminMenusPage() {
                 </div>
 
                 {/* Unified table with visual separation */}
-                <div className="border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm">
+                <div className={`border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm ${!isCurrent ? 'opacity-60' : ''}`}>
                   <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                     <colgroup>
                       <col className="w-40" />
@@ -778,17 +797,17 @@ export default function AdminMenusPage() {
                     </colgroup>
 
                     {/* Header section with blue/gray background */}
-                    <thead className={`${isCurrent ? "bg-[#0078D4]" : "bg-[#D2D2D7]"}`}>
+                    <thead className="bg-[#0078D4]">
                       <tr>
-                        <th className={`px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide ${isCurrent ? 'text-white' : 'text-[#1D1D1F]'}`}>
+                        <th className="px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide text-white">
                           Meal
                         </th>
                         <th></th>
                         {days.map((day, dayIndex) => (
                           <th key={day} className="py-4">
-                            <div className={`flex items-baseline justify-center gap-1 ${isCurrent ? 'text-white' : 'text-[#1D1D1F]'}`}>
+                            <div className="flex items-baseline justify-center gap-1 text-white">
                               <span className="text-apple-footnote font-medium uppercase tracking-wide">{day.substring(0, 3).toUpperCase()}</span>
-                              <span className={`text-apple-caption font-light ${isCurrent ? 'text-white' : 'text-[#1D1D1F]'}`}>
+                              <span className="text-apple-caption font-light text-white">
                                 {format(addDays(weekStart, dayIndex), 'd MMM')}
                               </span>
                             </div>

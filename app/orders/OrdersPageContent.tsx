@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { format, addDays, addWeeks, startOfWeek, getWeek } from 'date-fns';
+import { format, addDays, addWeeks, startOfWeek, getWeek, subWeeks } from 'date-fns';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 import HoverNumberInput from '@/components/HoverNumberInput';
 import { createOrderItem, createOrderItemsBatch, updateOrderItem, ensureFourWeeksAhead, clearWeekOrders } from './actions';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
-import SetDefaultWeekModal from './components/SetDefaultWeekModal';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface OrderWithItems {
   id: string;
@@ -108,7 +108,6 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
   const [locations, setLocations] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [showDefaultWeekModal, setShowDefaultWeekModal] = useState(false);
   const [viewingMenuWeek, setViewingMenuWeek] = useState<string | null>(null);
   const [weeklyMenus, setWeeklyMenus] = useState<Record<string, WeeklyMenu | null>>({});
   const [loadingMenu, setLoadingMenu] = useState<Record<string, boolean>>({});
@@ -152,7 +151,18 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
 
   // Use forcedLocation if provided, otherwise use searchParams
   const locationParam = forcedLocation || searchParams.get('location');
-  const currentLocation = locationParam ? locationBranding[locationParam] : null;
+
+  // State to hold the derived location slug for navigation
+  const [navLocationSlug, setNavLocationSlug] = useState<string | null>(locationParam);
+
+  // State for Snapchat building selection
+  const [snapchatBuilding, setSnapchatBuilding] = useState<'119' | '165'>(() => {
+    if (locationParam === 'snapchat-165') return '165';
+    return '119'; // Default to 119 for 'snapchat' or 'snapchat-119'
+  });
+
+  // Use navLocationSlug for branding to ensure logo shows even after async load
+  const currentLocation = navLocationSlug ? locationBranding[navLocationSlug] : null;
 
   // Map URL location params to database location names
   const locationParamMapping: Record<string, string> = {
@@ -298,7 +308,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
       .eq('location_id', locationId)
       .order('week_start_date', { ascending: true });
 
-    // Sort orders so current week appears first
+    // Sort orders: current week first, then future weeks, then past weeks
     const now = new Date();
     const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
     const currentWeekStart = format(startOfWeek(localDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
@@ -308,7 +318,15 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
       if (a.week_start_date === currentWeekStart) return -1;
       if (b.week_start_date === currentWeekStart) return 1;
 
-      // Otherwise sort by date ascending
+      // Separate future and past weeks
+      const aIsFuture = a.week_start_date > currentWeekStart;
+      const bIsFuture = b.week_start_date > currentWeekStart;
+
+      // Future weeks come before past weeks
+      if (aIsFuture && !bIsFuture) return -1;
+      if (!aIsFuture && bIsFuture) return 1;
+
+      // Within same category (both future or both past), sort by date ascending
       return a.week_start_date.localeCompare(b.week_start_date);
     });
 
@@ -349,6 +367,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
 
         // Determine which location to show
         let targetLocationId = profileData.location_id;
+        let derivedLocationSlug = locationParam;
 
         // If forcedLocation is provided, look up the location ID
         if (locationParam && locationsData) {
@@ -357,8 +376,21 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
           if (location) {
             targetLocationId = location.id;
           }
+        } else if (locationsData && targetLocationId) {
+          // If no locationParam, derive the slug from the user's profile location
+          const userLocation = locationsData.find(loc => loc.id === targetLocationId);
+          if (userLocation) {
+            // Find the reverse mapping (database name -> slug)
+            const slugEntry = Object.entries(locationParamMapping).find(
+              ([_, dbName]) => dbName === userLocation.name
+            );
+            if (slugEntry) {
+              derivedLocationSlug = slugEntry[0];
+            }
+          }
         }
 
+        setNavLocationSlug(derivedLocationSlug);
         setSelectedLocationId(targetLocationId);
         await fetchOrders(targetLocationId);
       } catch (err) {
@@ -378,6 +410,28 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
       }
     };
   }, [autoSaveTimeout]);
+
+  // Handle Snapchat building changes
+  useEffect(() => {
+    const handleBuildingChange = async () => {
+      const isSnapchat = navLocationSlug?.startsWith('snapchat');
+      if (!isSnapchat || !locations.length) return;
+
+      const newSlug = `snapchat-${snapchatBuilding}`;
+      const dbLocationName = locationParamMapping[newSlug];
+      const location = locations.find(loc => loc.name === dbLocationName);
+
+      if (location && location.id !== selectedLocationId) {
+        setNavLocationSlug(newSlug);
+        setSelectedLocationId(location.id);
+        // Update URL to reflect the building change
+        router.push(`/${newSlug}/orders`);
+        await fetchOrders(location.id);
+      }
+    };
+
+    handleBuildingChange();
+  }, [snapchatBuilding]);
 
   const locationPresets: Record<string, number> = {
     'Snapchat 119': 75,
@@ -418,6 +472,95 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
     });
 
     setEditedPortions({ ...editedPortions, [orderId]: portions });
+  };
+
+  const handleViewAndEdit = async (orderId: string, order: OrderWithItems, weekStartDate: string) => {
+    // First, open the menu if it's not already open
+    if (viewingMenuWeek !== weekStartDate) {
+      if (!weeklyMenus[weekStartDate] && !loadingMenu[weekStartDate]) {
+        await fetchWeeklyMenu(weekStartDate);
+      }
+      setViewingMenuWeek(weekStartDate);
+
+      // Scroll to top smoothly after state updates
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+
+    // Then, enter edit mode
+    handleEdit(orderId, order);
+  };
+
+  const handleCopyFromLastWeek = async (orderId: string, order: OrderWithItems) => {
+    // Find the previous week's order
+    const currentWeekDate = new Date(order.week_start_date);
+    const previousWeekDate = format(addDays(currentWeekDate, -7), 'yyyy-MM-dd');
+
+    const previousWeekOrder = orders.find(o => o.week_start_date === previousWeekDate);
+
+    if (!previousWeekOrder) {
+      alert('No previous week found to copy from.');
+      return;
+    }
+
+    if (previousWeekOrder.order_items.length === 0) {
+      alert('Previous week has no orders to copy.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Copy all portions from ${formatWeekRange(previousWeekOrder.week_start_date)}?`);
+    if (!confirmed) return;
+
+    // Build portions object from previous week
+    const portions: Record<string, Record<string, number>> = {};
+    const weekStart = new Date(order.week_start_date);
+
+    for (let i = 0; i < 5; i++) {
+      const date = addDays(weekStart, i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      portions[dateStr] = {
+        soup: 0,
+        hot_dish_meat_fish: 0,
+        hot_dish_veg: 0,
+        salad_bar: 0
+      };
+    }
+
+    // Copy portions from previous week (matching by day of week, not absolute date)
+    const previousWeekStart = new Date(previousWeekOrder.week_start_date);
+    previousWeekOrder.order_items.forEach((item) => {
+      if (item.dishes.category !== 'off_menu') {
+        // Calculate which day of the week this item is for (0-4 for Mon-Fri)
+        const itemDate = new Date(item.delivery_date);
+        const dayOfWeek = Math.floor((itemDate.getTime() - new Date(previousWeekOrder.week_start_date).getTime()) / (1000 * 60 * 60 * 24));
+
+        if (dayOfWeek >= 0 && dayOfWeek < 5) {
+          // Map to the same day of week in the new week
+          const targetDate = format(addDays(weekStart, dayOfWeek), 'yyyy-MM-dd');
+
+          if (portions[targetDate]) {
+            if (item.dishes.category === 'hot_dish_meat' || item.dishes.category === 'hot_dish_fish') {
+              portions[targetDate]['hot_dish_meat_fish'] = item.portions;
+            } else {
+              portions[targetDate][item.dishes.category] = item.portions;
+            }
+          }
+        }
+      }
+    });
+
+    // Enter edit mode with the copied portions
+    setEditingOrder(orderId);
+    setEditedPortions({ ...editedPortions, [orderId]: portions });
+
+    // Open menu if not already open
+    if (viewingMenuWeek !== order.week_start_date) {
+      if (!weeklyMenus[order.week_start_date] && !loadingMenu[order.week_start_date]) {
+        await fetchWeeklyMenu(order.week_start_date);
+      }
+      setViewingMenuWeek(order.week_start_date);
+    }
   };
 
   const handlePortionChange = (orderId: string, date: string, category: string, value: string) => {
@@ -615,6 +758,9 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
     }
 
     await handleSave(orderId, true);
+
+    // Close the menu after saving
+    setViewingMenuWeek(null);
   };
 
   const handleClearWeek = async (orderId: string, weekRange: string) => {
@@ -832,27 +978,51 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
       <AdminQuickNav />
 
       <UniversalHeader
-        title="Orders"
-        backPath={currentLocation ? (locationParam === 'snapchat-119' || locationParam === 'snapchat-165' ? '/snapchat/dashboard' : `/${locationParam}/dashboard`) : "/location-management"}
+        title=""
+        backPath=""
         locationLogo={currentLocation?.logo || ""}
         locationName={currentLocation?.name || ""}
-        locationSubtitle={currentLocation?.subtitle}
+        locationSubtitle={navLocationSlug?.startsWith('snapchat') ? `Building ${snapchatBuilding}` : currentLocation?.subtitle}
+        navItems={navLocationSlug ? [
+          { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
+          { label: 'Orders', href: `/${navLocationSlug}/orders`, active: true },
+          { label: 'Soup & Salad Bar', href: `/${navLocationSlug}/soup-salad-bar`, active: false },
+          { label: 'Banqueting', href: `/admin/banqueting`, active: false },
+          { label: 'Settings', href: '/location-management/settings', active: false },
+        ] : undefined}
       />
 
-      {selectedLocationId && !viewingMenuWeek && (
-        <div className="max-w-6xl mx-auto px-8 lg:px-12 pt-6 pb-2">
-          <div className="flex items-center justify-end">
-            <button
-              onClick={() => setShowDefaultWeekModal(true)}
-              className="px-4 py-2 text-apple-footnote text-apple-blue hover:text-apple-blue-hover transition-colors"
-            >
-              Set Default Week
-            </button>
+      {selectedLocationId && !viewingMenuWeek && navLocationSlug?.startsWith('snapchat') && (
+        <div className="max-w-6xl mx-auto px-8 lg:px-12 pt-16 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[15px] text-[#6E6E73]">Building:</span>
+            <div className="flex bg-[#F5F5F7] rounded-lg p-1">
+              <button
+                onClick={() => setSnapchatBuilding('119')}
+                className={`px-4 py-1.5 text-[15px] font-medium rounded-md transition-colors ${
+                  snapchatBuilding === '119'
+                    ? 'bg-white text-[#1D1D1F] shadow-sm'
+                    : 'text-[#86868B] hover:text-[#1D1D1F]'
+                }`}
+              >
+                119
+              </button>
+              <button
+                onClick={() => setSnapchatBuilding('165')}
+                className={`px-4 py-1.5 text-[15px] font-medium rounded-md transition-colors ${
+                  snapchatBuilding === '165'
+                    ? 'bg-white text-[#1D1D1F] shadow-sm'
+                    : 'text-[#86868B] hover:text-[#1D1D1F]'
+                }`}
+              >
+                165
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <main className={`max-w-6xl mx-auto px-8 lg:px-12 ${viewingMenuWeek ? 'py-4' : 'py-10'}`}>
+      <main className={`max-w-6xl mx-auto px-8 lg:px-12 ${viewingMenuWeek ? 'py-4' : 'pt-24 pb-10'}`}>
         {orders.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-apple-body text-slate-600 mb-4">No orders found</p>
@@ -866,7 +1036,20 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
         ) : (
           <div className="space-y-8">
             {orders
-              .filter(order => !viewingMenuWeek || order.week_start_date === viewingMenuWeek)
+              .filter(order => {
+                if (viewingMenuWeek) {
+                  return order.week_start_date === viewingMenuWeek;
+                }
+
+                // Show only current week + 3 future weeks (4 weeks total)
+                const now = new Date();
+                const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+                const currentWeek = startOfWeek(localDate, { weekStartsOn: 1 });
+                const threeWeeksAhead = addWeeks(currentWeek, 3);
+                const orderWeek = new Date(order.week_start_date);
+
+                return orderWeek >= currentWeek && orderWeek <= threeWeeksAhead;
+              })
               .map((order) => {
               const isEditing = editingOrder === order.id;
               const groupedItems: Record<string, Record<string, number>> = {};
@@ -915,7 +1098,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
 
               return (
                 <div key={order.id}>
-                  <div className="px-5 py-2">
+                  <div className="py-2 flex items-center">
                     <div className="flex items-center gap-3">
                       <h3 className="text-apple-headline font-medium italic text-slate-700">
                         {formatWeekRange(order.week_start_date)}
@@ -923,49 +1106,58 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                       <span className="text-apple-footnote font-medium italic tracking-wider text-slate-500">
                         (Week {getWeek(new Date(order.week_start_date), { weekStartsOn: 1 })})
                       </span>
-                      <div className="flex gap-2 ml-auto items-center">
-                        {!isEditing && (
+                    </div>
+                    <div className="flex-1 flex justify-end gap-2 items-center">
+                      {isEditing ? (
+                        <>
+                          {saving && (
+                            <span className="text-apple-subheadline text-slate-500 italic">
+                              Saving...
+                            </span>
+                          )}
                           <button
-                            onClick={() => handleToggleMenu(order.week_start_date)}
-                            className="px-3 py-1.5 text-apple-subheadline font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] hover:bg-[#F5F5F7] rounded-sm transition-colors"
+                            onClick={() => handleDone(order.id)}
+                            disabled={saving}
+                            className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors disabled:opacity-50"
                           >
-                            {viewingMenuWeek === order.week_start_date ? 'Hide Menu' : 'View Menu'}
+                            Done
                           </button>
-                        )}
-                        {isEditing ? (
-                          <>
-                            {saving && (
-                              <span className="text-apple-subheadline text-slate-500 italic">
-                                Saving...
-                              </span>
-                            )}
-                            <button
-                              onClick={() => handleDone(order.id)}
-                              disabled={saving}
-                              className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors disabled:opacity-50"
-                            >
-                              Done
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            {order.order_items.length > 0 && (
+                        </>
+                      ) : (
+                        <>
+                          {(() => {
+                            // Check if there's a previous week to copy from
+                            const currentWeekDate = new Date(order.week_start_date);
+                            const previousWeekDate = format(addDays(currentWeekDate, -7), 'yyyy-MM-dd');
+                            const previousWeekOrder = orders.find(o => o.week_start_date === previousWeekDate);
+                            const hasPreviousWeek = previousWeekOrder && previousWeekOrder.order_items.length > 0;
+
+                            return hasPreviousWeek && (
                               <button
-                                onClick={() => handleClearWeek(order.id, formatWeekRange(order.week_start_date))}
-                                className="px-3 py-1.5 text-apple-subheadline font-medium text-red-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
+                                onClick={() => handleCopyFromLastWeek(order.id, order)}
+                                title="Copy last week's orders"
+                                className="px-3 py-1.5 text-apple-subheadline font-medium text-[#0078D4] bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
                               >
-                                Clear
+                                Copy
                               </button>
-                            )}
+                            );
+                          })()}
+                          {order.order_items.length > 0 && (
                             <button
-                              onClick={() => handleEdit(order.id, order)}
-                              className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
+                              onClick={() => handleClearWeek(order.id, formatWeekRange(order.week_start_date))}
+                              className="px-3 py-1.5 text-apple-subheadline font-medium text-red-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
                             >
-                              Edit
+                              Clear
                             </button>
-                          </>
-                        )}
-                      </div>
+                          )}
+                          <button
+                            onClick={() => handleViewAndEdit(order.id, order, order.week_start_date)}
+                            className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
+                          >
+                            View & Edit
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -979,7 +1171,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                           <p className="text-[15px] text-[#86868B]">No menu found for this week.</p>
                         </div>
                       ) : (
-                        <div className="bg-white border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm">
+                        <div className={`bg-white border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm ${!isCurrentWeek ? 'opacity-60' : ''}`}>
                           <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                             <colgroup>
                               <col className="w-48" />
@@ -989,16 +1181,16 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                             </colgroup>
                             <thead>
                               <tr className="bg-[#0078D4]">
-                                <th className="px-5 py-4 text-left text-[13px] font-semibold text-white uppercase tracking-wide">
+                                <th className="px-5 py-4 text-left text-apple-footnote font-medium text-white border-r border-white/20">
                                   Menu
                                 </th>
                                 {Array.from({ length: 5 }, (_, i) => addDays(new Date(order.week_start_date), i)).map((day, dayIndex) => (
-                                  <th key={dayIndex} className="py-4">
+                                  <th key={dayIndex} className={`py-4 ${dayIndex < 4 ? 'border-r border-white/20' : ''}`}>
                                     <div className="flex items-baseline justify-center gap-1">
-                                      <span className="text-apple-footnote font-medium uppercase tracking-wide text-white">
-                                        {format(day, 'EEE').toUpperCase()}
+                                      <span className="text-apple-footnote font-medium text-white">
+                                        {format(day, 'EEE')}
                                       </span>
-                                      <span className="text-apple-caption font-light text-white">
+                                      <span className="text-apple-footnote font-medium text-white">
                                         {format(day, 'd MMM')}
                                       </span>
                                     </div>
@@ -1009,21 +1201,28 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                             <tbody>
                           {/* Soup Row */}
                           <tr className="border-b border-[#D2D2D7]">
-                            <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
-                              <div className="text-[15px] font-semibold text-[#1D1D1F]">Soup</div>
+                            <td className="px-5 py-6 bg-gray-200 border-r border-[#D2D2D7] align-top">
+                              <div className="text-[15px] font-medium text-[#1D1D1F]">Soup</div>
                             </td>
                             {Array.from({ length: 5 }).map((_, dayIndex) => {
                               const soupItem = weeklyMenus[order.week_start_date]?.menu_items.find(
                                 (item) => item.day_of_week === dayIndex && item.meal_type === 'soup'
                               );
+                              const isEven = dayIndex % 2 === 0;
                               return (
-                                <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                                <td
+                                  key={dayIndex}
+                                  className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center align-top"
+                                  style={{ backgroundColor: isEven ? '#FFFFFF' : '#E2E8F0' }}
+                                >
                                   {soupItem ? (
                                     <div className="space-y-1">
                                       {/* Line 1-2: Dish Name (fixed height) */}
-                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
-                                        {soupItem.dish.name}
-                                      </h3>
+                                      <div className="h-[3rem]">
+                                        <h3 className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] line-clamp-2">
+                                          {soupItem.dish.name}
+                                        </h3>
+                                      </div>
 
                                       {/* Line 3-4-5: Toppings (3 lines) */}
                                       <p className="text-[12px] text-[#1D1D1F] min-h-[3.75rem]">
@@ -1044,28 +1243,35 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
 
                           {/* Meat/Fish Row */}
                           <tr className="border-b border-[#D2D2D7]">
-                            <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
-                              <div className="text-[15px] font-semibold text-[#1D1D1F]">Meat/Fish</div>
+                            <td className="px-5 py-6 bg-gray-200 border-r border-[#D2D2D7] align-top">
+                              <div className="text-[15px] font-medium text-[#1D1D1F]">Hot Dish Meat/Fish</div>
                             </td>
                             {Array.from({ length: 5 }).map((_, dayIndex) => {
                               const meatItem = weeklyMenus[order.week_start_date]?.menu_items.find(
                                 (item) => item.day_of_week === dayIndex && item.meal_type === 'hot_meat'
                               );
+                              const isEven = dayIndex % 2 === 0;
                               return (
-                                <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                                <td
+                                  key={dayIndex}
+                                  className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center align-top"
+                                  style={{ backgroundColor: isEven ? '#FFFFFF' : '#E2E8F0' }}
+                                >
                                   {meatItem ? (
                                     <div className="space-y-1">
                                       {/* Line 1-2: Dish Name (fixed height) */}
-                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
-                                        {meatItem.dish.name}
-                                      </h3>
+                                      <div className="h-[3rem]">
+                                        <h3 className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] line-clamp-2">
+                                          {meatItem.dish.name}
+                                        </h3>
+                                      </div>
 
                                       {/* Line 3: Carbs (always visible) */}
                                       <p className="text-[12px] text-[#1D1D1F] min-h-[1.25rem]">
                                         {getCarbs(meatItem.dish).length > 0 ? (
                                           <><span className="font-medium">Carbs:</span> {getCarbs(meatItem.dish).join(', ')}</>
                                         ) : (
-                                          <span className="text-transparent">-</span>
+                                          <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                                         )}
                                       </p>
 
@@ -1094,28 +1300,35 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
 
                           {/* Veg Row */}
                           <tr>
-                            <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
-                              <div className="text-[15px] font-semibold text-[#1D1D1F]">Veg Option</div>
+                            <td className="px-5 py-6 bg-gray-200 border-r border-[#D2D2D7] align-top">
+                              <div className="text-[15px] font-medium text-[#1D1D1F]">Hot Dish Veg</div>
                             </td>
                             {Array.from({ length: 5 }).map((_, dayIndex) => {
                               const vegItem = weeklyMenus[order.week_start_date]?.menu_items.find(
                                 (item) => item.day_of_week === dayIndex && item.meal_type === 'hot_veg'
                               );
+                              const isEven = dayIndex % 2 === 0;
                               return (
-                                <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
+                                <td
+                                  key={dayIndex}
+                                  className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center align-top"
+                                  style={{ backgroundColor: isEven ? '#FFFFFF' : '#E2E8F0' }}
+                                >
                                   {vegItem ? (
                                     <div className="space-y-1">
                                       {/* Line 1-2: Dish Name (fixed height) */}
-                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
-                                        {vegItem.dish.name}
-                                      </h3>
+                                      <div className="h-[3rem]">
+                                        <h3 className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] line-clamp-2">
+                                          {vegItem.dish.name}
+                                        </h3>
+                                      </div>
 
                                       {/* Line 3: Carbs (always visible) */}
                                       <p className="text-[12px] text-[#1D1D1F] min-h-[1.25rem]">
                                         {getCarbs(vegItem.dish).length > 0 ? (
                                           <><span className="font-medium">Carbs:</span> {getCarbs(vegItem.dish).join(', ')}</>
                                         ) : (
-                                          <span className="text-transparent">-</span>
+                                          <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                                         )}
                                       </p>
 
@@ -1148,93 +1361,94 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <div className={`border rounded-sm overflow-hidden ${isCurrentWeek ? "border-[#0d9488] border-2 bg-[#0d9488]" : "border-slate-300 bg-slate-200"}`}>
-                      <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
-                        <colgroup>
-                          <col className="w-48" />
-                          {Object.keys(currentPortions || {}).map((date) => (
-                            <col key={date} className="w-44" />
-                          ))}
-                        </colgroup>
-                        <thead>
-                          <tr>
-                            <th className={`px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide border-r ${isCurrentWeek ? 'text-white border-white/20' : 'text-slate-600 border-slate-300'}`}>
-                              Item
-                            </th>
-                            {Object.entries(currentPortions || {})
-                              .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                              .map(([date], index, array) => (
-                                <th key={date} className={`py-4 ${index < array.length - 1 ? (isCurrentWeek ? 'border-r border-white/20' : 'border-r border-slate-300') : ''}`}>
-                                  <div className={`flex items-baseline justify-center gap-1 ${isCurrentWeek ? 'text-white' : 'text-slate-600'}`}>
-                                    <span className="text-apple-footnote font-medium uppercase tracking-wide">
-                                      {format(new Date(date), 'EEE')}
-                                    </span>
-                                    <span className={`text-apple-caption font-light ${isCurrentWeek ? 'text-white/70' : 'text-slate-400'}`}>
-                                      {format(new Date(date), 'd MMM')}
-                                    </span>
-                                  </div>
-                                </th>
-                              ))}
-                          </tr>
-                        </thead>
-                      </table>
-                    </div>
-
-                  <div className="overflow-hidden bg-slate-100 pb-4 border border-slate-300 rounded-sm">
-                    <table className="w-full bg-slate-100 border-separate" style={{borderSpacing: '0 0'}}>
+                  <div className={`border border-[#D2D2D7] rounded-sm overflow-hidden ${isCurrentWeek ? 'shadow-md' : 'shadow-sm opacity-60'}`}>
+                    <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                       <colgroup>
                         <col className="w-48" />
-                        {Object.keys(currentPortions || {}).map((date, i) => (
+                        {Object.keys(currentPortions || {}).map((date) => (
                           <col key={date} className="w-44" />
                         ))}
                       </colgroup>
-                      <tbody className="divide-y divide-slate-100">
+                      <thead>
+                        <tr className="bg-[#0078D4]">
+                          <th className="px-5 py-4 text-left text-apple-footnote font-medium text-white border-r border-white/20">
+                            Item
+                          </th>
+                          {Object.entries(currentPortions || {})
+                            .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+                            .map(([date], index, array) => (
+                              <th key={date} className={`py-4 ${index < array.length - 1 ? 'border-r border-white/20' : ''}`}>
+                                <div className="flex items-baseline justify-center gap-1 text-white">
+                                  <span className="text-apple-footnote font-medium">
+                                    {format(new Date(date), 'EEE')}
+                                  </span>
+                                  <span className="text-apple-footnote font-medium">
+                                    {format(new Date(date), 'd MMM')}
+                                  </span>
+                                </div>
+                              </th>
+                            ))}
+                        </tr>
+                      </thead>
+                      <tbody>
                         {[
                           { key: 'soup', label: 'Soup' },
                           { key: 'salad_bar', label: 'Salad Bar' },
                           { key: 'hot_dish_meat_fish', label: 'Hot Dish Meat/Fish' },
                           { key: 'hot_dish_veg', label: 'Hot Dish Veg' }
                         ].map(({ key, label }) => (
-                          <tr key={key} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700 border-r border-slate-300">
+                          <tr key={key} className="border-b border-[#D2D2D7]">
+                            <td className="px-5 py-4 bg-gray-200 border-r border-[#D2D2D7] text-apple-subheadline font-medium text-[#1D1D1F]">
                               {label}
                             </td>
                             {Object.entries(currentPortions || {})
                               .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                              .map(([date, items], index, array) => (
-                                <td key={date} className={`py-4 text-center ${index < array.length - 1 ? 'border-r border-slate-300' : ''}`}>
-                                  {isEditing ? (
-                                    <div className="flex justify-center">
-                                      <HoverNumberInput
-                                        value={items[key] || 0}
-                                        onChange={(newValue) => handlePortionChange(order.id, date, key, String(newValue))}
-                                      />
-                                    </div>
-                                  ) : (
-                                    <span className="text-apple-subheadline text-slate-600">{items[key] || 0}</span>
-                                  )}
-                                </td>
-                              ))}
+                              .map(([date, items], dayIndex, array) => {
+                                const isEven = dayIndex % 2 === 0;
+                                return (
+                                  <td
+                                    key={date}
+                                    className={`py-4 text-center border-r border-[#D2D2D7] last:border-r-0`}
+                                    style={{ backgroundColor: isEven ? '#FFFFFF' : '#E2E8F0' }}
+                                  >
+                                    {isEditing ? (
+                                      <div className="flex justify-center">
+                                        <HoverNumberInput
+                                          value={items[key] || 0}
+                                          onChange={(newValue) => handlePortionChange(order.id, date, key, String(newValue))}
+                                        />
+                                      </div>
+                                    ) : (
+                                      <span className="text-apple-subheadline text-[#1D1D1F]">{items[key] || 0}</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
                           </tr>
                         ))}
                         {hasOffMenuItems && Object.entries(offMenuItems).map(([dishName, portions]) => (
-                          <tr key={dishName} className="hover:bg-slate-50 transition-colors bg-slate-50/50">
-                            <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700 italic border-r border-slate-300">
+                          <tr key={dishName} className="border-b border-[#D2D2D7] last:border-b-0">
+                            <td className="px-5 py-4 bg-gray-200 border-r border-[#D2D2D7] text-apple-subheadline font-medium text-[#1D1D1F] italic">
                               {dishName}
                             </td>
                             {Object.entries(currentPortions || {})
                               .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                              .map(([date], index, array) => (
-                                <td key={date} className={`py-4 text-center ${index < array.length - 1 ? 'border-r border-slate-300' : ''}`}>
-                                  <span className="text-apple-subheadline text-slate-600">{portions[date] || 0}</span>
-                                </td>
-                              ))}
+                              .map(([date], dayIndex, array) => {
+                                const isEven = dayIndex % 2 === 0;
+                                return (
+                                  <td
+                                    key={date}
+                                    className="py-4 text-center border-r border-[#D2D2D7] last:border-r-0"
+                                    style={{ backgroundColor: isEven ? '#FFFFFF' : '#E2E8F0' }}
+                                  >
+                                    <span className="text-apple-subheadline text-[#1D1D1F]">{portions[date] || 0}</span>
+                                  </td>
+                                );
+                              })}
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  </div>
                   </div>
                 </div>
               );
@@ -1242,15 +1456,6 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
           </div>
         )}
       </main>
-
-      {selectedLocationId && (
-        <SetDefaultWeekModal
-          locationId={selectedLocationId}
-          locationName={locations.find(l => l.id === selectedLocationId)?.name || ''}
-          isOpen={showDefaultWeekModal}
-          onClose={() => setShowDefaultWeekModal(false)}
-        />
-      )}
     </div>
   );
 }

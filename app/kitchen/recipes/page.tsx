@@ -378,7 +378,27 @@ export default function DarkKitchenRecipesPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7]">
-      <UniversalHeader title="Recipes" backPath="/kitchen/dashboard" />
+      <UniversalHeader
+        title=""
+        backPath=""
+        locationLogo=""
+        locationName="Kitchen"
+        navItems={[
+          { label: 'Week Overview', href: '/kitchen/week-overview', active: false },
+          {
+            label: 'Dishes',
+            href: '/kitchen/dishes',
+            active: false,
+            subItems: [
+              { label: 'Dish Library', href: '/kitchen/dishes', active: false },
+              { label: 'Dish Cards', href: '/kitchen/dish-cards', active: false },
+              { label: 'Allergens', href: '/kitchen/allergens', active: false },
+            ]
+          },
+          { label: 'Menu Planner', href: '/kitchen/menus', active: false },
+          { label: 'Recipes', href: '/kitchen/recipes', active: true },
+          { label: 'Production', href: '/kitchen/production', active: false },
+        ]}      />
 
       <main className="max-w-7xl mx-auto px-8 py-8">
         {/* Message */}

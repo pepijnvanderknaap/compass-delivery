@@ -18,7 +18,7 @@ interface SaladItemWithPercentage {
 interface SaladCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (items: Array<{id: string; percentage: number}>, totalPortion: number) => void;
+  onAdd: (items: Array<{id: string; percentage: number}>, totalPortion: number, saladName: string) => Promise<void>;
   existingItems?: Array<{component_dish_id: string; percentage: number}>;
   existingTotalPortion?: number;
 }
@@ -33,15 +33,19 @@ export default function SaladCreateModal({
   const supabase = createClient();
   const [allSaladItems, setAllSaladItems] = useState<SaladItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<SaladItemWithPercentage[]>([]);
+  const [saladName, setSaladName] = useState('');
   const [totalPortion, setTotalPortion] = useState(existingTotalPortion.toString());
   const [showQuickForm, setShowQuickForm] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       fetchSaladItems();
+      setSaladName('');
       setTotalPortion(existingTotalPortion > 0 ? existingTotalPortion.toString() : '');
       setMessage(null);
+      setSaving(false);
     }
   }, [isOpen, existingTotalPortion]);
 
@@ -55,7 +59,7 @@ export default function SaladCreateModal({
 
     setAllSaladItems(data || []);
 
-    // If we have existing items, load them
+    // If we have existing items, load them; otherwise reset to empty
     if (existingItems.length > 0 && data) {
       const selected = existingItems.map(ei => {
         const item = data.find(v => v.id === ei.component_dish_id);
@@ -66,6 +70,9 @@ export default function SaladCreateModal({
         };
       });
       setSelectedItems(selected);
+    } else {
+      // Reset to empty when opening modal with no existing items
+      setSelectedItems([]);
     }
   };
 
@@ -85,8 +92,16 @@ export default function SaladCreateModal({
     );
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
+    console.log('[SaladCreateModal] handleAdd called');
     setMessage(null);
+
+    // Validate salad name
+    if (!saladName.trim()) {
+      console.log('[SaladCreateModal] Validation failed: no salad name');
+      setMessage({ type: 'error', text: 'Please enter a name for this salad combination' });
+      return;
+    }
 
     // Validate total portion
     const portion = parseInt(totalPortion);
@@ -104,16 +119,35 @@ export default function SaladCreateModal({
 
     const totalPercentage = validItems.reduce((sum, v) => sum + parseInt(v.percentage), 0);
     if (totalPercentage !== 100) {
+      console.log('[SaladCreateModal] Validation failed: percentages =', totalPercentage);
       setMessage({ type: 'error', text: `Percentages must add up to 100% (currently ${totalPercentage}%)` });
       return;
     }
 
-    // All valid - call onAdd (just updates form state, doesn't save to database)
-    onAdd(
-      validItems.map(v => ({ id: v.id, percentage: parseInt(v.percentage) })),
-      portion
-    );
-    onClose();
+    // All valid - set saving state and await onAdd
+    console.log('[SaladCreateModal] All validation passed, calling onAdd with:', {
+      items: validItems.length,
+      portion,
+      saladName: saladName.trim(),
+    });
+    setSaving(true);
+
+    try {
+      // Await the async save operation
+      await onAdd(
+        validItems.map(v => ({ id: v.id, percentage: parseInt(v.percentage) })),
+        portion,
+        saladName.trim()
+      );
+
+      console.log('[SaladCreateModal] onAdd completed successfully');
+      // Success - close modal
+      onClose();
+    } catch (error: any) {
+      console.error('[SaladCreateModal] onAdd failed:', error);
+      setMessage({ type: 'error', text: error.message || 'Failed to save salad' });
+      setSaving(false);
+    }
   };
 
   const handleQuickItemCreated = (newItem: { id: string; name: string }) => {
@@ -168,6 +202,23 @@ export default function SaladCreateModal({
               {message.text}
             </div>
           )}
+
+          {/* Salad Name */}
+          <div className="mb-6">
+            <label className="block text-[13px] font-medium text-[#86868B] mb-2">
+              Salad Name *
+            </label>
+            <input
+              type="text"
+              value={saladName}
+              onChange={(e) => setSaladName(e.target.value)}
+              className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
+              placeholder="e.g., Classic Garden Mix"
+            />
+            <p className="mt-1 text-[12px] text-[#86868B]">
+              Give this salad combination a name so it can be reused later
+            </p>
+          </div>
 
           {/* Total Portion Size */}
           <div className="mb-6">
@@ -268,9 +319,10 @@ export default function SaladCreateModal({
             <button
               type="button"
               onClick={handleAdd}
-              className="flex-1 px-6 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-sm transition-colors"
+              disabled={saving}
+              className="flex-1 px-6 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add to Dish
+              {saving ? 'Saving...' : 'Add to Dish'}
             </button>
           </div>
         </div>

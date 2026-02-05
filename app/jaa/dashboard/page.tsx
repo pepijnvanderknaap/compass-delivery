@@ -1,12 +1,8 @@
-import LocationDashboard from '@/components/LocationDashboard';
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function JAADashboardPage() {
-  return (
-    <LocationDashboard
-      locationSlug="jaa"
-      locationLogo="/locations/jaa-logo.png"
-      locationName="JAA Training"
-      loadingColor="border-orange-600"
-    />
-  );
+  // Redirect to week overview which will have the proper header
+  redirect('/jaa/week-overview');
 }

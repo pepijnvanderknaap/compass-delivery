@@ -323,9 +323,9 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
   const loadWarmVeggieComponents = async (dishId: string) => {
     // Load warm veggies using the simplified system (direct dish -> vegetable links)
     const { data } = await supabase
-      .from('dish_warm_veggie_components')
+      .from('warm_veggie_components')
       .select('component_dish_id, percentage')
-      .eq('dish_id', dishId);
+      .eq('main_dish_id', dishId);
 
     if (data && data.length > 0) {
       setWarmVeggies(data);
@@ -429,24 +429,99 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
     setShowSaladCreateModal(true);
   };
 
-  const handleAddCustomSalad = (items: Array<{id: string; percentage: number}>, totalPortion: number) => {
-    // Update the salad components state
-    const newComponents = items.map((item, idx) => ({
-      tempId: `custom-${idx}`,
-      component_dish_id: item.id,
-      component_name: '', // Will be resolved when rendering
-      percentage: String(item.percentage),
-    }));
+  const handleAddCustomSalad = async (items: Array<{id: string; percentage: number}>, totalPortion: number, saladName: string) => {
+    try {
+      // Get the next display_number for the category
+      const category = 'leafy';
+      const { data: existingSalads } = await supabase
+        .from('salad_combinations')
+        .select('display_number')
+        .eq('category', category)
+        .order('display_number', { ascending: false })
+        .limit(1);
 
-    setSaladComponents(newComponents);
-    setFormData(prev => ({
-      ...prev,
-      salad_total_portion_g: totalPortion.toString(),
-    }));
+      const nextDisplayNumber = existingSalads && existingSalads.length > 0
+        ? existingSalads[0].display_number + 1
+        : 1;
 
-    // Clear selected salad combo (this is a custom salad)
-    setSelectedSaladComboId(null);
-    setSelectedSaladName(null);
+      // Save the salad combination to the database
+      const { data: newSaladCombo, error: saladError } = await supabase
+        .from('salad_combinations')
+        .insert([{
+          custom_name: saladName,
+          category: category,
+          display_number: nextDisplayNumber
+        }])
+        .select()
+        .single();
+
+      if (saladError) {
+        console.error('Error creating salad combination:', saladError);
+        throw new Error(`Failed to save salad: ${saladError.message}`);
+      }
+
+      console.log('[MainDishForm] Salad combination created:', newSaladCombo.id);
+
+      // Save the components
+      const componentInserts = items.map(item => ({
+        salad_combination_id: newSaladCombo.id,
+        component_dish_id: item.id,
+        percentage: item.percentage,
+      }));
+
+      const { error: componentsError } = await supabase
+        .from('salad_combination_items')
+        .insert(componentInserts);
+
+      if (componentsError) {
+        console.error('Error creating salad components:', componentsError);
+        throw new Error(`Failed to save salad components: ${componentsError.message}`);
+      }
+
+      console.log('[MainDishForm] Salad components saved successfully');
+
+      // Fetch component names for immediate display
+      const componentIds = items.map(item => item.id);
+      const { data: componentDetails } = await supabase
+        .from('dishes')
+        .select('id, name')
+        .in('id', componentIds);
+
+      // Update the form state with the new salad
+      const newComponents = items.map((item, idx) => {
+        const component = componentDetails?.find(c => c.id === item.id);
+        return {
+          tempId: `custom-${idx}`,
+          component_dish_id: item.id,
+          component_name: component?.name || '',
+          percentage: String(item.percentage),
+        };
+      });
+
+      setSaladComponents(newComponents);
+      setFormData(prev => ({
+        ...prev,
+        salad_total_portion_g: totalPortion.toString(),
+      }));
+
+      // Store the salad combo ID (not null anymore!)
+      setSelectedSaladComboId(newSaladCombo.id);
+      setSelectedSaladName(saladName);
+
+      console.log('[MainDishForm] Salad state updated:', {
+        comboId: newSaladCombo.id,
+        name: saladName,
+        components: newComponents.length,
+      });
+
+      // Refresh components to ensure names are available for display
+      await fetchComponents();
+
+      console.log('[MainDishForm] handleAddCustomSalad completed successfully');
+    } catch (err: any) {
+      console.error('Error in handleAddCustomSalad:', err);
+      throw err; // Re-throw so the SaladCreateModal can handle the error display
+    }
   };
 
   // Warm veggie simple modal handler
@@ -1263,7 +1338,18 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={handleCreateNewSalad}
+                                  onClick={() => {
+                                    // Clear all salad state
+                                    setSelectedSaladComboId(null);
+                                    setSelectedSaladName(null);
+                                    setSaladComponents([
+                                      { tempId: '1', component_dish_id: null, component_name: '', percentage: '' }
+                                    ]);
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      salad_total_portion_g: '',
+                                    }));
+                                  }}
                                   className="text-[13px] text-[#0078D4] hover:text-[#106EBE] font-medium transition-colors"
                                 >
                                   Clear
@@ -1271,9 +1357,9 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
                               </div>
 
                               {/* Component List */}
-                              {saladComponents.length > 0 && (
+                              {saladComponents.filter(sc => sc.component_dish_id).length > 0 && (
                                 <div className="space-y-1.5 mt-3">
-                                  {saladComponents.map((sc) => {
+                                  {saladComponents.filter(sc => sc.component_dish_id).map((sc) => {
                                     const component = availableComponents.find(c => c.id === sc.component_dish_id);
                                     return (
                                       <div key={sc.tempId} className="flex items-center justify-between text-[13px]">

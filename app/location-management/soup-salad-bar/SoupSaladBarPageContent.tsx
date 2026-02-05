@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { UserProfile, LocationSettings, Location } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
+import UserProfile from '@/components/UserProfile';
 import SaladBarComposer from '../settings/SaladBarComposer';
 
 interface SoupSaladBarPageContentProps {
@@ -59,7 +60,18 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
 
   // Use forcedLocation if provided, otherwise use searchParams
   const locationParam = forcedLocation || searchParams.get('location');
-  const currentLocation = locationParam ? locationBranding[locationParam] : null;
+
+  // State to hold the derived location slug for navigation
+  const [navLocationSlug, setNavLocationSlug] = useState<string | null>(locationParam);
+
+  // State for Snapchat building selection
+  const [snapchatBuilding, setSnapchatBuilding] = useState<'119' | '165'>(() => {
+    if (locationParam === 'snapchat-165') return '165';
+    return '119'; // Default to 119 for 'snapchat' or 'snapchat-119'
+  });
+
+  // Use navLocationSlug for branding to ensure logo shows even after async load
+  const currentLocation = navLocationSlug ? locationBranding[navLocationSlug] : null;
 
   // Map URL location params to database location names
   const locationParamMapping: Record<string, string> = {
@@ -110,6 +122,7 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
 
         // Determine which location to show
         let targetLocationId = profileData.location_id;
+        let derivedLocationSlug = locationParam;
 
         // If forcedLocation is provided, look up the location ID
         if (locationParam && locationsData) {
@@ -118,7 +131,21 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
           if (location) {
             targetLocationId = location.id;
           }
+        } else if (locationsData && targetLocationId) {
+          // If no locationParam, derive the slug from the user's profile location
+          const userLocation = locationsData.find(loc => loc.id === targetLocationId);
+          if (userLocation) {
+            // Find the reverse mapping (database name -> slug)
+            const slugEntry = Object.entries(locationParamMapping).find(
+              ([_, dbName]) => dbName === userLocation.name
+            );
+            if (slugEntry) {
+              derivedLocationSlug = slugEntry[0];
+            }
+          }
         }
+
+        setNavLocationSlug(derivedLocationSlug);
 
         if (targetLocationId) {
           setSelectedLocationId(targetLocationId);
@@ -139,6 +166,28 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
       fetchLocationSettings(selectedLocationId);
     }
   }, [selectedLocationId]);
+
+  // Handle Snapchat building changes
+  useEffect(() => {
+    const handleBuildingChange = async () => {
+      const isSnapchat = navLocationSlug?.startsWith('snapchat');
+      if (!isSnapchat || !locations.length) return;
+
+      const newSlug = `snapchat-${snapchatBuilding}`;
+      const dbLocationName = locationParamMapping[newSlug];
+      const location = locations.find(loc => loc.name === dbLocationName);
+
+      if (location && location.id !== selectedLocationId) {
+        setNavLocationSlug(newSlug);
+        setSelectedLocationId(location.id);
+        // Update URL to reflect the building change
+        router.push(`/${newSlug}/soup-salad-bar`);
+        await fetchLocationSettings(location.id);
+      }
+    };
+
+    handleBuildingChange();
+  }, [snapchatBuilding]);
 
   const fetchLocationSettings = async (locationId: string) => {
     try {
@@ -208,11 +257,6 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/home');
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -247,23 +291,53 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
       <AdminQuickNav />
 
       <UniversalHeader
-        title="Soup & Salad Bar"
-        backPath={currentLocation ? (locationParam === 'snapchat-119' || locationParam === 'snapchat-165' ? '/snapchat/dashboard' : `/${locationParam}/dashboard`) : "/location-management"}
+        title=""
+        backPath=""
         locationLogo={currentLocation?.logo || ""}
         locationName={currentLocation?.name || ""}
-        locationSubtitle={currentLocation?.subtitle}
+        locationSubtitle={navLocationSlug?.startsWith('snapchat') ? `Building ${snapchatBuilding}` : currentLocation?.subtitle}
+        navItems={navLocationSlug ? [
+          { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
+          { label: 'Orders', href: `/${navLocationSlug}/orders`, active: false },
+          { label: 'Soup & Salad Bar', href: `/${navLocationSlug}/soup-salad-bar`, active: true },
+          { label: 'Banqueting', href: `/admin/banqueting`, active: false },
+          { label: 'Settings', href: '/location-management/settings', active: false },
+        ] : undefined}
         actions={
-          <>
-            <span className="text-apple-subheadline text-slate-700">{profile.full_name}</span>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
-            >
-              Sign Out
-            </button>
-          </>
+          <UserProfile userName={profile.full_name} redirectPath="/home" />
         }
       />
+
+      {/* Snapchat Building Selector */}
+      {navLocationSlug?.startsWith('snapchat') && (
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-6">
+          <div className="flex items-center gap-2">
+            <span className="text-[15px] text-[#6E6E73]">Building:</span>
+            <div className="flex bg-[#F5F5F7] rounded-lg p-1">
+              <button
+                onClick={() => setSnapchatBuilding('119')}
+                className={`px-4 py-1.5 text-[15px] font-medium rounded-md transition-colors ${
+                  snapchatBuilding === '119'
+                    ? 'bg-white text-[#1D1D1F] shadow-sm'
+                    : 'text-[#86868B] hover:text-[#1D1D1F]'
+                }`}
+              >
+                119
+              </button>
+              <button
+                onClick={() => setSnapchatBuilding('165')}
+                className={`px-4 py-1.5 text-[15px] font-medium rounded-md transition-colors ${
+                  snapchatBuilding === '165'
+                    ? 'bg-white text-[#1D1D1F] shadow-sm'
+                    : 'text-[#86868B] hover:text-[#1D1D1F]'
+                }`}
+              >
+                165
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-6xl mx-auto px-6 lg:px-8 py-6">
         {selectedLocationId && (

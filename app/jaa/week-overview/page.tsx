@@ -54,7 +54,7 @@ interface WeeklyMenu {
   menu_items: MenuItem[];
 }
 
-export default function WeeklyMenuPreviewPage() {
+export default function JAAWeekOverviewPage() {
   const supabase = createClient();
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
     startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -211,11 +211,14 @@ export default function WeeklyMenuPreviewPage() {
 
   const getDietaryInfo = (dish: Dish) => {
     const info = [];
-    if (dish.is_vegetarian) info.push('🌱 Vegetarian');
-    if (dish.is_vegan) info.push('🌿 Vegan');
+    if (dish.is_vegetarian) info.push('Veg');
+    if (dish.is_vegan) info.push('Vegan');
     if (dish.contains_pork) info.push('Pork');
     if (dish.contains_beef) info.push('Beef');
     if (dish.contains_lamb) info.push('Lamb');
+    if (dish.contains_chicken) info.push('Chicken');
+    if (dish.contains_fish) info.push('Fish');
+    if (dish.is_halal) info.push('Halal');
     return info;
   };
 
@@ -247,24 +250,15 @@ export default function WeeklyMenuPreviewPage() {
       <div className="no-print">
         <UniversalHeader
           title=""
-          backPath=""
-          locationLogo=""
-          locationName="Kitchen"
+          backPath="/jaa/dashboard"
+          locationLogo="/locations/jaa-logo.png"
+          locationName="JAA Training"
           navItems={[
-            { label: 'Week Overview', href: '/kitchen/week-overview', active: true },
-            {
-              label: 'Dishes',
-              href: '/kitchen/dishes',
-              active: false,
-              subItems: [
-                { label: 'Dish Library', href: '/kitchen/dishes', active: false },
-                { label: 'Dish Cards', href: '/kitchen/dish-cards', active: false },
-                { label: 'Allergens', href: '/kitchen/allergens', active: false },
-              ]
-            },
-            { label: 'Menu Planner', href: '/kitchen/menus', active: false },
-            { label: 'Recipes', href: '/kitchen/recipes', active: false },
-            { label: 'Production', href: '/kitchen/production', active: false },
+            { label: 'Menu Overview', href: '/jaa/week-overview', active: true },
+            { label: 'Orders', href: '/jaa/orders', active: false },
+            { label: 'Soup & Salad Bar', href: '/jaa/soup-salad-bar', active: false },
+            { label: 'Banqueting', href: '/admin/banqueting', active: false },
+            { label: 'Settings', href: '/location-management/settings', active: false },
           ]}
         />
       </div>
@@ -374,7 +368,7 @@ export default function WeeklyMenuPreviewPage() {
                           {getSoupToppings(soupItem.dish).length > 0 ? (
                             <><span className="font-medium">Toppings:</span> {getSoupToppings(soupItem.dish).join(', ')}</>
                           ) : (
-                            <span className="text-transparent">-</span>
+                            <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                           )}
                         </p>
 
@@ -425,7 +419,7 @@ export default function WeeklyMenuPreviewPage() {
                           {getCarbs(meatItem.dish).length > 0 ? (
                             <><span className="font-medium">Carbs:</span> {getCarbs(meatItem.dish).join(', ')}</>
                           ) : (
-                            <span className="text-transparent">-</span>
+                            <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                           )}
                         </p>
 
@@ -440,7 +434,7 @@ export default function WeeklyMenuPreviewPage() {
                               ].join(', ')}
                             </>
                           ) : (
-                            <span className="text-transparent">-</span>
+                            <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                           )}
                         </p>
 
@@ -491,7 +485,7 @@ export default function WeeklyMenuPreviewPage() {
                           {getCarbs(vegItem.dish).length > 0 ? (
                             <><span className="font-medium">Carbs:</span> {getCarbs(vegItem.dish).join(', ')}</>
                           ) : (
-                            <span className="text-transparent">-</span>
+                            <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                           )}
                         </p>
 
@@ -506,7 +500,7 @@ export default function WeeklyMenuPreviewPage() {
                               ].join(', ')}
                             </>
                           ) : (
-                            <span className="text-transparent">-</span>
+                            <><span className="font-medium">Carbs:</span> <span className="text-[#86868B] italic">n.a.</span></>
                           )}
                         </p>
 
@@ -540,12 +534,6 @@ export default function WeeklyMenuPreviewPage() {
             </div>
           </div>
         )}
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-[13px] text-[#86868B] print:mt-12">
-          <p>For allergen information and dietary requirements, please consult with our kitchen staff.</p>
-          <p className="mt-1">Menu subject to availability and may change without notice.</p>
-        </div>
       </main>
 
       {/* Print-specific styles */}

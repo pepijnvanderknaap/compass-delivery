@@ -8,6 +8,7 @@ import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
+import UserProfile from '@/components/UserProfile';
 
 export default function LocationManagementContent() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -59,11 +60,6 @@ export default function LocationManagementContent() {
 
     fetchProfile();
   }, [supabase, router]);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/home');
-  };
 
   if (loading) {
     return (
@@ -192,15 +188,7 @@ export default function LocationManagementContent() {
         locationName={locationBranding?.name}
         locationSubtitle={locationBranding?.subtitle}
         actions={
-          <>
-            <span className="text-apple-subheadline text-slate-700">{profile.full_name}</span>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg transition-colors"
-            >
-              Sign Out
-            </button>
-          </>
+          <UserProfile userName={profile.full_name} redirectPath="/home" />
         }
       />
 

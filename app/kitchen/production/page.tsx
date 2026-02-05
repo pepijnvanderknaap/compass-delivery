@@ -1096,6 +1096,24 @@ export default function ProductionSheetsPage() {
         <UniversalHeader
           title="Production Sheets"
           backPath="/kitchen/dashboard"
+          locationLogo=""
+          locationName="Kitchen"
+          navItems={[
+            { label: 'Week Overview', href: '/kitchen/week-overview', active: false },
+            {
+              label: 'Dishes',
+              href: '/kitchen/dishes',
+              active: false,
+              subItems: [
+                { label: 'Dish Library', href: '/kitchen/dishes', active: false },
+                { label: 'Dish Cards', href: '/kitchen/dish-cards', active: false },
+                { label: 'Allergens', href: '/kitchen/allergens', active: false },
+              ]
+            },
+            { label: 'Menu Planner', href: '/kitchen/menus', active: false },
+            { label: 'Recipes', href: '/kitchen/recipes', active: false },
+            { label: 'Production', href: '/kitchen/production', active: true },
+          ]}
         />
 
         <main className="max-w-4xl mx-auto px-6 lg:px-8 py-10">
@@ -1656,6 +1674,24 @@ export default function ProductionSheetsPage() {
       <UniversalHeader
         title="Production Sheets"
         backPath="/kitchen/dashboard"
+        locationLogo=""
+        locationName="Kitchen"
+        navItems={[
+          { label: 'Week Overview', href: '/kitchen/week-overview', active: false },
+          {
+            label: 'Dishes',
+            href: '/kitchen/dishes',
+            active: false,
+            subItems: [
+              { label: 'All Dishes', href: '/kitchen/dishes', active: false },
+              { label: 'Dish Cards', href: '/kitchen/dish-cards', active: false },
+              { label: 'Allergens', href: '/kitchen/allergens', active: false },
+            ]
+          },
+          { label: 'Menu Planner', href: '/kitchen/menus', active: false },
+          { label: 'Recipes', href: '/kitchen/recipes', active: false },
+          { label: 'Production', href: '/kitchen/production', active: true },
+        ]}
       />
 
       <main className={`max-w-7xl mx-auto px-8 lg:px-12 py-8 print-${activeTab}`}>

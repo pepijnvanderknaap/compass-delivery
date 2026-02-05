@@ -1,12 +1,8 @@
-import LocationDashboard from '@/components/LocationDashboard';
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function SymphonyDashboardPage() {
-  return (
-    <LocationDashboard
-      locationSlug="symphony"
-      locationLogo="/locations/symphony-offices.png"
-      locationName="Symphony Offices"
-      loadingColor="border-blue-600"
-    />
-  );
+  // Redirect to week overview which will have the proper header
+  redirect('/symphony/week-overview');
 }

@@ -1,12 +1,8 @@
-import LocationDashboard from '@/components/LocationDashboard';
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function AtlassianDashboardPage() {
-  return (
-    <LocationDashboard
-      locationSlug="atlassian"
-      locationLogo="/locations/atlassian-logo.png"
-      locationName="Atlassian"
-      loadingColor="border-blue-500"
-    />
-  );
+  // Redirect to week overview which will have the proper header
+  redirect('/atlassian/week-overview');
 }

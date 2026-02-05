@@ -1,12 +1,8 @@
-import LocationDashboard from '@/components/LocationDashboard';
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function SnowflakeDashboardPage() {
-  return (
-    <LocationDashboard
-      locationSlug="snowflake"
-      locationLogo="/locations/snowflake-logo.png"
-      locationName="Snowflake"
-      loadingColor="border-cyan-500"
-    />
-  );
+  // Redirect to week overview which will have the proper header
+  redirect('/snowflake/week-overview');
 }
