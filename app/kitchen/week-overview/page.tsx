@@ -107,11 +107,33 @@ export default function WeeklyMenuPreviewPage() {
             .select('percentage, component_dish:component_dish_id(id, name, category)')
             .eq('main_dish_id', item.dish_id);
 
-          // Fetch salad components
-          const { data: saladComponents } = await supabase
-            .from('salad_components')
-            .select('percentage, component_dish:component_dish_id(id, name, category)')
-            .eq('main_dish_id', item.dish_id);
+          // Fetch salad components (new system)
+          let saladComponents: any[] = [];
+          let saladName: string | null = null;
+          const { data: dishSaladLink } = await supabase
+            .from('dish_salad_combinations')
+            .select('salad_combination_id')
+            .eq('main_dish_id', item.dish_id)
+            .maybeSingle();
+
+          if (dishSaladLink) {
+            // Get salad combination name
+            const { data: saladCombo } = await supabase
+              .from('salad_combinations')
+              .select('custom_name')
+              .eq('id', dishSaladLink.salad_combination_id)
+              .single();
+
+            saladName = saladCombo?.custom_name || null;
+
+            // Get salad items
+            const { data: saladItems } = await supabase
+              .from('salad_combination_items')
+              .select('percentage, component_dish:component_dish_id(id, name, category)')
+              .eq('salad_combination_id', dishSaladLink.salad_combination_id);
+
+            saladComponents = saladItems || [];
+          }
 
           // Fetch soup toppings (from dish_components table)
           const { data: toppingComponents } = await supabase
@@ -133,6 +155,7 @@ export default function WeeklyMenuPreviewPage() {
               ...dishData,
               warm_veggie_components: warmVeggieComponents || [],
               salad_components: saladComponents || [],
+              salad_name: saladName,
               topping_components: toppingComponents || [],
               carb_components: carbComponents || [],
             },
@@ -238,7 +261,7 @@ export default function WeeklyMenuPreviewPage() {
         {loading ? (
           <div className="text-center py-12 text-[#86868B] no-print">Loading menu...</div>
         ) : !weeklyMenu ? (
-          <div className="bg-white border border-[#E8E8ED] rounded-sm-sm p-12 text-center no-print">
+          <div className="bg-white border border-[#E8E8ED] rounded-sm p-12 text-center no-print">
             <p className="text-[15px] text-[#86868B]">No menu found for this week.</p>
           </div>
         ) : (
@@ -249,7 +272,7 @@ export default function WeeklyMenuPreviewPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={previousWeek}
-                  className="p-1.5 text-[#6E6E73] hover:text-[#1D1D1F] rounded-sm-sm transition-colors no-print"
+                  className="p-1.5 text-[#6E6E73] hover:text-[#1D1D1F] rounded-sm transition-colors no-print"
                   title="Previous Week"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -264,7 +287,7 @@ export default function WeeklyMenuPreviewPage() {
                 </span>
                 <button
                   onClick={nextWeek}
-                  className="p-1.5 text-[#6E6E73] hover:text-[#1D1D1F] rounded-sm-sm transition-colors no-print"
+                  className="p-1.5 text-[#6E6E73] hover:text-[#1D1D1F] rounded-sm transition-colors no-print"
                   title="Next Week"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -275,7 +298,7 @@ export default function WeeklyMenuPreviewPage() {
               <div className="flex-1 flex justify-end">
                 <button
                   onClick={handlePrint}
-                  className="px-3 py-1.5 text-apple-subheadline font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] hover:bg-[#F5F5F7] rounded-sm-sm transition-colors no-print"
+                  className="px-3 py-1.5 text-apple-subheadline font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] hover:bg-[#F5F5F7] rounded-sm transition-colors no-print"
                 >
                   Print
                 </button>
@@ -283,7 +306,7 @@ export default function WeeklyMenuPreviewPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white border border-[#D2D2D7] rounded-sm-sm overflow-hidden shadow-sm">
+            <div className="bg-white border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm">
               <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                 <colgroup>
                   <col className="w-48" />
@@ -313,41 +336,42 @@ export default function WeeklyMenuPreviewPage() {
                 <tbody>
               {/* Soup Row */}
               <tr className="border-b border-[#D2D2D7]">
-                <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7]">
+                <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
                   <div className="text-[15px] font-semibold text-[#1D1D1F]">Soup</div>
                 </td>
                 {daysOfWeek.map((day, dayIndex) => {
                   const soupItem = getMenuForDay(dayIndex, 'soup');
                   return (
-                    <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white">
+                    <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
                     {soupItem ? (
-                      <div>
-                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                      <div className="space-y-1">
+                        {/* Line 1-2: Dish Name (fixed height) */}
+                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
                           {soupItem.dish.name}
                         </h3>
-                        {soupItem.dish.description && (
-                          <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
-                            {soupItem.dish.description}
-                          </p>
-                        )}
-                        {/* Soup Toppings */}
-                        {getSoupToppings(soupItem.dish).length > 0 && (
-                          <div className="mb-2">
-                            <p className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wide mb-1">Toppings</p>
-                            <p className="text-[12px] text-[#1D1D1F]">
-                              {getSoupToppings(soupItem.dish).join(', ')}
-                            </p>
-                          </div>
-                        )}
-                        {/* Allergens & Dietary */}
-                        <div className="flex flex-wrap gap-1">
+
+                        {/* Line 3-4-5: Toppings (3 lines) */}
+                        <p className="text-[12px] text-[#1D1D1F] min-h-[3.75rem]">
+                          {getSoupToppings(soupItem.dish).length > 0 ? (
+                            <><span className="font-medium">Toppings:</span> {getSoupToppings(soupItem.dish).join(', ')}</>
+                          ) : (
+                            <span className="text-transparent">-</span>
+                          )}
+                        </p>
+
+                        {/* Line 6-7: Allergens (2 lines) */}
+                        <div className="flex flex-wrap gap-1 justify-center min-h-[2.5rem]">
                           {getAllergensForDish(soupItem.dish).map((allergen) => (
                             <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#FF3B30]/10 text-[#FF3B30] rounded-sm">
                               {allergen}
                             </span>
                           ))}
+                        </div>
+
+                        {/* Line 8: Dietary Info */}
+                        <div className="flex flex-nowrap gap-1 justify-center min-h-[1.25rem] overflow-hidden">
                           {getDietaryInfo(soupItem.dish).map((info) => (
-                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm">
+                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm whitespace-nowrap">
                               {info}
                             </span>
                           ))}
@@ -363,52 +387,57 @@ export default function WeeklyMenuPreviewPage() {
 
             {/* Meat/Fish Row */}
             <tr className="border-b border-[#D2D2D7]">
-              <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7]">
+              <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
                 <div className="text-[15px] font-semibold text-[#1D1D1F]">Meat/Fish</div>
               </td>
               {daysOfWeek.map((day, dayIndex) => {
                 const meatItem = getMenuForDay(dayIndex, 'hot_meat');
                 return (
-                  <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white">
+                  <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
                     {meatItem ? (
-                      <div>
-                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                      <div className="space-y-1">
+                        {/* Line 1-2: Dish Name (fixed height) */}
+                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
                           {meatItem.dish.name}
                         </h3>
-                        {meatItem.dish.description && (
-                          <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
-                            {meatItem.dish.description}
-                          </p>
-                        )}
-                        {/* Components */}
-                        {(getCarbs(meatItem.dish).length > 0 || getWarmVeggies(meatItem.dish).length > 0 || hasSalad(meatItem.dish)) && (
-                          <div className="mb-2 space-y-1">
-                            {getCarbs(meatItem.dish).length > 0 && (
-                              <p className="text-[12px] text-[#1D1D1F]">
-                                <span className="font-medium">Carbs:</span> {getCarbs(meatItem.dish).join(', ')}
-                              </p>
-                            )}
-                            {getWarmVeggies(meatItem.dish).length > 0 && (
-                              <p className="text-[12px] text-[#1D1D1F]">
-                                <span className="font-medium">Veggies:</span> {getWarmVeggies(meatItem.dish).join(', ')}
-                              </p>
-                            )}
-                            {hasSalad(meatItem.dish) && (
-                              <p className="text-[12px] text-[#1D1D1F]">
-                                <span className="font-medium">Side:</span> Salad
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        {/* Allergens & Dietary */}
-                        <div className="flex flex-wrap gap-1">
+
+                        {/* Line 3: Carbs (always visible) */}
+                        <p className="text-[12px] text-[#1D1D1F] min-h-[1.25rem]">
+                          {getCarbs(meatItem.dish).length > 0 ? (
+                            <><span className="font-medium">Carbs:</span> {getCarbs(meatItem.dish).join(', ')}</>
+                          ) : (
+                            <span className="text-transparent">-</span>
+                          )}
+                        </p>
+
+                        {/* Line 4-5: Veg (2 lines) */}
+                        <p className="text-[12px] text-[#1D1D1F] min-h-[2.5rem]">
+                          {(getWarmVeggies(meatItem.dish).length > 0 || hasSalad(meatItem.dish)) ? (
+                            <>
+                              <span className="font-medium">Veg:</span>{' '}
+                              {[
+                                ...getWarmVeggies(meatItem.dish),
+                                ...(hasSalad(meatItem.dish) ? [meatItem.dish.salad_name || 'Salad'] : [])
+                              ].join(', ')}
+                            </>
+                          ) : (
+                            <span className="text-transparent">-</span>
+                          )}
+                        </p>
+
+                        {/* Line 6-7: Allergens (2 lines) */}
+                        <div className="flex flex-wrap gap-1 justify-center min-h-[2.5rem]">
                           {getAllergensForDish(meatItem.dish).map((allergen) => (
                             <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#FF3B30]/10 text-[#FF3B30] rounded-sm">
                               {allergen}
                             </span>
                           ))}
+                        </div>
+
+                        {/* Line 8: Dietary Info */}
+                        <div className="flex flex-nowrap gap-1 justify-center min-h-[1.25rem] overflow-hidden">
                           {getDietaryInfo(meatItem.dish).map((info) => (
-                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm">
+                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm whitespace-nowrap">
                               {info}
                             </span>
                           ))}
@@ -424,52 +453,57 @@ export default function WeeklyMenuPreviewPage() {
 
             {/* Veg Row */}
             <tr>
-              <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7]">
+              <td className="px-5 py-6 bg-[#FAFAFA] border-r border-[#D2D2D7] align-top">
                 <div className="text-[15px] font-semibold text-[#1D1D1F]">Veg Option</div>
               </td>
               {daysOfWeek.map((day, dayIndex) => {
                 const vegItem = getMenuForDay(dayIndex, 'hot_veg');
                 return (
-                  <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white">
+                  <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
                     {vegItem ? (
-                      <div>
-                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                      <div className="space-y-1">
+                        {/* Line 1-2: Dish Name (fixed height) */}
+                        <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
                           {vegItem.dish.name}
                         </h3>
-                        {vegItem.dish.description && (
-                          <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
-                            {vegItem.dish.description}
-                          </p>
-                        )}
-                        {/* Components */}
-                        {(getCarbs(vegItem.dish).length > 0 || getWarmVeggies(vegItem.dish).length > 0 || hasSalad(vegItem.dish)) && (
-                          <div className="mb-2 space-y-1">
-                            {getCarbs(vegItem.dish).length > 0 && (
-                              <p className="text-[12px] text-[#1D1D1F]">
-                                <span className="font-medium">Carbs:</span> {getCarbs(vegItem.dish).join(', ')}
-                              </p>
-                            )}
-                            {getWarmVeggies(vegItem.dish).length > 0 && (
-                              <p className="text-[12px] text-[#1D1D1F]">
-                                <span className="font-medium">Veggies:</span> {getWarmVeggies(vegItem.dish).join(', ')}
-                              </p>
-                            )}
-                            {hasSalad(vegItem.dish) && (
-                              <p className="text-[12px] text-[#1D1D1F]">
-                                <span className="font-medium">Side:</span> Salad
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        {/* Allergens & Dietary */}
-                        <div className="flex flex-wrap gap-1">
+
+                        {/* Line 3: Carbs (always visible) */}
+                        <p className="text-[12px] text-[#1D1D1F] min-h-[1.25rem]">
+                          {getCarbs(vegItem.dish).length > 0 ? (
+                            <><span className="font-medium">Carbs:</span> {getCarbs(vegItem.dish).join(', ')}</>
+                          ) : (
+                            <span className="text-transparent">-</span>
+                          )}
+                        </p>
+
+                        {/* Line 4-5: Veg (2 lines) */}
+                        <p className="text-[12px] text-[#1D1D1F] min-h-[2.5rem]">
+                          {(getWarmVeggies(vegItem.dish).length > 0 || hasSalad(vegItem.dish)) ? (
+                            <>
+                              <span className="font-medium">Veg:</span>{' '}
+                              {[
+                                ...getWarmVeggies(vegItem.dish),
+                                ...(hasSalad(vegItem.dish) ? [vegItem.dish.salad_name || 'Salad'] : [])
+                              ].join(', ')}
+                            </>
+                          ) : (
+                            <span className="text-transparent">-</span>
+                          )}
+                        </p>
+
+                        {/* Line 6-7: Allergens (2 lines) */}
+                        <div className="flex flex-wrap gap-1 justify-center min-h-[2.5rem]">
                           {getAllergensForDish(vegItem.dish).map((allergen) => (
                             <span key={allergen} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#FF3B30]/10 text-[#FF3B30] rounded-sm">
                               {allergen}
                             </span>
                           ))}
+                        </div>
+
+                        {/* Line 8: Dietary Info */}
+                        <div className="flex flex-nowrap gap-1 justify-center min-h-[1.25rem] overflow-hidden">
                           {getDietaryInfo(vegItem.dish).map((info) => (
-                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm">
+                            <span key={info} className="text-[10px] font-medium px-1.5 py-0.5 bg-[#34C759]/10 text-[#34C759] rounded-sm whitespace-nowrap">
                               {info}
                             </span>
                           ))}

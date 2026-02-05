@@ -50,6 +50,7 @@ interface Dish {
   carb_components?: CarbComponent[];
   warm_veggie_components?: WarmVeggieComponent[];
   salad_components?: SaladComponent[];
+  salad_name?: string | null;
 }
 
 interface ComponentDish {
@@ -297,7 +298,21 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
       .eq('location_id', locationId)
       .order('week_start_date', { ascending: true });
 
-    setOrders(syncedOrders as any || []);
+    // Sort orders so current week appears first
+    const now = new Date();
+    const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+    const currentWeekStart = format(startOfWeek(localDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
+    const sortedOrders = (syncedOrders || []).sort((a, b) => {
+      // Current week goes first
+      if (a.week_start_date === currentWeekStart) return -1;
+      if (b.week_start_date === currentWeekStart) return 1;
+
+      // Otherwise sort by date ascending
+      return a.week_start_date.localeCompare(b.week_start_date);
+    });
+
+    setOrders(sortedOrders as any || []);
   };
 
   useEffect(() => {
@@ -663,10 +678,33 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
           .select('percentage, component_dish:component_dish_id(id, name, category)')
           .eq('main_dish_id', item.dish_id);
 
-        const { data: saladComponents } = await supabase
-          .from('salad_components')
-          .select('percentage, component_dish:component_dish_id(id, name, category)')
-          .eq('main_dish_id', item.dish_id);
+        // Fetch salad combination name (new system)
+        let saladComponents: any[] = [];
+        let saladName: string | null = null;
+        const { data: dishSaladLink } = await supabase
+          .from('dish_salad_combinations')
+          .select('salad_combination_id')
+          .eq('main_dish_id', item.dish_id)
+          .maybeSingle();
+
+        if (dishSaladLink) {
+          // Get salad combination name
+          const { data: saladCombo } = await supabase
+            .from('salad_combinations')
+            .select('custom_name')
+            .eq('id', dishSaladLink.salad_combination_id)
+            .single();
+
+          saladName = saladCombo?.custom_name || null;
+
+          // Get salad items
+          const { data: saladItems } = await supabase
+            .from('salad_combination_items')
+            .select('percentage, component_dish:component_dish_id(id, name, category)')
+            .eq('salad_combination_id', dishSaladLink.salad_combination_id);
+
+          saladComponents = saladItems || [];
+        }
 
         const { data: toppingComponents } = await supabase
           .from('dish_components')
@@ -686,6 +724,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
             ...dishData,
             warm_veggie_components: warmVeggieComponents || [],
             salad_components: saladComponents || [],
+            salad_name: saladName,
             topping_components: toppingComponents || [],
             carb_components: carbComponents || [],
           },
@@ -943,7 +982,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                         <div className="bg-white border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm">
                           <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                             <colgroup>
-                              <col className="w-64" />
+                              <col className="w-48" />
                               {Array.from({ length: 5 }).map((_, i) => (
                                 <col key={i} className="w-44" />
                               ))}
@@ -980,23 +1019,20 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                               return (
                                 <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
                                   {soupItem ? (
-                                    <div>
-                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                                    <div className="space-y-1">
+                                      {/* Line 1-2: Dish Name (fixed height) */}
+                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
                                         {soupItem.dish.name}
                                       </h3>
-                                      {soupItem.dish.description && (
-                                        <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
-                                          {soupItem.dish.description}
-                                        </p>
-                                      )}
-                                      {getSoupToppings(soupItem.dish).length > 0 && (
-                                        <div className="mb-2">
-                                          <p className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wide mb-1">Toppings</p>
-                                          <p className="text-[12px] text-[#1D1D1F]">
-                                            {getSoupToppings(soupItem.dish).join(', ')}
-                                          </p>
-                                        </div>
-                                      )}
+
+                                      {/* Line 3-4-5: Toppings (3 lines) */}
+                                      <p className="text-[12px] text-[#1D1D1F] min-h-[3.75rem]">
+                                        {getSoupToppings(soupItem.dish).length > 0 ? (
+                                          <><span className="font-medium">Toppings:</span> {getSoupToppings(soupItem.dish).join(', ')}</>
+                                        ) : (
+                                          <span className="text-transparent">-</span>
+                                        )}
+                                      </p>
                                     </div>
                                   ) : (
                                     <p className="text-[13px] text-[#86868B] italic">Not available</p>
@@ -1018,34 +1054,35 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                               return (
                                 <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
                                   {meatItem ? (
-                                    <div>
-                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                                    <div className="space-y-1">
+                                      {/* Line 1-2: Dish Name (fixed height) */}
+                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
                                         {meatItem.dish.name}
                                       </h3>
-                                      {meatItem.dish.description && (
-                                        <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
-                                          {meatItem.dish.description}
-                                        </p>
-                                      )}
-                                      {(getCarbs(meatItem.dish).length > 0 || getWarmVeggies(meatItem.dish).length > 0 || hasSalad(meatItem.dish)) && (
-                                        <div className="mb-2 space-y-1">
-                                          {getCarbs(meatItem.dish).length > 0 && (
-                                            <p className="text-[12px] text-[#1D1D1F]">
-                                              <span className="font-medium">Carbs:</span> {getCarbs(meatItem.dish).join(', ')}
-                                            </p>
-                                          )}
-                                          {getWarmVeggies(meatItem.dish).length > 0 && (
-                                            <p className="text-[12px] text-[#1D1D1F]">
-                                              <span className="font-medium">Veggies:</span> {getWarmVeggies(meatItem.dish).join(', ')}
-                                            </p>
-                                          )}
-                                          {hasSalad(meatItem.dish) && (
-                                            <p className="text-[12px] text-[#1D1D1F]">
-                                              <span className="font-medium">Side:</span> Salad
-                                            </p>
-                                          )}
-                                        </div>
-                                      )}
+
+                                      {/* Line 3: Carbs (always visible) */}
+                                      <p className="text-[12px] text-[#1D1D1F] min-h-[1.25rem]">
+                                        {getCarbs(meatItem.dish).length > 0 ? (
+                                          <><span className="font-medium">Carbs:</span> {getCarbs(meatItem.dish).join(', ')}</>
+                                        ) : (
+                                          <span className="text-transparent">-</span>
+                                        )}
+                                      </p>
+
+                                      {/* Line 4-5: Veg (2 lines) */}
+                                      <p className="text-[12px] text-[#1D1D1F] min-h-[2.5rem]">
+                                        {(getWarmVeggies(meatItem.dish).length > 0 || hasSalad(meatItem.dish)) ? (
+                                          <>
+                                            <span className="font-medium">Veg:</span>{' '}
+                                            {[
+                                              ...getWarmVeggies(meatItem.dish),
+                                              ...(hasSalad(meatItem.dish) ? [meatItem.dish.salad_name || 'Salad'] : [])
+                                            ].join(', ')}
+                                          </>
+                                        ) : (
+                                          <span className="text-transparent">-</span>
+                                        )}
+                                      </p>
                                     </div>
                                   ) : (
                                     <p className="text-[13px] text-[#86868B] italic">Not available</p>
@@ -1067,34 +1104,35 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                               return (
                                 <td key={dayIndex} className="px-4 py-6 border-r border-[#D2D2D7] last:border-r-0 text-center bg-white align-top">
                                   {vegItem ? (
-                                    <div>
-                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] mb-2">
+                                    <div className="space-y-1">
+                                      {/* Line 1-2: Dish Name (fixed height) */}
+                                      <h3 className="text-[16px] font-semibold text-[#1D1D1F] line-clamp-2 min-h-[2.5rem]">
                                         {vegItem.dish.name}
                                       </h3>
-                                      {vegItem.dish.description && (
-                                        <p className="text-[13px] text-[#6E6E73] leading-relaxed mb-2">
-                                          {vegItem.dish.description}
-                                        </p>
-                                      )}
-                                      {(getCarbs(vegItem.dish).length > 0 || getWarmVeggies(vegItem.dish).length > 0 || hasSalad(vegItem.dish)) && (
-                                        <div className="mb-2 space-y-1">
-                                          {getCarbs(vegItem.dish).length > 0 && (
-                                            <p className="text-[12px] text-[#1D1D1F]">
-                                              <span className="font-medium">Carbs:</span> {getCarbs(vegItem.dish).join(', ')}
-                                            </p>
-                                          )}
-                                          {getWarmVeggies(vegItem.dish).length > 0 && (
-                                            <p className="text-[12px] text-[#1D1D1F]">
-                                              <span className="font-medium">Veggies:</span> {getWarmVeggies(vegItem.dish).join(', ')}
-                                            </p>
-                                          )}
-                                          {hasSalad(vegItem.dish) && (
-                                            <p className="text-[12px] text-[#1D1D1F]">
-                                              <span className="font-medium">Side:</span> Salad
-                                            </p>
-                                          )}
-                                        </div>
-                                      )}
+
+                                      {/* Line 3: Carbs (always visible) */}
+                                      <p className="text-[12px] text-[#1D1D1F] min-h-[1.25rem]">
+                                        {getCarbs(vegItem.dish).length > 0 ? (
+                                          <><span className="font-medium">Carbs:</span> {getCarbs(vegItem.dish).join(', ')}</>
+                                        ) : (
+                                          <span className="text-transparent">-</span>
+                                        )}
+                                      </p>
+
+                                      {/* Line 4-5: Veg (2 lines) */}
+                                      <p className="text-[12px] text-[#1D1D1F] min-h-[2.5rem]">
+                                        {(getWarmVeggies(vegItem.dish).length > 0 || hasSalad(vegItem.dish)) ? (
+                                          <>
+                                            <span className="font-medium">Veg:</span>{' '}
+                                            {[
+                                              ...getWarmVeggies(vegItem.dish),
+                                              ...(hasSalad(vegItem.dish) ? [vegItem.dish.salad_name || 'Salad'] : [])
+                                            ].join(', ')}
+                                          </>
+                                        ) : (
+                                          <span className="text-transparent">-</span>
+                                        )}
+                                      </p>
                                     </div>
                                   ) : (
                                     <p className="text-[13px] text-[#86868B] italic">Not available</p>
@@ -1115,7 +1153,6 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                       <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                         <colgroup>
                           <col className="w-48" />
-                          <col className="w-16" />
                           {Object.keys(currentPortions || {}).map((date) => (
                             <col key={date} className="w-44" />
                           ))}
@@ -1125,7 +1162,6 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                             <th className={`px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide border-r ${isCurrentWeek ? 'text-white border-white/20' : 'text-slate-600 border-slate-300'}`}>
                               Item
                             </th>
-                            <th className={`border-r ${isCurrentWeek ? 'border-white/20' : 'border-slate-300'}`}></th>
                             {Object.entries(currentPortions || {})
                               .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
                               .map(([date], index, array) => (
@@ -1149,7 +1185,6 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                     <table className="w-full bg-slate-100 border-separate" style={{borderSpacing: '0 0'}}>
                       <colgroup>
                         <col className="w-48" />
-                        <col className="w-16" />
                         {Object.keys(currentPortions || {}).map((date, i) => (
                           <col key={date} className="w-44" />
                         ))}
@@ -1165,7 +1200,6 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                             <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700 border-r border-slate-300">
                               {label}
                             </td>
-                            <td className="border-r border-slate-300"></td>
                             {Object.entries(currentPortions || {})
                               .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
                               .map(([date, items], index, array) => (
@@ -1189,7 +1223,6 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                             <td className="px-5 py-4 text-apple-subheadline font-medium text-slate-700 italic border-r border-slate-300">
                               {dishName}
                             </td>
-                            <td className="border-r border-slate-300"></td>
                             {Object.entries(currentPortions || {})
                               .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
                               .map(([date], index, array) => (

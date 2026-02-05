@@ -28,6 +28,12 @@ export default function DishDetailModal({
   useEffect(() => {
     if (isOpen && dishId) {
       fetchDishDetails();
+    } else if (!isOpen) {
+      // Clear state when modal closes
+      setDish(null);
+      setSaladComponents([]);
+      setWarmVeggieComponents([]);
+      setLoading(true);
     }
   }, [isOpen, dishId]);
 
@@ -87,21 +93,38 @@ export default function DishDetailModal({
       setDish(dishData);
     }
 
-    // Fetch salad components with percentages
-    const { data: saladComponentsData } = await supabase
-      .from('salad_components')
-      .select('*, component_dish:dishes!component_dish_id(*)')
-      .eq('main_dish_id', dishId);
+    // Fetch salad combination for this dish (new system)
+    const { data: dishSaladLink } = await supabase
+      .from('dish_salad_combinations')
+      .select('salad_combination_id, total_portion_g')
+      .eq('main_dish_id', dishId)
+      .maybeSingle();
 
-    if (saladComponentsData) {
-      setSaladComponents(saladComponentsData as SaladComponentWithDish[]);
+    if (dishSaladLink) {
+      // Fetch the salad combination items
+      const { data: saladItemsData } = await supabase
+        .from('salad_combination_items')
+        .select('*, component_dish:dishes!component_dish_id(*)')
+        .eq('salad_combination_id', dishSaladLink.salad_combination_id);
+
+      if (saladItemsData) {
+        // Transform to match the SaladComponentWithDish interface
+        const transformedData = saladItemsData.map(item => ({
+          id: item.id,
+          main_dish_id: dishId,
+          component_dish_id: item.component_dish_id,
+          percentage: item.percentage,
+          component_dish: item.component_dish
+        }));
+        setSaladComponents(transformedData as SaladComponentWithDish[]);
+      }
     }
 
     // Fetch warm veggie components with percentages
     const { data: warmVeggieComponentsData } = await supabase
-      .from('dish_warm_veggie_components')
-      .select('*, component_dish:dishes!dish_warm_veggie_components_component_dish_id_fkey(*)')
-      .eq('dish_id', dishId);
+      .from('warm_veggie_components')
+      .select('*, component_dish:dishes!component_dish_id(*)')
+      .eq('main_dish_id', dishId);
 
     if (warmVeggieComponentsData) {
       setWarmVeggieComponents(warmVeggieComponentsData as WarmVeggieComponentWithDish[]);
@@ -134,18 +157,16 @@ export default function DishDetailModal({
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       {loading ? (
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-apple-blue"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0078D4]"></div>
         </div>
       ) : dish ? (
-        <div className="w-full max-w-sm flex flex-col gap-2">
-          {/* 1. Header Box - No border */}
-          <div className="rounded-sm bg-[#4A7DB5] relative overflow-hidden">
-            <div className="px-6 py-8">
-              <h2 className="text-[32px] leading-tight font-semibold text-white text-center">{dish.name}</h2>
-              {dish.description && (
-                <p className="text-apple-body text-white/90 mt-3 text-center">{dish.description}</p>
-              )}
-            </div>
+        <div className="w-full max-w-sm bg-white rounded-sm shadow-2xl overflow-hidden">
+          {/* Header - Connected to card */}
+          <div className="bg-[#0078D4] relative px-6 py-8">
+            <h2 className="text-[32px] leading-tight font-semibold text-white text-center">{dish.name}</h2>
+            {dish.description && (
+              <p className="text-[17px] text-white/90 mt-3 text-center">{dish.description}</p>
+            )}
             <button
               onClick={onClose}
               className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
@@ -156,14 +177,14 @@ export default function DishDetailModal({
             </button>
           </div>
 
-          {/* 2. Content Card with buttons inside - No border */}
-          <div className="rounded-sm bg-white overflow-y-auto max-h-[60vh]">
+          {/* Content - Connected to header */}
+          <div className="overflow-y-auto max-h-[60vh]">
             <div className="px-6 py-6">
               {/* Components - Simple vertical list */}
               {(dish.components && Object.values(dish.components).some(arr => arr && arr.length > 0)) || saladComponents.length > 0 || warmVeggieComponents.length > 0 ? (
                 <div>
                   {/* Show "Served with" label before components */}
-                  <h3 className="text-apple-footnote font-medium italic text-apple-gray3 mb-4 text-center">
+                  <h3 className="text-[13px] font-medium italic text-[#86868B] mb-4 text-center">
                     Served with
                   </h3>
 
@@ -175,7 +196,7 @@ export default function DishDetailModal({
                       return items.map(component => (
                         <div
                           key={component.id}
-                          className="text-[22px] text-apple-gray1 text-center py-1.5"
+                          className="text-[22px] text-[#1D1D1F] text-center py-1.5"
                         >
                           {component.name}
                         </div>
@@ -184,12 +205,12 @@ export default function DishDetailModal({
 
                     {/* Salad components with percentages */}
                     {saladComponents.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-200">
-                        <div className="text-[17px] font-medium text-apple-gray2 text-center mb-2">Salad</div>
+                      <div className="mt-4 pt-4 border-t border-[#E8E8ED]">
+                        <div className="text-[17px] font-medium text-[#6E6E73] text-center mb-2">Salad</div>
                         {saladComponents.map(sc => (
                           <div
                             key={sc.id}
-                            className="text-[18px] text-apple-gray1 text-center py-1"
+                            className="text-[18px] text-[#1D1D1F] text-center py-1"
                           >
                             {sc.component_dish.name} ({sc.percentage}%)
                           </div>
@@ -199,12 +220,12 @@ export default function DishDetailModal({
 
                     {/* Warm veggie components with percentages */}
                     {warmVeggieComponents.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-200">
-                        <div className="text-[17px] font-medium text-apple-gray2 text-center mb-2">Warm Vegetables</div>
+                      <div className="mt-4 pt-4 border-t border-[#E8E8ED]">
+                        <div className="text-[17px] font-medium text-[#6E6E73] text-center mb-2">Warm Vegetables</div>
                         {warmVeggieComponents.map(wv => (
                           <div
                             key={wv.id}
-                            className="text-[18px] text-apple-gray1 text-center py-1"
+                            className="text-[18px] text-[#1D1D1F] text-center py-1"
                           >
                             {wv.component_dish.name} ({wv.percentage}%)
                           </div>
@@ -214,7 +235,7 @@ export default function DishDetailModal({
                   </div>
                 </div>
               ) : (
-                <div className="text-apple-subheadline text-apple-gray3 text-center py-8">
+                <div className="text-[15px] text-[#86868B] text-center py-8">
                   No components
                 </div>
               )}
@@ -223,47 +244,96 @@ export default function DishDetailModal({
               {(dish.allergen_gluten || dish.allergen_soy || dish.allergen_lactose ||
                 dish.allergen_sesame || dish.allergen_sulphites || dish.allergen_egg ||
                 dish.allergen_mustard || dish.allergen_celery) && (
-                <div className="mt-8 pt-6 border-t border-slate-200">
-                  <h3 className="text-apple-subheadline font-medium text-apple-gray2 mb-3 text-center">Allergens</h3>
+                <div className="mt-8 pt-6 border-t border-[#E8E8ED]">
+                  <h3 className="text-[15px] font-medium text-[#6E6E73] mb-3 text-center">Allergens</h3>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {dish.allergen_gluten && (
-                      <span className="px-2.5 py-1 bg-amber-100 text-[11px] font-medium text-amber-800 rounded-full">
+                      <span className="px-2.5 py-1 bg-[#FF3B30]/10 text-[11px] font-medium text-[#FF3B30] rounded-full">
                         Gluten
                       </span>
                     )}
                     {dish.allergen_soy && (
-                      <span className="px-2.5 py-1 bg-amber-100 text-[11px] font-medium text-amber-800 rounded-full">
+                      <span className="px-2.5 py-1 bg-[#FF3B30]/10 text-[11px] font-medium text-[#FF3B30] rounded-full">
                         Soy
                       </span>
                     )}
                     {dish.allergen_lactose && (
-                      <span className="px-2.5 py-1 bg-amber-100 text-[11px] font-medium text-amber-800 rounded-full">
+                      <span className="px-2.5 py-1 bg-[#FF3B30]/10 text-[11px] font-medium text-[#FF3B30] rounded-full">
                         Lactose
                       </span>
                     )}
                     {dish.allergen_sesame && (
-                      <span className="px-2.5 py-1 bg-amber-100 text-[11px] font-medium text-amber-800 rounded-full">
+                      <span className="px-2.5 py-1 bg-[#FF3B30]/10 text-[11px] font-medium text-[#FF3B30] rounded-full">
                         Sesame
                       </span>
                     )}
                     {dish.allergen_sulphites && (
-                      <span className="px-2.5 py-1 bg-amber-100 text-[11px] font-medium text-amber-800 rounded-full">
+                      <span className="px-2.5 py-1 bg-[#FF3B30]/10 text-[11px] font-medium text-[#FF3B30] rounded-full">
                         Sulphites
                       </span>
                     )}
                     {dish.allergen_egg && (
-                      <span className="px-2.5 py-1 bg-amber-100 text-[11px] font-medium text-amber-800 rounded-full">
+                      <span className="px-2.5 py-1 bg-[#FF3B30]/10 text-[11px] font-medium text-[#FF3B30] rounded-full">
                         Egg
                       </span>
                     )}
                     {dish.allergen_mustard && (
-                      <span className="px-2.5 py-1 bg-amber-100 text-[11px] font-medium text-amber-800 rounded-full">
+                      <span className="px-2.5 py-1 bg-[#FF3B30]/10 text-[11px] font-medium text-[#FF3B30] rounded-full">
                         Mustard
                       </span>
                     )}
                     {dish.allergen_celery && (
-                      <span className="px-2.5 py-1 bg-amber-100 text-[11px] font-medium text-amber-800 rounded-full">
+                      <span className="px-2.5 py-1 bg-[#FF3B30]/10 text-[11px] font-medium text-[#FF3B30] rounded-full">
                         Celery
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Dietary Info (if any) */}
+              {(dish.is_vegetarian || dish.is_vegan || dish.contains_pork || dish.contains_beef || dish.contains_lamb || dish.contains_chicken || dish.contains_fish || dish.is_halal) && (
+                <div className="mt-8 pt-6 border-t border-[#E8E8ED]">
+                  <h3 className="text-[15px] font-medium text-[#6E6E73] mb-3 text-center">Dietary Information</h3>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {dish.is_vegetarian && (
+                      <span className="px-2.5 py-1 bg-[#34C759]/10 text-[11px] font-medium text-[#34C759] rounded-full">
+                        Vegetarian
+                      </span>
+                    )}
+                    {dish.is_vegan && (
+                      <span className="px-2.5 py-1 bg-[#34C759]/10 text-[11px] font-medium text-[#34C759] rounded-full">
+                        Vegan
+                      </span>
+                    )}
+                    {dish.contains_pork && (
+                      <span className="px-2.5 py-1 bg-[#34C759]/10 text-[11px] font-medium text-[#34C759] rounded-full">
+                        Pork
+                      </span>
+                    )}
+                    {dish.contains_beef && (
+                      <span className="px-2.5 py-1 bg-[#34C759]/10 text-[11px] font-medium text-[#34C759] rounded-full">
+                        Beef
+                      </span>
+                    )}
+                    {dish.contains_lamb && (
+                      <span className="px-2.5 py-1 bg-[#34C759]/10 text-[11px] font-medium text-[#34C759] rounded-full">
+                        Lamb
+                      </span>
+                    )}
+                    {dish.contains_chicken && (
+                      <span className="px-2.5 py-1 bg-[#34C759]/10 text-[11px] font-medium text-[#34C759] rounded-full">
+                        Chicken
+                      </span>
+                    )}
+                    {dish.contains_fish && (
+                      <span className="px-2.5 py-1 bg-[#34C759]/10 text-[11px] font-medium text-[#34C759] rounded-full">
+                        Fish
+                      </span>
+                    )}
+                    {dish.is_halal && (
+                      <span className="px-2.5 py-1 bg-[#34C759]/10 text-[11px] font-medium text-[#34C759] rounded-full">
+                        Halal
                       </span>
                     )}
                   </div>
@@ -272,19 +342,19 @@ export default function DishDetailModal({
             </div>
 
             {/* Buttons inside the card - side by side - Always visible */}
-            <div className="px-6 pb-6 pt-6 border-t border-slate-200">
+            <div className="px-6 pb-6 pt-6 border-t border-[#E8E8ED]">
               <div className="flex gap-3 justify-center">
                 <button
                   type="button"
                   onClick={handleEdit}
-                  className="flex-1 max-w-[140px] px-6 py-3 text-[16px] font-semibold text-[#1D1D1F] bg-slate-200 rounded-sm hover:bg-slate-300 transition-colors"
+                  className="flex-1 max-w-[140px] px-6 py-3 text-[15px] font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm hover:bg-[#F5F5F7] transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={handleReplace}
-                  className="flex-1 max-w-[140px] px-6 py-3 text-[16px] font-semibold text-[#1D1D1F] bg-white border border-slate-300 rounded-sm hover:bg-slate-50 transition-colors"
+                  className="flex-1 max-w-[140px] px-6 py-3 text-[15px] font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm hover:bg-[#F5F5F7] transition-colors"
                 >
                   Replace
                 </button>
@@ -294,7 +364,7 @@ export default function DishDetailModal({
         </div>
       ) : (
         <div className="flex items-center justify-center py-24">
-          <p className="text-apple-subheadline text-apple-gray3">Dish not found</p>
+          <p className="text-[15px] text-[#86868B]">Dish not found</p>
         </div>
       )}
     </div>

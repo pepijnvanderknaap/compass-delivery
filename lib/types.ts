@@ -41,6 +41,9 @@ export interface Dish {
   contains_pork?: boolean;
   contains_beef?: boolean;
   contains_lamb?: boolean;
+  contains_chicken?: boolean;
+  contains_fish?: boolean;
+  is_halal?: boolean;
   is_vegetarian?: boolean;
   is_vegan?: boolean;
   portion_display?: string | null;
