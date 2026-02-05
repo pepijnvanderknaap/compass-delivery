@@ -52,7 +52,6 @@ interface MenuItem {
 interface WeeklyMenu {
   id: string;
   week_start_date: string;
-  location_id: string;
   menu_items: MenuItem[];
 }
 
@@ -64,34 +63,12 @@ export default function LocationManagementWeekOverviewPage() {
   );
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
   const [loading, setLoading] = useState(true);
-  const [locationId, setLocationId] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState<string>('Location Management');
 
   useEffect(() => {
-    const fetchLocation = async () => {
-      const { data: location } = await supabase
-        .from('locations')
-        .select('id, name')
-        .eq('slug', 'location-management')
-        .single();
-
-      if (location) {
-        setLocationId(location.id);
-        setLocationName(location.name);
-      }
-    };
-    fetchLocation();
-  }, []);
-
-  useEffect(() => {
-    if (locationId) {
-      fetchWeeklyMenu();
-    }
-  }, [currentWeekStart, locationId]);
+    fetchWeeklyMenu();
+  }, [currentWeekStart]);
 
   const fetchWeeklyMenu = async () => {
-    if (!locationId) return;
-
     setLoading(true);
     const weekStartString = format(currentWeekStart, 'yyyy-MM-dd');
 
@@ -99,7 +76,6 @@ export default function LocationManagementWeekOverviewPage() {
       .from('weekly_menus')
       .select('*')
       .eq('week_start_date', weekStartString)
-      .eq('location_id', locationId)
       .maybeSingle();
 
     if (menuError) {
@@ -269,14 +245,14 @@ export default function LocationManagementWeekOverviewPage() {
         title="Week Overview"
         backPath="/location-management"
         locationLogo="/images/location-management-logo.png"
-        locationName={locationName}
+        locationName="Location Management"
       />
 
       <main className="max-w-[1800px] mx-auto px-8 py-12">
         {/* Location-specific title */}
         <div className="text-center mb-8 print-only">
           <h1 className="text-[28px] font-semibold text-[#1D1D1F] mb-2">
-            {locationName} - Week Overview
+            Location Management - Week Overview
           </h1>
           <p className="text-[#1D1D1F] mb-1">
             {format(currentWeekStart, 'MMMM d')} - {format(addDays(currentWeekStart, 4), 'MMMM d, yyyy')}

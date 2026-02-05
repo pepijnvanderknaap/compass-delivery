@@ -52,7 +52,6 @@ interface MenuItem {
 interface WeeklyMenu {
   id: string;
   week_start_date: string;
-  location_id: string;
   menu_items: MenuItem[];
 }
 
@@ -64,32 +63,12 @@ export default function SymphonyWeekOverviewPage() {
   );
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
   const [loading, setLoading] = useState(true);
-  const [locationId, setLocationId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLocation = async () => {
-      const { data: location } = await supabase
-        .from('locations')
-        .select('id')
-        .eq('slug', 'symphony')
-        .single();
-
-      if (location) {
-        setLocationId(location.id);
-      }
-    };
-    fetchLocation();
-  }, []);
-
-  useEffect(() => {
-    if (locationId) {
-      fetchWeeklyMenu();
-    }
-  }, [currentWeekStart, locationId]);
+    fetchWeeklyMenu();
+  }, [currentWeekStart]);
 
   const fetchWeeklyMenu = async () => {
-    if (!locationId) return;
-
     setLoading(true);
     const weekStartString = format(currentWeekStart, 'yyyy-MM-dd');
 
@@ -97,7 +76,6 @@ export default function SymphonyWeekOverviewPage() {
       .from('weekly_menus')
       .select('*')
       .eq('week_start_date', weekStartString)
-      .eq('location_id', locationId)
       .maybeSingle();
 
     if (menuError) {
