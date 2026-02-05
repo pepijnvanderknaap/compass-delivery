@@ -188,7 +188,7 @@ export default function LocationManagementContent() {
         locationName={locationBranding?.name}
         locationSubtitle={locationBranding?.subtitle}
         actions={
-          <UserProfileComponent userName={profile.full_name} redirectPath="/home" />
+          <UserProfileComponent userName={profile.full_name || 'User'} redirectPath="/home" />
         }
       />
 
