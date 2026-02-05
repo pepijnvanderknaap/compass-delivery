@@ -100,10 +100,10 @@ export default function LocationDashboard({
 
   const defaultSections: DashboardSection[] = [
     {
-      title: 'Menu Overview',
-      href: '#',
-      description: 'Coming soon',
-      available: false,
+      title: 'Week Overview',
+      href: `/${locationSlug}/week-overview`,
+      description: 'View weekly menu for all meal types',
+      available: true,
       icon: (
         <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
