@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { UserProfile, LocationSettings, Location } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
-import UserProfile from '@/components/UserProfile';
+import UserProfileComponent from '@/components/UserProfile';
 import SaladBarComposer from '../settings/SaladBarComposer';
 
 interface SoupSaladBarPageContentProps {
@@ -304,7 +304,7 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
           { label: 'Settings', href: '/location-management/settings', active: false },
         ] : undefined}
         actions={
-          <UserProfile userName={profile.full_name} redirectPath="/home" />
+          <UserProfileComponent userName={profile.full_name || 'User'} redirectPath="/home" />
         }
       />
 
