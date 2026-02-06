@@ -625,6 +625,7 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
         let finalWarmVeggies = [...warmVeggies];
         let finalSaladComboId = selectedSaladComboId;
         let finalSaladPortionG = formData.salad_total_portion_g;
+        let finalWarmVeggiePortionG = formData.warm_veggie_total_portion_g;
 
         // Handle "Copy from other Hot Dish" functionality
         if (menuContext && (copyAllSideDishes || copyCarbFromOther || copyWarmVeggieFromOther || copySaladFromOther || copyCondimentFromOther)) {
@@ -688,6 +689,17 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
                       component_dish_id: wv.component_dish_id,
                       percentage: wv.percentage
                     }));
+
+                    // Also fetch the warm veggie total portion from the other dish
+                    const { data: otherDish } = await supabase
+                      .from('dishes')
+                      .select('warm_veggie_total_portion_g')
+                      .eq('id', otherMenuItem.dish_id)
+                      .single();
+
+                    if (otherDish && otherDish.warm_veggie_total_portion_g) {
+                      finalWarmVeggiePortionG = otherDish.warm_veggie_total_portion_g.toString();
+                    }
                   }
                 }
 
@@ -776,7 +788,7 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
           .eq('main_dish_id', dishId);
 
         // Insert new warm veggie components - use finalWarmVeggies which may include copied veggies
-        if (finalWarmVeggies.length > 0 && formData.warm_veggie_total_portion_g) {
+        if (finalWarmVeggies.length > 0 && finalWarmVeggiePortionG) {
           const warmVeggieInserts = finalWarmVeggies.map(v => ({
             main_dish_id: dishId,
             component_dish_id: v.component_dish_id,
@@ -791,6 +803,12 @@ export default function MainDishForm({ dish, onClose, onSave, contextCategory, i
             console.error('Error inserting warm veggie components:', warmVeggieError);
             throw new Error('Failed to add warm vegetables');
           }
+
+          // Also update the dish's warm_veggie_total_portion_g field
+          await supabase
+            .from('dishes')
+            .update({ warm_veggie_total_portion_g: parseInt(finalWarmVeggiePortionG) })
+            .eq('id', dishId);
         }
       }
 
