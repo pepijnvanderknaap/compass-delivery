@@ -335,16 +335,16 @@ export default function WeeklyMenuPreviewPage() {
                 </colgroup>
                 <thead>
                   <tr className="bg-[#0078D4]">
-                    <th className="px-5 py-4 text-left text-[13px] font-semibold text-white uppercase tracking-wide">
+                    <th className="px-5 py-4 text-left text-apple-footnote font-medium text-white">
                       Menu
                     </th>
                     {daysOfWeek.map((day, dayIndex) => (
                       <th key={dayIndex} className="py-4">
                         <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-apple-footnote font-medium uppercase tracking-wide text-white">
-                            {format(day, 'EEE').toUpperCase()}
+                          <span className="text-apple-footnote font-medium text-white">
+                            {format(day, 'EEE')}
                           </span>
-                          <span className="text-apple-caption font-light text-white">
+                          <span className="text-apple-footnote font-medium text-white">
                             {format(day, 'd MMM')}
                           </span>
                         </div>
