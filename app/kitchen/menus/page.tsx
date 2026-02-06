@@ -835,7 +835,7 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'soup')}
-                                className="w-full h-16 border border-[#D2D2D7]/50 rounded-sm p-2 hover:border-[#0078D4] hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 bg-white border border-[#D2D2D7]/50 rounded-sm p-2 hover:border-[#0078D4] hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
@@ -872,7 +872,7 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_meat')}
-                                className="w-full h-16 border border-[#D2D2D7]/50 rounded-sm p-2 hover:border-[#0078D4] hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 bg-white border border-[#D2D2D7]/50 rounded-sm p-2 hover:border-[#0078D4] hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
@@ -909,7 +909,7 @@ export default function AdminMenusPage() {
                             <td key={dayIndex} className="px-2 py-3">
                               <button
                                 onClick={() => openPalette(weekIndex, dayIndex, 'hot_veg')}
-                                className="w-full h-16 border border-[#D2D2D7]/50 rounded-sm p-2 hover:border-[#0078D4] hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                className="w-full h-16 bg-white border border-[#D2D2D7]/50 rounded-sm p-2 hover:border-[#0078D4] hover:shadow-sm transition-all duration-200 flex items-center justify-center cursor-pointer"
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
