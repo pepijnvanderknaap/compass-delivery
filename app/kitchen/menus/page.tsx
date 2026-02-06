@@ -799,15 +799,15 @@ export default function AdminMenusPage() {
                     {/* Header section with blue/gray background */}
                     <thead className="bg-[#0078D4]">
                       <tr>
-                        <th className="px-5 py-4 text-left text-apple-footnote font-semibold uppercase tracking-wide text-white">
-                          Meal
+                        <th className="px-5 py-4 text-left text-apple-footnote font-medium text-white">
+                          Menu
                         </th>
                         <th></th>
                         {days.map((day, dayIndex) => (
                           <th key={day} className="py-4">
                             <div className="flex items-baseline justify-center gap-1 text-white">
-                              <span className="text-apple-footnote font-medium uppercase tracking-wide">{day.substring(0, 3).toUpperCase()}</span>
-                              <span className="text-apple-caption font-light text-white">
+                              <span className="text-apple-footnote font-medium">{day.substring(0, 3)}</span>
+                              <span className="text-apple-footnote font-medium text-white">
                                 {format(addDays(weekStart, dayIndex), 'd MMM')}
                               </span>
                             </div>
@@ -824,7 +824,7 @@ export default function AdminMenusPage() {
                     <tbody className="bg-[#F5F5F7] divide-y divide-[#F5F5F7]">
                       {/* Soup Row */}
                       <tr>
-                        <td className="px-5 py-4 text-apple-subheadline font-medium text-[#1D1D1F]">Soup</td>
+                        <td className="px-5 py-4 text-[15px] font-medium text-[#1D1D1F]">Soup</td>
                         <td></td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
@@ -839,7 +839,7 @@ export default function AdminMenusPage() {
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
-                                    <div className="text-apple-body text-[#1D1D1F] text-center line-clamp-2">{dish.name}</div>
+                                    <div className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -851,7 +851,7 @@ export default function AdminMenusPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-[#86868B]">+ Add</div>
+                                  <div className="text-[15px] font-medium text-[#86868B]">+ Add</div>
                                 )}
                               </button>
                             </td>
@@ -861,7 +861,7 @@ export default function AdminMenusPage() {
 
                       {/* Hot Dish Meat/Fish Row */}
                       <tr>
-                        <td className="px-5 py-4 text-apple-subheadline font-medium text-[#1D1D1F]">Hot Dish Meat/Fish</td>
+                        <td className="px-5 py-4 text-[15px] font-medium text-[#1D1D1F]">Hot Dish Meat/Fish</td>
                         <td></td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
@@ -876,7 +876,7 @@ export default function AdminMenusPage() {
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
-                                    <div className="text-apple-body text-[#1D1D1F] text-center line-clamp-2">{dish.name}</div>
+                                    <div className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -888,7 +888,7 @@ export default function AdminMenusPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-[#86868B]">+ Add</div>
+                                  <div className="text-[15px] font-medium text-[#86868B]">+ Add</div>
                                 )}
                               </button>
                             </td>
@@ -896,9 +896,9 @@ export default function AdminMenusPage() {
                         })}
                       </tr>
 
-                      {/* Hot Dish Vegetarian Row */}
+                      {/* Hot Dish Veg Row */}
                       <tr>
-                        <td className="px-5 py-4 text-apple-subheadline font-medium text-[#1D1D1F]">Hot Dish Vegetarian</td>
+                        <td className="px-5 py-4 text-[15px] font-medium text-[#1D1D1F]">Hot Dish Veg</td>
                         <td></td>
                         {days.map((_, dayIndex) => {
                           const dateKey = format(addDays(weekStart, dayIndex), 'yyyy-MM-dd');
@@ -913,7 +913,7 @@ export default function AdminMenusPage() {
                               >
                                 {dish ? (
                                   <div className="relative group w-full h-full rounded-sm p-2 flex items-center justify-center">
-                                    <div className="text-apple-body text-[#1D1D1F] text-center line-clamp-2">{dish.name}</div>
+                                    <div className="text-[16px] leading-[1.5] font-medium text-[#1D1D1F] text-center line-clamp-2">{dish.name}</div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -925,7 +925,7 @@ export default function AdminMenusPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="text-apple-subheadline text-[#86868B]">+ Add</div>
+                                  <div className="text-[15px] font-medium text-[#86868B]">+ Add</div>
                                 )}
                               </button>
                             </td>
