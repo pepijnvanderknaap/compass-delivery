@@ -1728,10 +1728,10 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                       </tr>
                     ))}
 
-                    {/* 12. Staff Cost Central Kitchen - EDITABLE (for now, AUTO later) */}
+                    {/* 12. Kitchen Staff Cost - EDITABLE (for now, AUTO later) */}
                     <tr className="hover:bg-[#F5F5F7] transition-colors">
                       <td className="px-4 py-3 text-[13px] text-[#1D1D1F]">1</td>
-                      <td className="px-4 py-3 text-[13px] text-[#1D1D1F]">Staff Cost Central Kitchen</td>
+                      <td className="px-4 py-3 text-[13px] text-[#1D1D1F]">Kitchen Staff Cost</td>
                       <td className="px-4 py-3 text-right">
                         <input
                           type="number"

@@ -121,7 +121,7 @@ export default function AllergenMatrixPage() {
             Allergen & Dietary Information Matrix
           </h1>
           <p className="text-center text-slate-600">
-            Compass Group Dark Kitchen - {new Date().toLocaleDateString()}
+            Compass Group Kitchen - {new Date().toLocaleDateString()}
           </p>
         </div>
 

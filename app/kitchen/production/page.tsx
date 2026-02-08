@@ -116,9 +116,9 @@ export default function ProductionSheetsPage() {
           .select('*')
           .eq('is_active', true);
 
-        // Deduplicate by name (keep first occurrence) and filter out Dark Kitchen
+        // Deduplicate by name (keep first occurrence)
         const uniqueLocations = locationsData?.reduce((acc: Location[], loc) => {
-          if (!acc.find(l => l.name === loc.name) && loc.name !== 'Dark Kitchen') {
+          if (!acc.find(l => l.name === loc.name)) {
             acc.push(loc);
           }
           return acc;

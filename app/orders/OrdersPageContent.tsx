@@ -331,7 +331,6 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
         const { data: locationsData } = await supabase
           .from('locations')
           .select('id, name')
-          .neq('name', 'Dark Kitchen')
           .order('name');
 
         setLocations(locationsData || []);

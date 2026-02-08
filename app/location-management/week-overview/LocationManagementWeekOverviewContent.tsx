@@ -308,7 +308,7 @@ export default function LocationManagementWeekOverviewContent() {
           <p className="text-xl text-[#6E6E73] mb-1">
             {format(currentWeekStart, 'MMMM d')} - {format(addDays(currentWeekStart, 4), 'MMMM d, yyyy')}
           </p>
-          <p className="text-[#86868B]">Compass Group Dark Kitchen</p>
+          <p className="text-[#86868B]">Compass Group Kitchen</p>
         </div>
 
         {loading ? (
