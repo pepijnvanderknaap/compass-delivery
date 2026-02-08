@@ -6,6 +6,8 @@ import type { Dish } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 
+export const dynamic = 'force-dynamic';
+
 export default function AllergenMatrixPage() {
   const supabase = createClient();
   const [dishes, setDishes] = useState<Dish[]>([]);

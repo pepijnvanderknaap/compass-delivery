@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+export const dynamic = 'force-dynamic';
+
 interface CateringOrder {
   id: string;
   location_id: string;

@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import UniversalHeader from '@/components/UniversalHeader';
 import * as XLSX from 'xlsx';
 
+export const dynamic = 'force-dynamic';
+
 interface RecipeRow {
   id: string;
   type: 'action' | 'ingredient';

@@ -11,6 +11,8 @@ import WarmVeggieEditModal from './WarmVeggieEditModal';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 
+export const dynamic = 'force-dynamic';
+
 // Grid layout with component management - v2
 interface SaladMixComponent {
   component_id: string;

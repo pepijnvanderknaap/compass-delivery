@@ -11,6 +11,8 @@ import MainDishForm from '../dishes/MainDishForm';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminMenusPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);

@@ -26,6 +26,8 @@ import type { UserProfile, Dish, Location, DishWithComponents } from '@/lib/type
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 
+export const dynamic = 'force-dynamic';
+
 interface LocationOrders {
   [locationId: string]: number; // portions
 }
