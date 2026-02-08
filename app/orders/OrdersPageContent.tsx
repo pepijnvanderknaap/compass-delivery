@@ -126,7 +126,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
       name: 'Atlassian',
     },
     'snowflake': {
-      logo: '/locations/snowflake-logo.png',
+      logo: '/locations/snowflake-logo-v2.png',
       name: 'Snowflake',
     },
     'snapchat': {
@@ -286,34 +286,15 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
 
     console.log(`Fetched ${ordersData?.length || 0} orders for location ${locationId}`);
 
-    await syncOrdersWithMenu(ordersData || []);
-
-    const { data: syncedOrders } = await supabase
-      .from('orders')
-      .select(`
-        id,
-        week_start_date,
-        created_at,
-        order_items (
-          id,
-          delivery_date,
-          portions,
-          meal_type,
-          dishes (
-            name,
-            category
-          )
-        )
-      `)
-      .eq('location_id', locationId)
-      .order('week_start_date', { ascending: true });
+    // Sync removed for performance - should be done as background job or when menu changes
+    // await syncOrdersWithMenu(ordersData || []);
 
     // Sort orders: current week first, then future weeks, then past weeks
     const now = new Date();
     const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
     const currentWeekStart = format(startOfWeek(localDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
-    const sortedOrders = (syncedOrders || []).sort((a, b) => {
+    const sortedOrders = (ordersData || []).sort((a, b) => {
       // Current week goes first
       if (a.week_start_date === currentWeekStart) return -1;
       if (b.week_start_date === currentWeekStart) return 1;
@@ -987,8 +968,9 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
           { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
           { label: 'Orders', href: `/${navLocationSlug}/orders`, active: true },
           { label: 'Soup & Salad Bar', href: `/${navLocationSlug}/soup-salad-bar`, active: false },
-          { label: 'Banqueting', href: `/admin/banqueting`, active: false },
-          { label: 'Settings', href: '/location-management/settings', active: false },
+          { label: navLocationSlug === 'symphony' ? 'Banqueting' : 'Catering', href: navLocationSlug === 'symphony' ? `/admin/banqueting` : `/${navLocationSlug}/catering`, active: false },
+          { label: 'Settings', href: `/${navLocationSlug}/settings`, active: false },
+          ...(navLocationSlug !== 'symphony' ? [{ label: 'Cost & Billing', href: `/${navLocationSlug}/cost-billing`, active: false }] : []),
         ] : undefined}
       />
 

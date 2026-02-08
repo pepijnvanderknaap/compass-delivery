@@ -251,6 +251,8 @@ export interface LocationSettings {
   site_manager_name?: string | null;
   site_manager_email?: string | null;
   site_manager_mobile?: string | null;
+  site_manager_gross_monthly_salary?: number | null;
+  site_manager_contractual_hours?: number | null;
   regional_manager_name?: string | null;
   regional_manager_email?: string | null;
   regional_manager_mobile?: string | null;
@@ -291,6 +293,8 @@ export interface LocationStaff {
   staff_name: string;
   staff_role?: string | null;
   staff_mobile?: string | null;
+  gross_monthly_salary?: number | null;
+  contractual_hours?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -298,4 +302,84 @@ export interface LocationStaff {
 export interface LocationWithSettings extends Location {
   settings?: LocationSettings;
   staff?: LocationStaff[];
+}
+
+export interface LocationBillingSettings {
+  id: string;
+  location_id: string;
+
+  // Dutch Employer Cost Percentages
+  employer_social_security_percentage: number; // Werkgeverslasten (~17.9%)
+  pension_contribution_percentage: number; // Pensioen (~8%)
+  holiday_allowance_percentage: number; // Vakantiegeld (8% required in NL)
+  other_employer_costs_percentage: number; // Insurance, etc. (~2%)
+
+  // Other Overhead
+  management_fee_percentage: number;
+  overhead_percentage: number;
+
+  // Portion Pricing
+  soup_price_per_portion: number;
+  salad_bar_price_per_portion: number;
+  hot_dish_meat_fish_price_per_portion: number;
+  hot_dish_veg_price_per_portion: number;
+
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  location_id: string;
+
+  // Invoice Details
+  invoice_number: string;
+  month: string; // Format: "YYYY-MM"
+
+  // Invoice Data (line items and calculations)
+  invoice_data: {
+    location_name: string;
+    billing_contact: {
+      name?: string;
+      email?: string;
+      phone?: string;
+    };
+    period: {
+      start: string;
+      end: string;
+    };
+    line_items: {
+      date: string;
+      description: string;
+      category: string;
+      quantity: number;
+      unit_price: number;
+      total: number;
+    }[];
+    costs: {
+      staff_cost: number;
+      management_fee: number;
+      overhead: number;
+    };
+  };
+
+  // Financial
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+
+  // Status
+  status: 'draft' | 'sent' | 'paid' | 'cancelled';
+
+  // PDF Storage
+  pdf_url?: string | null;
+
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+  sent_at?: string | null;
+  paid_at?: string | null;
+
+  // Notes
+  notes?: string | null;
 }

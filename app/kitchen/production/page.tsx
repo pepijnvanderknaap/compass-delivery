@@ -53,10 +53,11 @@ export default function ProductionSheetsPage() {
   const [productionRows, setProductionRows] = useState<ProductionRow[]>([]);
   const [locationSettingsMap, setLocationSettingsMap] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'main' | 'mep' | 'salad_bar' | 'recipes'>('main');
+  const [activeTab, setActiveTab] = useState<'main' | 'mep' | 'salad_bar' | 'recipes' | 'catering'>('main');
   const [saladBarData, setSaladBarData] = useState<any[]>([]);
   const [mepData, setMepData] = useState<any[]>([]);
   const [recipesData, setRecipesData] = useState<any[]>([]);
+  const [cateringData, setCateringData] = useState<any[]>([]);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printSections, setPrintSections] = useState({
     main: true,
@@ -158,6 +159,7 @@ export default function ProductionSheetsPage() {
       fetchProductionData(selectedDate, locations);
       fetchSaladBarData(selectedDate, locations);
       fetchRecipesData(selectedDate);
+      fetchCateringData(selectedDate);
     }
   }, [selectedDate]);
 
@@ -672,6 +674,32 @@ export default function ProductionSheetsPage() {
       return row;
     });
 
+    // Add Protein row for Snowflake only (at the bottom)
+    const snowflakeLocation = locs.find(loc => loc.name === 'Snowflake');
+    if (snowflakeLocation && locationPortions[snowflakeLocation.id] > 0) {
+      const proteinRow: any = {
+        ingredient: 'Protein (Chicken/Salmon/Tofu)',
+        locationWeights: {},
+        totalWeight: 0
+      };
+
+      locs.forEach(loc => {
+        if (loc.id === snowflakeLocation.id) {
+          const portions = locationPortions[loc.id] || 0;
+          const settings = settingsMap.get(loc.id);
+          const proteinPortionG = settings?.protein_salad_bar_portion_g || 80;
+          const weightG = portions * proteinPortionG;
+
+          proteinRow.locationWeights[loc.id] = weightG;
+          proteinRow.totalWeight += weightG;
+        } else {
+          proteinRow.locationWeights[loc.id] = 0;
+        }
+      });
+
+      saladBarRows.push(proteinRow);
+    }
+
     setSaladBarData(saladBarRows);
   };
 
@@ -861,6 +889,34 @@ export default function ProductionSheetsPage() {
 
     console.log('[RECIPES] Scaled recipes:', sortedRecipes);
     setRecipesData(sortedRecipes);
+  };
+
+  const fetchCateringData = async (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    console.log('[CATERING] Fetching catering orders for date:', dateStr);
+
+    const { data: orders, error } = await supabase
+      .from('catering_orders')
+      .select(`
+        *,
+        locations(name, slug),
+        catering_order_items(
+          *,
+          components(name)
+        )
+      `)
+      .eq('delivery_date', dateStr)
+      .eq('status', 'ready_for_production')
+      .order('locations(name)');
+
+    if (error) {
+      console.error('[CATERING] Error fetching catering orders:', error);
+      setCateringData([]);
+      return;
+    }
+
+    console.log('[CATERING] Fetched catering orders:', orders?.length);
+    setCateringData(orders || []);
   };
 
   const generateMEPData = () => {
@@ -1757,6 +1813,16 @@ export default function ProductionSheetsPage() {
               >
                 Recipes
               </button>
+              <button
+                onClick={() => setActiveTab('catering')}
+                className={`text-sm font-semibold transition-all ${
+                  activeTab === 'catering'
+                    ? 'text-[#0078D4]'
+                    : 'text-[#86868B] hover:text-[#1D1D1F]'
+                }`}
+              >
+                Catering
+              </button>
             </div>
             <div className="flex gap-3">
               <button
@@ -2487,6 +2553,108 @@ export default function ProductionSheetsPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+        </div>
+
+        {/* Catering Orders Tab */}
+        <div
+          data-print-section="catering"
+          className={`print-catering ${activeTab !== 'catering' ? 'hidden' : ''}`}
+        >
+            {cateringData.length === 0 ? (
+              <div className="bg-white border border-black/10 shadow-sm rounded-sm p-8 text-center">
+                <p className="text-[#86868B]">No catering orders ready for production on this date</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Big Red Warning */}
+                <div className="bg-[#FF3B30] border-2 border-[#FF453A] rounded-xl p-6 shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-8 h-8 text-white flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <h3 className="text-[17px] font-bold text-white">INGREDIENT ORDERING REQUIRED</h3>
+                      <p className="text-[13px] text-white mt-1">These are special off-menu orders. Check lead times and ensure all ingredients are ordered.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Catering Orders */}
+                {cateringData.map((order: any) => (
+                  <div key={order.id} className="bg-white border-2 border-[#D2D2D7] rounded-xl overflow-hidden shadow-sm">
+                    <div className="bg-[#F5F5F7] border-b border-[#D2D2D7] px-6 py-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-[17px] font-semibold text-[#1D1D1F]">{order.locations?.name || 'Unknown Location'}</h3>
+                          <p className="text-[13px] text-[#86868B] mt-1">{order.description}</p>
+                          {order.estimated_portions > 0 && (
+                            <p className="text-[13px] text-[#86868B] mt-1">Estimated portions: {order.estimated_portions}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[13px] text-[#86868B]">Total Cost</p>
+                          <p className="text-[22px] font-semibold text-[#1D1D1F]">€ {order.total_cost.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Components Table */}
+                    <div className="p-6">
+                      {order.catering_order_items && order.catering_order_items.length > 0 ? (
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-[#E8E8ED]">
+                              <th className="text-left py-3 px-4 text-[13px] font-semibold text-[#86868B]">Component</th>
+                              <th className="text-right py-3 px-4 text-[13px] font-semibold text-[#86868B]">Quantity</th>
+                              <th className="text-right py-3 px-4 text-[13px] font-semibold text-[#86868B]">Cost/kg</th>
+                              <th className="text-right py-3 px-4 text-[13px] font-semibold text-[#86868B]">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {order.catering_order_items.map((item: any) => (
+                              <tr key={item.id} className="border-b border-[#E8E8ED] last:border-0">
+                                <td className="py-3 px-4 text-[15px] text-[#1D1D1F]">{item.components?.name || 'Unknown'}</td>
+                                <td className="py-3 px-4 text-[15px] text-right text-[#1D1D1F]">
+                                  {(item.quantity_g / 1000).toFixed(2)} kg
+                                </td>
+                                <td className="py-3 px-4 text-[15px] text-right text-[#86868B]">
+                                  € {item.cost_per_kg.toFixed(2)}
+                                </td>
+                                <td className="py-3 px-4 text-[15px] text-right font-semibold text-[#1D1D1F]">
+                                  € {item.total_cost.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t-2 border-[#D2D2D7]">
+                              <td colSpan={3} className="py-3 px-4 text-[15px] font-semibold text-[#1D1D1F]">Food Cost</td>
+                              <td className="py-3 px-4 text-[15px] text-right font-semibold text-[#1D1D1F]">
+                                € {order.food_cost.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td colSpan={3} className="py-3 px-4 text-[15px] font-semibold text-[#1D1D1F]">Labor Cost</td>
+                              <td className="py-3 px-4 text-[15px] text-right font-semibold text-[#1D1D1F]">
+                                € {order.labor_cost.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr className="border-t-2 border-[#D2D2D7]">
+                              <td colSpan={3} className="py-3 px-4 text-[17px] font-bold text-[#1D1D1F]">Total Cost</td>
+                              <td className="py-3 px-4 text-[17px] text-right font-bold text-[#1D1D1F]">
+                                € {order.total_cost.toFixed(2)}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      ) : (
+                        <p className="text-[13px] text-[#86868B] text-center py-4">No components added</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
         </div>

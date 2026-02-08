@@ -33,20 +33,20 @@ export default function UniversalHeader({ title, backPath, actions, locationLogo
     <nav className="bg-white/90 backdrop-blur-xl sticky top-0 z-10 no-print">
       <div className="max-w-7xl mx-auto px-8 lg:px-12">
         {/* Logo Row */}
-        <div className="flex justify-between items-center py-3">
+        <div className="flex justify-between items-center py-[15px]">
           <div className="flex flex-col">
             {locationLogo ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 h-[50px]">
                 <Image
                   src={locationLogo}
                   alt={locationName || 'Location'}
-                  width={120}
-                  height={40}
-                  className="object-contain"
+                  width={150}
+                  height={100}
+                  className="h-full w-auto"
                 />
               </div>
             ) : (
-              <div className="text-5xl font-bold text-[#475569] tracking-tight">
+              <div className="text-[50px] leading-[50px] font-bold text-[#475569] tracking-tight">
                 DELIVERY
               </div>
             )}
@@ -66,7 +66,7 @@ export default function UniversalHeader({ title, backPath, actions, locationLogo
 
         {/* Navigation Items */}
         {navItems && navItems.length > 0 && (
-          <div className="flex items-center justify-end gap-8 py-2 border-t-2 border-[#D2D2D7]">
+          <div className="flex items-center justify-end gap-8 py-2 border-t border-[#D2D2D7]">
             {navItems.map((item) => (
               <div key={item.href} className="relative group">
                 <button

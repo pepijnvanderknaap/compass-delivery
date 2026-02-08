@@ -1,21 +1,14 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import SettingsPageContent from '@/app/location-management/settings/SettingsPageContent';
 
 export default function AtlassianSettingsPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/location-management/settings?location=atlassian');
-  }, [router]);
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
-    </div>
+    }>
+      <SettingsPageContent forcedLocation="atlassian" />
+    </Suspense>
   );
 }

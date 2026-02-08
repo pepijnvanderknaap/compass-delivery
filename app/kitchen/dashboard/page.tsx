@@ -105,8 +105,6 @@ export default function KitchenDashboardPage() {
 
 // ===== NEW APPLE-STYLE LAYOUT =====
 
-'use client';
-
 import { redirect } from 'next/navigation';
 
 export default function KitchenDashboardPage() {

@@ -136,9 +136,9 @@ export default function LocationDashboard({
       )
     },
     {
-      title: 'Banqueting',
-      href: `/${locationSlug}/banqueting`,
-      description: 'Manage catering catalog, orders and quotes',
+      title: locationSlug === 'symphony' ? 'Banqueting' : 'Catering',
+      href: locationSlug === 'symphony' ? `/${locationSlug}/banqueting` : `/${locationSlug}/catering`,
+      description: locationSlug === 'symphony' ? 'Manage catering catalog, orders and quotes' : 'Request off-menu items for special events',
       available: true,
       icon: (
         <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

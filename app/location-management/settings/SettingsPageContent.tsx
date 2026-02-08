@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import type { UserProfile, LocationSettings } from '@/lib/types';
+import type { UserProfile, LocationSettings, Location, LocationStaff } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
+import UserProfileComponent from '@/components/UserProfile';
 
 interface SettingsPageContentProps {
   forcedLocation?: string;
@@ -13,7 +14,9 @@ interface SettingsPageContentProps {
 
 export default function SettingsPageContent({ forcedLocation }: SettingsPageContentProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
   const [settings, setSettings] = useState<LocationSettings | null>(null);
+  const [staff, setStaff] = useState<LocationStaff[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -31,7 +34,7 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
       name: 'Atlassian',
     },
     'snowflake': {
-      logo: '/locations/snowflake-logo.png',
+      logo: '/locations/snowflake-logo-v2.png',
       name: 'Snowflake',
     },
     'snapchat': {
@@ -54,9 +57,30 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
     },
   };
 
-  // Use forcedLocation if provided, otherwise use searchParams
+  // Map URL location params to database location names
+  const locationParamMapping: Record<string, string> = {
+    'symphony': 'Symphony',
+    'atlassian': 'Atlassian',
+    'snowflake': 'Snowflake',
+    'snapchat': 'SnapChat 119',
+    'snapchat-119': 'SnapChat 119',
+    'snapchat-165': 'SnapChat 165',
+    'jaa': 'JAA Training',
+  };
+
   const locationParam = forcedLocation || searchParams.get('location');
-  const currentLocation = locationParam ? locationBranding[locationParam] : null;
+  const currentLocation = locationParam && locationBranding[locationParam] ? locationBranding[locationParam] : null;
+
+  // State for Snapchat building selection
+  const [snapchatBuilding, setSnapchatBuilding] = useState<'119' | '165'>(() => {
+    if (locationParam === 'snapchat-165') return '165';
+    return '119'; // Default to 119 for 'snapchat' or 'snapchat-119'
+  });
+
+  // Debug: log if we can't find the location branding
+  if (locationParam && !currentLocation) {
+    console.error(`Location branding not found for: "${locationParam}"`, Object.keys(locationBranding));
+  }
 
   useEffect(() => {
     const initialize = async () => {
@@ -69,17 +93,15 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
 
         const { data: profileData } = await supabase
           .from('user_profiles')
-          .select('*, locations(name)')
+          .select('*, locations(id, name, address, contact_person, contact_email, contact_phone)')
           .eq('id', user.id)
           .single();
 
-        // Allow both managers and admins to access
         if (!profileData) {
           router.push('/location-management');
           return;
         }
 
-        // Managers need a location_id
         if (profileData.role === 'manager' && !profileData.location_id) {
           router.push('/location-management');
           return;
@@ -87,9 +109,27 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
 
         setProfile(profileData);
 
-        // For managers, use their assigned location
-        if (profileData.role === 'manager' && profileData.location_id) {
-          await fetchLocationSettings(profileData.location_id);
+        // Determine which location to fetch
+        let targetLocationId = profileData.location_id;
+
+        if (locationParam) {
+          const dbLocationName = locationParamMapping[locationParam];
+          const { data: paramLocation } = await supabase
+            .from('locations')
+            .select('*')
+            .eq('name', dbLocationName)
+            .single();
+
+          if (paramLocation) {
+            targetLocationId = paramLocation.id;
+            setLocation(paramLocation);
+          }
+        } else if (profileData.locations) {
+          setLocation(profileData.locations as any);
+        }
+
+        if (targetLocationId) {
+          await fetchLocationData(targetLocationId);
         }
       } catch (err) {
         console.error('Error initializing:', err);
@@ -99,194 +139,536 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
     };
 
     initialize();
-  }, [supabase, router]);
+  }, [supabase, router, locationParam]);
 
-  const fetchLocationSettings = async (locationId: string) => {
+  // Handle Snapchat building changes
+  useEffect(() => {
+    const handleBuildingChange = () => {
+      const isSnapchat = locationParam?.startsWith('snapchat');
+      if (!isSnapchat) return;
+
+      const newSlug = `snapchat-${snapchatBuilding}`;
+      if (newSlug !== locationParam) {
+        router.push(`/${newSlug}/settings`);
+      }
+    };
+
+    handleBuildingChange();
+  }, [snapchatBuilding, locationParam, router]);
+
+  const fetchLocationData = async (locationId: string) => {
     try {
+      if (!location) {
+        const { data: locationData } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('id', locationId)
+          .single();
+
+        if (locationData) {
+          setLocation(locationData);
+        }
+      }
+
       // Fetch settings
-      const { data: settingsData } = await supabase
+      let { data: settingsData } = await supabase
         .from('location_settings')
         .select('*')
         .eq('location_id', locationId)
         .single();
 
-      // If no settings exist, create default settings
+      // If no settings exist, create default
       if (!settingsData) {
-        const defaultSettings: Partial<LocationSettings> = {
+        const defaultSettings = {
           location_id: locationId,
-          soup_portion_size_ml: 150,
-          salad_bar_portion_size_g: 240,
-          salad_leaves_percentage: 0.05,
-          cucumber_percentage: 0.05,
-          tomato_percentage: 0.05,
-          carrot_julienne_percentage: 0.05,
-          radish_julienne_percentage: 0.05,
-          pickled_beetroot_percentage: 0.05,
-          mixed_blanched_veg_percentage: 0.07,
-          roasted_veg_1_percentage: 0.07,
-          roasted_veg_2_percentage: 0.07,
-          roasted_veg_3_percentage: 0.07,
-          potato_salad_percentage: 0.06,
-          composed_salad_percentage: 0.16,
-          pasta_salad_percentage: 0.16,
-          carb_percentage: 0.04,
         };
-
         const { data: newSettings } = await supabase
           .from('location_settings')
           .insert(defaultSettings)
           .select()
           .single();
+        settingsData = newSettings;
+      }
 
-        setSettings(newSettings as LocationSettings);
-      } else {
-        setSettings(settingsData);
+      setSettings(settingsData);
+
+      // Fetch staff
+      const { data: staffData } = await supabase
+        .from('location_staff')
+        .select('*')
+        .eq('location_id', locationId)
+        .order('staff_name');
+
+      if (staffData) {
+        setStaff(staffData);
       }
     } catch (err) {
-      console.error('Error fetching location settings:', err);
+      console.error('Error fetching location data:', err);
     }
   };
 
-  const handleSaveSettings = async () => {
-    if (!profile?.location_id || !settings) return;
+  const handleLocationUpdate = (field: keyof Location, value: string) => {
+    if (location) {
+      setLocation({ ...location, [field]: value });
+    }
+  };
+
+  const handleSettingsUpdate = (field: keyof LocationSettings, value: string) => {
+    if (settings) {
+      setSettings({ ...settings, [field]: value });
+    }
+  };
+
+  const handleStaffUpdate = (index: number, field: keyof LocationStaff, value: string) => {
+    const updatedStaff = [...staff];
+    updatedStaff[index] = { ...updatedStaff[index], [field]: value };
+    setStaff(updatedStaff);
+  };
+
+  const handleAddStaff = () => {
+    if (location) {
+      setStaff([...staff, {
+        id: `temp-${Date.now()}`,
+        location_id: location.id,
+        staff_name: '',
+        staff_role: '',
+        staff_mobile: '',
+        created_at: new Date().toISOString(),
+      }]);
+    }
+  };
+
+  const handleRemoveStaff = (index: number) => {
+    const updatedStaff = staff.filter((_, i) => i !== index);
+    setStaff(updatedStaff);
+  };
+
+  const handleSave = async () => {
+    if (!location || !settings) return;
 
     setSaving(true);
     try {
-      const { error } = await supabase
+      // Update location
+      const { error: locationError } = await supabase
+        .from('locations')
+        .update({
+          name: location.name,
+          address: location.address,
+          contact_person: location.contact_person,
+          contact_email: location.contact_email,
+          contact_phone: location.contact_phone,
+        })
+        .eq('id', location.id);
+
+      if (locationError) throw locationError;
+
+      // Update settings
+      const { error: settingsError } = await supabase
         .from('location_settings')
         .upsert({
           ...settings,
-          location_id: profile.location_id,
+          location_id: location.id,
         });
 
-      if (error) throw error;
+      if (settingsError) throw settingsError;
+
+      // Delete all existing staff for this location
+      await supabase
+        .from('location_staff')
+        .delete()
+        .eq('location_id', location.id);
+
+      // Insert new staff (only non-empty names)
+      const validStaff = staff.filter(s => s.staff_name.trim() !== '');
+      if (validStaff.length > 0) {
+        const staffToInsert = validStaff.map(s => ({
+          location_id: location.id,
+          staff_name: s.staff_name,
+          staff_role: s.staff_role || null,
+          staff_mobile: s.staff_mobile || null,
+        }));
+
+        const { error: staffError } = await supabase
+          .from('location_staff')
+          .insert(staffToInsert);
+
+        if (staffError) throw staffError;
+      }
 
       alert('Settings saved successfully!');
+
+      // Refresh data
+      await fetchLocationData(location.id);
     } catch (err) {
       console.error('Error saving settings:', err);
-      alert('Failed to save settings');
+      alert('Failed to save settings. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/home');
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0071E3]"></div>
       </div>
     );
   }
 
-  if (!profile) {
+  if (!profile || !location) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Unable to load profile</p>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-[#6E6E73]">Unable to load location data</p>
       </div>
     );
   }
-
-  // For managers without settings, show error
-  if (profile.role === 'manager' && !settings) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Unable to load settings for your location</p>
-      </div>
-    );
-  }
-
-  const locationName = (profile.locations as any)?.name || 'Your Location';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <AdminQuickNav />
 
       <UniversalHeader
-        title="Location Settings"
-        backPath={currentLocation ? (locationParam === 'snapchat-119' || locationParam === 'snapchat-165' ? '/snapchat/dashboard' : `/${locationParam}/dashboard`) : "/location-management"}
-        locationLogo={currentLocation?.logo || ""}
-        locationName={currentLocation?.name || ""}
-        locationSubtitle={currentLocation?.subtitle}
+        title=""
+        backPath=""
+        locationLogo={currentLocation?.logo || undefined}
+        locationName={currentLocation?.name || ''}
+        locationSubtitle={locationParam?.startsWith('snapchat') ? `Building ${snapchatBuilding}` : currentLocation?.subtitle}
+        navItems={locationParam ? [
+          { label: 'Menu Overview', href: `/${locationParam}/week-overview`, active: false },
+          { label: 'Orders', href: `/${locationParam}/orders`, active: false },
+          { label: 'Soup & Salad Bar', href: `/${locationParam}/soup-salad-bar`, active: false },
+          { label: locationParam === 'symphony' ? 'Banqueting' : 'Catering', href: locationParam === 'symphony' ? `/admin/banqueting` : `/${locationParam}/catering`, active: false },
+          { label: 'Settings', href: `/${locationParam}/settings`, active: true },
+          ...(locationParam !== 'symphony' ? [{ label: 'Cost & Billing', href: `/${locationParam}/cost-billing`, active: false }] : []),
+        ] : undefined}
         actions={
-          <>
-            <span className="text-apple-subheadline text-slate-700">{profile.full_name}</span>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
-            >
-              Sign Out
-            </button>
-          </>
+          <UserProfileComponent userName={profile.full_name || 'User'} redirectPath="/home" />
         }
       />
 
-      <main className="max-w-6xl mx-auto px-6 lg:px-8 py-10">
-        {/* Location Info */}
-        <div className="mb-8 bg-white border border-teal-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            {locationName}
-          </h2>
-          <p className="text-sm text-gray-600">
-            View your location details and contact information
-          </p>
-        </div>
-
-        {settings && (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-3">
-              Location Information
-            </h2>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location Name
-                </label>
-                <input
-                  type="text"
-                  value={locationName}
-                  disabled
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Manager Name
-                </label>
-                <input
-                  type="text"
-                  value={profile?.full_name || ''}
-                  disabled
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Manager Email
-                </label>
-                <input
-                  type="email"
-                  value={profile?.email || ''}
-                  disabled
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                />
-              </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                To configure soup portions and salad bar composition, please visit the <a href="/location-management/soup-salad-bar" className="text-teal-600 hover:text-teal-700 font-medium underline">Soup & Salad Bar</a> page.
-              </p>
+      {/* Snapchat Building Selector */}
+      {locationParam?.startsWith('snapchat') && (
+        <div className="max-w-5xl mx-auto px-8 pt-6">
+          <div className="flex items-center gap-2">
+            <span className="text-[15px] text-[#6E6E73]">Building:</span>
+            <div className="flex bg-[#F5F5F7] rounded-lg p-1">
+              <button
+                onClick={() => setSnapchatBuilding('119')}
+                className={`px-4 py-1.5 text-[15px] font-medium rounded-md transition-colors ${
+                  snapchatBuilding === '119'
+                    ? 'bg-white text-[#1D1D1F] shadow-sm'
+                    : 'text-[#86868B] hover:text-[#1D1D1F]'
+                }`}
+              >
+                119
+              </button>
+              <button
+                onClick={() => setSnapchatBuilding('165')}
+                className={`px-4 py-1.5 text-[15px] font-medium rounded-md transition-colors ${
+                  snapchatBuilding === '165'
+                    ? 'bg-white text-[#1D1D1F] shadow-sm'
+                    : 'text-[#86868B] hover:text-[#1D1D1F]'
+                }`}
+              >
+                165
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
+
+      <main className="max-w-5xl mx-auto px-8 py-6">
+        <div className="space-y-4">
+          {/* Section 1: Location Details */}
+          <div className="bg-white border border-[#E8E8ED] rounded-sm p-4">
+            <h2 className="text-[15px] font-semibold text-[#1D1D1F] mb-3">
+              Location Details
+            </h2>
+
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                    Company Name
+                  </label>
+                  <input
+                    type="text"
+                    value={location.name || ''}
+                    onChange={(e) => handleLocationUpdate('name', e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                    placeholder="Company name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                    General Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={settings?.general_phone || ''}
+                    onChange={(e) => handleSettingsUpdate('general_phone', e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                  Address
+                </label>
+                <textarea
+                  value={location.address || ''}
+                  onChange={(e) => handleLocationUpdate('address', e.target.value)}
+                  rows={2}
+                  className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20 resize-none"
+                  placeholder="Full address"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-[#E8E8ED]">
+                <h3 className="text-[13px] font-medium text-[#1D1D1F] mb-2">Contact Person</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={settings?.contact_person_name || ''}
+                      onChange={(e) => handleSettingsUpdate('contact_person_name', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="Contact name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={settings?.contact_person_mobile || ''}
+                      onChange={(e) => handleSettingsUpdate('contact_person_mobile', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="+1 (555) 000-0000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={settings?.contact_person_email || ''}
+                      onChange={(e) => handleSettingsUpdate('contact_person_email', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                  Delivery Directions
+                </label>
+                <textarea
+                  value={settings?.delivery_directions || ''}
+                  onChange={(e) => handleSettingsUpdate('delivery_directions', e.target.value)}
+                  rows={2}
+                  className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20 resize-none"
+                  placeholder="Delivery instructions, parking details, building access..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Compass Team */}
+          <div className="bg-white border border-[#E8E8ED] rounded-sm p-4">
+            <h2 className="text-[15px] font-semibold text-[#1D1D1F] mb-3">
+              Compass Team
+            </h2>
+
+            <div className="space-y-2.5">
+              {/* Location Manager */}
+              <div>
+                <h3 className="text-[13px] font-medium text-[#1D1D1F] mb-2">Location Manager</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={settings?.site_manager_name || ''}
+                      onChange={(e) => handleSettingsUpdate('site_manager_name', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="Manager name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={settings?.site_manager_mobile || ''}
+                      onChange={(e) => handleSettingsUpdate('site_manager_mobile', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="+1 (555) 000-0000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={settings?.site_manager_email || ''}
+                      onChange={(e) => handleSettingsUpdate('site_manager_email', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Regional Manager */}
+              <div className="pt-2 border-t border-[#E8E8ED]">
+                <h3 className="text-[13px] font-medium text-[#1D1D1F] mb-2">Regional Manager</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={settings?.regional_manager_name || ''}
+                      onChange={(e) => handleSettingsUpdate('regional_manager_name', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="Manager name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={settings?.regional_manager_mobile || ''}
+                      onChange={(e) => handleSettingsUpdate('regional_manager_mobile', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="+1 (555) 000-0000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={settings?.regional_manager_email || ''}
+                      onChange={(e) => handleSettingsUpdate('regional_manager_email', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Staff List */}
+              <div className="pt-2 border-t border-[#E8E8ED]">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-[13px] font-medium text-[#1D1D1F]">Compass Staff</h3>
+                  <button
+                    onClick={handleAddStaff}
+                    className="px-2.5 py-1 text-[12px] font-medium text-[#0071E3] hover:text-[#0077ED] hover:bg-[#F5F5F7] border border-[#D2D2D7] rounded-sm transition-all"
+                  >
+                    + Add Staff
+                  </button>
+                </div>
+
+                {staff.length === 0 ? (
+                  <div className="text-center py-4 bg-[#FAFAFA] rounded-sm border border-[#E8E8ED]">
+                    <p className="text-[12px] text-[#86868B]">No staff members added yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {staff.map((member, index) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 p-2 bg-[#FAFAFA] rounded-sm border border-[#E8E8ED]">
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#86868B] mb-0.5">
+                            Name
+                          </label>
+                          <input
+                            type="text"
+                            value={member.staff_name}
+                            onChange={(e) => handleStaffUpdate(index, 'staff_name', e.target.value)}
+                            className="w-full px-2 py-1 text-[13px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                            placeholder="Staff name"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#86868B] mb-0.5">
+                            Phone
+                          </label>
+                          <input
+                            type="tel"
+                            value={member.staff_mobile || ''}
+                            onChange={(e) => handleStaffUpdate(index, 'staff_mobile', e.target.value)}
+                            className="w-full px-2 py-1 text-[13px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                            placeholder="+1 (555) 000-0000"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#86868B] mb-0.5">
+                            Function
+                          </label>
+                          <input
+                            type="text"
+                            value={member.staff_role || ''}
+                            onChange={(e) => handleStaffUpdate(index, 'staff_role', e.target.value)}
+                            className="w-full px-2 py-1 text-[13px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                            placeholder="Role/Function"
+                          />
+                        </div>
+
+                        <div className="flex items-end">
+                          <button
+                            onClick={() => handleRemoveStaff(index)}
+                            className="px-2.5 py-1 text-[11px] font-medium text-[#FF3B30] hover:text-white hover:bg-[#FF3B30] border border-[#FF3B30] rounded-sm transition-all"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-6 py-2 text-[14px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+        </div>
       </main>
     </div>
   );

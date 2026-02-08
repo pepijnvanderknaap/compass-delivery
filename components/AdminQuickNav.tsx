@@ -47,6 +47,7 @@ export default function AdminQuickNav() {
 
   const sections = [
     {
+      key: 'snap119',
       label: 'Snap119',
       fullName: 'SnapChat Building 119',
       href: '/snapchat/dashboard',
@@ -54,6 +55,7 @@ export default function AdminQuickNav() {
       inactiveColor: 'bg-yellow-400/10 text-yellow-600 hover:bg-yellow-400/20',
     },
     {
+      key: 'snap165',
       label: 'Snap165',
       fullName: 'SnapChat Building 165',
       href: '/snapchat/dashboard',
@@ -112,7 +114,7 @@ export default function AdminQuickNav() {
     <div className="fixed right-4 top-24 z-50 flex flex-col gap-2 bg-gray-50 rounded-lg p-2 shadow-lg border border-[#E8E8ED]">
       {sections.map((section) => (
         <button
-          key={section.href}
+          key={section.key || section.href}
           onClick={() => router.push(section.href)}
           className={`px-4 py-2.5 text-sm font-semibold rounded-sm transition-all ${
             isActive(section.href)

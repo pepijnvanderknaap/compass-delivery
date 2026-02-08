@@ -35,7 +35,7 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
       name: 'Atlassian',
     },
     'snowflake': {
-      logo: '/locations/snowflake-logo.png',
+      logo: '/locations/snowflake-logo-v2.png',
       name: 'Snowflake',
     },
     'snapchat': {
@@ -300,8 +300,9 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
           { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
           { label: 'Orders', href: `/${navLocationSlug}/orders`, active: false },
           { label: 'Soup & Salad Bar', href: `/${navLocationSlug}/soup-salad-bar`, active: true },
-          { label: 'Banqueting', href: `/admin/banqueting`, active: false },
-          { label: 'Settings', href: '/location-management/settings', active: false },
+          { label: navLocationSlug === 'symphony' ? 'Banqueting' : 'Catering', href: navLocationSlug === 'symphony' ? `/admin/banqueting` : `/${navLocationSlug}/catering`, active: false },
+          { label: 'Settings', href: `/${navLocationSlug}/settings`, active: false },
+          ...(navLocationSlug !== 'symphony' ? [{ label: 'Cost & Billing', href: `/${navLocationSlug}/cost-billing`, active: false }] : []),
         ] : undefined}
         actions={
           <UserProfileComponent userName={profile.full_name || 'User'} redirectPath="/home" />
@@ -403,6 +404,25 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
                 />
                 <p className="text-[10px] text-gray-500 mt-1">Default: 240g</p>
               </div>
+
+              {/* Protein Portion Size - Snowflake Only */}
+              {locationParam === 'snowflake' && (
+                <div className="mb-4">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Protein Portion Size (g) - Snowflake Only
+                  </label>
+                  <input
+                    type="number"
+                    value={settings.protein_salad_bar_portion_g || ''}
+                    onChange={(e) => setSettings({ ...settings, protein_salad_bar_portion_g: parseInt(e.target.value) || null })}
+                    placeholder="80"
+                    className="w-full max-w-md px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Protein (chicken, salmon, or tofu) added to each salad bar portion. Default: 80g
+                  </p>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-gray-200">
                 <h3 className="text-sm font-medium text-gray-800 mb-2">

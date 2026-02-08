@@ -50,7 +50,7 @@ export default function BanquetingAdminContent() {
       name: 'Atlassian',
     },
     'snowflake': {
-      logo: '/locations/snowflake-logo.png',
+      logo: '/locations/snowflake-logo-v2.png',
       name: 'Snowflake',
     },
     'snapchat': {

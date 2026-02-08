@@ -7,7 +7,8 @@ export default function SnapChatSettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/location-management/settings?location=snapchat');
+    // Redirect to building 119 by default
+    router.replace('/snapchat-119/settings');
   }, [router]);
 
   return (
