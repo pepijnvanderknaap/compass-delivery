@@ -234,6 +234,7 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
         staff_role: '',
         staff_mobile: '',
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }]);
     }
   };
