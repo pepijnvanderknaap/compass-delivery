@@ -190,7 +190,7 @@ export default function CateringPageContent({ forcedLocation }: CateringPageCont
       <UniversalHeader
         locationLogo={currentLocation.logo}
         locationName={currentLocation.name}
-        locationSubtitle={navLocationSlug?.startsWith('snapchat') ? `Building ${snapchatBuilding}` : currentLocation.subtitle}
+        locationSubtitle={navLocationSlug?.startsWith('snapchat') ? `Building ${snapchatBuilding}` : (currentLocation.subtitle || undefined)}
         navItems={navLocationSlug ? [
           { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
           { label: 'Orders', href: `/${navLocationSlug}/orders`, active: false },
@@ -198,7 +198,7 @@ export default function CateringPageContent({ forcedLocation }: CateringPageCont
           { label: 'Catering', href: `/${navLocationSlug}/catering`, active: true },
           { label: 'Settings', href: `/${navLocationSlug}/settings`, active: false },
           { label: 'Cost & Billing', href: `/${navLocationSlug}/cost-billing`, active: false },
-        ] : undefined}
+        ] : []}
         actions={
           <UserProfileComponent userName={profile.full_name || 'User'} redirectPath="/home" />
         }
