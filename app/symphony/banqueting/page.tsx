@@ -74,8 +74,6 @@ export default function SymphonyBanquetingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <AdminQuickNav />
-
       <UniversalHeader
         title=""
         backPath=""
