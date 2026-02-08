@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import CateringPageContent from '@/app/location-management/catering/CateringPageContent';
 import { getAllLocationSlugs } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LocationCateringPage({
   params,
 }: {
