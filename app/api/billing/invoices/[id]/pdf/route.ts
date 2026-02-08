@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 // GET download invoice PDF
@@ -9,7 +8,7 @@ export async function GET(
 ) {
   const invoiceId = params.id;
 
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
 
   // Get invoice
   const { data: invoice, error } = await supabase

@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 // GET monthly totals for a location
@@ -12,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Location ID is required' }, { status: 400 });
   }
 
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
 
   // Get billing settings to calculate revenue
   const { data: settings } = await supabase
