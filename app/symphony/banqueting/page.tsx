@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { UserProfile } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
+import { getLocationNavItems } from '@/lib/locationConfig';
 
 export default function SymphonyBanquetingPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -67,6 +68,9 @@ export default function SymphonyBanquetingPage() {
     );
   }
 
+  // Generate navigation items for Symphony with Banqueting as active
+  const navItems = getLocationNavItems('symphony', 'Banqueting');
+
   const sections = [
     {
       title: 'Menu Catalog',
@@ -106,20 +110,21 @@ export default function SymphonyBanquetingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <AdminQuickNav />
 
       <UniversalHeader
-        title="Banqueting Management"
-        backPath="/symphony/dashboard"
+        title=""
+        backPath=""
         locationLogo="/locations/symphony-offices.png"
         locationName="Symphony Offices"
+        navItems={navItems}
         actions={
           <>
-            <span className="text-apple-subheadline text-slate-700">{profile.full_name}</span>
+            <span className="text-apple-subheadline text-[#6E6E73]">{profile.full_name}</span>
             <button
               onClick={handleSignOut}
-              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-apple-blue hover:bg-apple-blue-hover rounded-lg transition-colors"
+              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-lg transition-colors"
             >
               Sign Out
             </button>
