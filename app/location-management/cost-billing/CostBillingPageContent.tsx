@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { UserProfile } from '@/lib/types';
+import { LOCATION_PARAM_MAPPING } from '@/lib/locationConfig';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import UserProfileComponent from '@/components/UserProfile';
@@ -216,18 +217,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
       if (!locationParam) return;
 
       try {
-        // Map location param to database location name
-        const locationParamMapping: Record<string, string> = {
-          'symphony': 'Symphony',
-          'atlassian': 'Atlassian',
-          'snowflake': 'Snowflake',
-          'snapchat': 'SnapChat 119',
-          'snapchat-119': 'SnapChat 119',
-          'snapchat-165': 'SnapChat 165',
-          'jaa': 'JAA Training',
-        };
-
-        const dbLocationName = locationParamMapping[locationParam];
+        const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
         if (!dbLocationName) return;
 
         // Get location ID
@@ -274,18 +264,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
       if (!locationParam) return;
 
       try {
-        // Map location param to database location name
-        const locationParamMapping: Record<string, string> = {
-          'symphony': 'Symphony',
-          'atlassian': 'Atlassian',
-          'snowflake': 'Snowflake',
-          'snapchat': 'SnapChat 119',
-          'snapchat-119': 'SnapChat 119',
-          'snapchat-165': 'SnapChat 165',
-          'jaa': 'JAA Training',
-        };
-
-        const dbLocationName = locationParamMapping[locationParam];
+        const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
         if (!dbLocationName) return;
 
         // Get location ID
@@ -394,18 +373,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
       if (!locationParam) return;
 
       try {
-        // Map location param to database location name
-        const locationParamMapping: Record<string, string> = {
-          'symphony': 'Symphony',
-          'atlassian': 'Atlassian',
-          'snowflake': 'Snowflake',
-          'snapchat': 'SnapChat 119',
-          'snapchat-119': 'SnapChat 119',
-          'snapchat-165': 'SnapChat 165',
-          'jaa': 'JAA Training',
-        };
-
-        const dbLocationName = locationParamMapping[locationParam];
+        const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
         if (!dbLocationName) return;
 
         // Get location ID
@@ -628,17 +596,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
 
     try {
       // Map location param to database location name
-      const locationParamMapping: Record<string, string> = {
-        'symphony': 'Symphony',
-        'atlassian': 'Atlassian',
-        'snowflake': 'Snowflake',
-        'snapchat': 'SnapChat 119',
-        'snapchat-119': 'SnapChat 119',
-        'snapchat-165': 'SnapChat 165',
-        'jaa': 'JAA Training',
-      };
-
-      const dbLocationName = locationParamMapping[locationParam];
+      const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
       if (!dbLocationName) return;
 
       // Get location ID
@@ -1009,17 +967,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
 
     try {
       // Map location param to database location name
-      const locationParamMapping: Record<string, string> = {
-        'symphony': 'Symphony',
-        'atlassian': 'Atlassian',
-        'snowflake': 'Snowflake',
-        'snapchat': 'SnapChat 119',
-        'snapchat-119': 'SnapChat 119',
-        'snapchat-165': 'SnapChat 165',
-        'jaa': 'JAA Training',
-      };
-
-      const dbLocationName = locationParamMapping[locationParam];
+      const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
       if (!dbLocationName) {
         setIsSavingInvoice(false);
         return;
@@ -1172,17 +1120,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
 
     try {
       // Map location param to database location name
-      const locationParamMapping: Record<string, string> = {
-        'symphony': 'Symphony',
-        'atlassian': 'Atlassian',
-        'snowflake': 'Snowflake',
-        'snapchat': 'SnapChat 119',
-        'snapchat-119': 'SnapChat 119',
-        'snapchat-165': 'SnapChat 165',
-        'jaa': 'JAA Training',
-      };
-
-      const dbLocationName = locationParamMapping[locationParam];
+      const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
       if (!dbLocationName) return;
 
       // Get location ID
@@ -1243,17 +1181,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
     if (!locationParam) return;
 
     try {
-      const locationParamMapping: Record<string, string> = {
-        'symphony': 'Symphony',
-        'atlassian': 'Atlassian',
-        'snowflake': 'Snowflake',
-        'snapchat': 'SnapChat 119',
-        'snapchat-119': 'SnapChat 119',
-        'snapchat-165': 'SnapChat 165',
-        'jaa': 'JAA Training',
-      };
-
-      const dbLocationName = locationParamMapping[locationParam];
+      const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
       if (!dbLocationName) return;
 
       const { data: location } = await supabase

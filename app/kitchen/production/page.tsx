@@ -390,13 +390,6 @@ export default function ProductionSheetsPage() {
           // Track total salad aggregation
           const mainDishTotalField = (mainDish as any).salad_total_portion_g;
 
-            dishId: mainDish.id,
-            componentName: comp.component_dish.name,
-            percentage: comp.percentage,
-            portionSize: mainDishTotalField,
-            totalPortionsForThisDish: totalPortions
-          });
-
           if (mainDishTotalField) {
             if (!totalAggregation['salad']) {
               totalAggregation['salad'] = {
@@ -460,13 +453,6 @@ export default function ProductionSheetsPage() {
 
           // Track total warm veggie aggregation
           const mainDishTotalField = (mainDish as any).warm_veggie_total_portion_g;
-
-            dishId: mainDish.id,
-            componentName: comp.component_dish.name,
-            percentage: comp.percentage,
-            portionSize: mainDishTotalField,
-            totalPortionsForThisDish: totalPortions
-          });
 
           if (mainDishTotalField) {
             if (!totalAggregation['warm_veggie']) {
@@ -547,15 +533,6 @@ export default function ProductionSheetsPage() {
         });
       });
     });
-
-
-    // Log final total aggregation values
-      type: key,
-      totalPortions: totalAggregation[key].totalPortions,
-      mainDishTotalPortionG: totalAggregation[key].mainDishTotalPortionG,
-      allPortionSizes: Array.from(totalAggregation[key].dishPortionSizes),
-      calculatedWeight: `${(totalAggregation[key].totalPortions * totalAggregation[key].mainDishTotalPortionG) / 1000}kg`
-    })));
 
     setProductionRows(rows);
   };
