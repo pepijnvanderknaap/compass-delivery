@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
+import { LOCATION_PARAM_MAPPING } from '@/lib/locationConfig';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import UserProfileComponent from '@/components/UserProfile';
@@ -17,17 +18,6 @@ export default function LocationManagementContent() {
   const searchParams = useSearchParams();
   const locationParam = searchParams.get('location');
   const supabase = createClient();
-
-  // Map URL location params to database location names
-  const locationParamMapping: Record<string, string> = {
-    'symphony': 'Symphony',
-    'atlassian': 'Atlassian',
-    'snowflake': 'Snowflake',
-    'snapchat': 'SnapChat 119', // Default to 119 for now
-    'snapchat-119': 'SnapChat 119',
-    'snapchat-165': 'SnapChat 165',
-    'jaa': 'JAA Training',
-  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -171,8 +161,8 @@ export default function LocationManagementContent() {
   let locationName = (profile.locations as any)?.name || '';
 
   // If admin and location parameter is provided, use that instead
-  if (profile?.role === 'admin' && locationParam && locationParamMapping[locationParam]) {
-    locationName = locationParamMapping[locationParam];
+  if (profile?.role === 'admin' && locationParam && LOCATION_PARAM_MAPPING[locationParam]) {
+    locationName = LOCATION_PARAM_MAPPING[locationParam];
   }
 
   const locationBranding = locationLogos[locationName];

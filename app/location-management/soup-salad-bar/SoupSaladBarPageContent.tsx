@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { UserProfile, LocationSettings, Location } from '@/lib/types';
+import { LOCATION_PARAM_MAPPING } from '@/lib/locationConfig';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import UserProfileComponent from '@/components/UserProfile';
@@ -74,15 +75,6 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
   const currentLocation = navLocationSlug ? locationBranding[navLocationSlug] : null;
 
   // Map URL location params to database location names
-  const locationParamMapping: Record<string, string> = {
-    'symphony': 'Symphony',
-    'atlassian': 'Atlassian',
-    'snowflake': 'Snowflake',
-    'snapchat': 'SnapChat 119',
-    'snapchat-119': 'SnapChat 119',
-    'snapchat-165': 'SnapChat 165',
-    'jaa': 'JAA Training',
-  };
 
   useEffect(() => {
     const initialize = async () => {
@@ -126,7 +118,7 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
 
         // If forcedLocation is provided, look up the location ID
         if (locationParam && locationsData) {
-          const dbLocationName = locationParamMapping[locationParam];
+          const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
           const location = locationsData.find(loc => loc.name === dbLocationName);
           if (location) {
             targetLocationId = location.id;
@@ -136,7 +128,7 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
           const userLocation = locationsData.find(loc => loc.id === targetLocationId);
           if (userLocation) {
             // Find the reverse mapping (database name -> slug)
-            const slugEntry = Object.entries(locationParamMapping).find(
+            const slugEntry = Object.entries(LOCATION_PARAM_MAPPING).find(
               ([_, dbName]) => dbName === userLocation.name
             );
             if (slugEntry) {
@@ -174,7 +166,7 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
       if (!isSnapchat || !locations.length) return;
 
       const newSlug = `snapchat-${snapchatBuilding}`;
-      const dbLocationName = locationParamMapping[newSlug];
+      const dbLocationName = LOCATION_PARAM_MAPPING[newSlug];
       const location = locations.find(loc => loc.name === dbLocationName);
 
       if (location && location.id !== selectedLocationId) {

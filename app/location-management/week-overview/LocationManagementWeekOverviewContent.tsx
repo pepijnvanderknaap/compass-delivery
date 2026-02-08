@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { Dish, UserProfile } from '@/lib/types';
+import { LOCATION_PARAM_MAPPING } from '@/lib/locationConfig';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import { format, startOfWeek, addDays, addWeeks, subWeeks } from 'date-fns';
@@ -67,15 +68,6 @@ export default function LocationManagementWeekOverviewContent() {
   const [loading, setLoading] = useState(true);
 
   // Map URL location params to database location names
-  const locationParamMapping: Record<string, string> = {
-    'symphony': 'Symphony',
-    'atlassian': 'Atlassian',
-    'snowflake': 'Snowflake',
-    'snapchat': 'SnapChat 119',
-    'snapchat-119': 'SnapChat 119',
-    'snapchat-165': 'SnapChat 165',
-    'jaa': 'JAA Training',
-  };
 
   // Map location names to their logos
   const locationLogos: Record<string, { logo: string; name: string; subtitle?: string }> = {
@@ -287,8 +279,8 @@ export default function LocationManagementWeekOverviewContent() {
   let locationName = (profile?.locations as any)?.name || '';
 
   // If admin and location parameter is provided, use that instead
-  if (profile?.role === 'admin' && locationParam && locationParamMapping[locationParam]) {
-    locationName = locationParamMapping[locationParam];
+  if (profile?.role === 'admin' && locationParam && LOCATION_PARAM_MAPPING[locationParam]) {
+    locationName = LOCATION_PARAM_MAPPING[locationParam];
   }
 
   const locationBranding = locationLogos[locationName];

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { UserProfile, LocationSettings, Location, LocationStaff } from '@/lib/types';
+import { LOCATION_PARAM_MAPPING } from '@/lib/locationConfig';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import UserProfileComponent from '@/components/UserProfile';
@@ -58,16 +59,6 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
   };
 
   // Map URL location params to database location names
-  const locationParamMapping: Record<string, string> = {
-    'symphony': 'Symphony',
-    'atlassian': 'Atlassian',
-    'snowflake': 'Snowflake',
-    'snapchat': 'SnapChat 119',
-    'snapchat-119': 'SnapChat 119',
-    'snapchat-165': 'SnapChat 165',
-    'jaa': 'JAA Training',
-  };
-
   const locationParam = forcedLocation || searchParams.get('location');
   const currentLocation = locationParam && locationBranding[locationParam] ? locationBranding[locationParam] : null;
 
@@ -113,7 +104,7 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
         let targetLocationId = profileData.location_id;
 
         if (locationParam) {
-          const dbLocationName = locationParamMapping[locationParam];
+          const dbLocationName = LOCATION_PARAM_MAPPING[locationParam];
           const { data: paramLocation } = await supabase
             .from('locations')
             .select('*')
