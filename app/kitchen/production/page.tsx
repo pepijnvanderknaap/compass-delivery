@@ -209,10 +209,8 @@ export default function ProductionSheetsPage() {
       .single();
 
     // NEW LOGIC: Get dishes from MENU, match with order portions by meal_type
-    console.log('Fetching menu for date:', dateStr);
 
     if (!weeklyMenu) {
-      console.log('No menu found for this week');
       setProductionRows([]);
       return;
     }
@@ -224,10 +222,8 @@ export default function ProductionSheetsPage() {
       .eq('menu_id', weeklyMenu.id)
       .eq('day_of_week', dayOfWeek);
 
-    console.log('Menu items for this day:', menuItems?.length);
 
     if (!menuItems || menuItems.length === 0) {
-      console.log('No menu items found for this day');
       setProductionRows([]);
       return;
     }
@@ -240,7 +236,6 @@ export default function ProductionSheetsPage() {
       .select('*, salad_total_portion_g, warm_veggie_total_portion_g')
       .in('id', dishIds);
 
-    console.log('Fetched dishes:', dishes?.length);
 
     // Get components for each main dish with percentage data
     const { data: dishComponents } = await supabase
@@ -260,9 +255,6 @@ export default function ProductionSheetsPage() {
       .select('*, component_dish:dishes!component_dish_id(*)')
       .in('main_dish_id', dishIds);
 
-    console.log('Fetched dish components:', dishComponents?.length);
-    console.log('Fetched salad components:', saladComponents?.length);
-    console.log('Fetched warm veggie components:', warmVeggieComponents?.length);
 
     // Get orders for this date (all order items, we'll match by meal_type)
     const { data: orderItems } = await supabase
@@ -270,12 +262,9 @@ export default function ProductionSheetsPage() {
       .select('meal_type, portions, orders(location_id)')
       .eq('delivery_date', dateStr);
 
-    console.log('Fetched order items:', orderItems?.length);
-    console.log('Locations being displayed:', locs.map(l => l.name));
 
     // Build production rows with aggregated components
     const rows: ProductionRow[] = [];
-    console.log('Building rows for', dishes?.length, 'dishes');
     const componentAggregation: Record<string, {
       dish: Dish;
       locationOrders: LocationOrders;
@@ -332,7 +321,6 @@ export default function ProductionSheetsPage() {
       // Aggregate NON-salad/NON-warm-veggie components from dish_components table
       // (e.g., carbs, toppings, condiments - things that don't use percentage breakdown)
       const components = dishComponents?.filter(dc => dc.main_dish_id === mainDish.id) || [];
-      console.log(`[COMPONENT DEBUG] Processing ${components.length} components for ${mainDish.name} (${mealType}), totalPortions: ${totalPortions}`);
 
       components.forEach((comp: any) => {
         if (comp.component_dish) {
@@ -349,7 +337,6 @@ export default function ProductionSheetsPage() {
           // Process other component types (carb, topping, condiment, etc.)
           const key = `${comp.component_dish.id}-${comp.component_type}`;
 
-          console.log(`[COMPONENT DEBUG] Processing ${comp.component_type}: ${comp.component_dish.name}, adding ${totalPortions} portions`);
 
           if (!componentAggregation[key]) {
             componentAggregation[key] = {
@@ -371,7 +358,6 @@ export default function ProductionSheetsPage() {
           });
           componentAggregation[key].totalPortions += totalPortions;
 
-          console.log(`[COMPONENT DEBUG] ${comp.component_dish.name} now has ${componentAggregation[key].totalPortions} total portions`);
         }
       });
 
@@ -404,7 +390,6 @@ export default function ProductionSheetsPage() {
           // Track total salad aggregation
           const mainDishTotalField = (mainDish as any).salad_total_portion_g;
 
-          console.log(`[SALAD DEBUG] Processing salad component from ${mainDish.name} (${mealType}):`, {
             dishId: mainDish.id,
             componentName: comp.component_dish.name,
             percentage: comp.percentage,
@@ -414,7 +399,6 @@ export default function ProductionSheetsPage() {
 
           if (mainDishTotalField) {
             if (!totalAggregation['salad']) {
-              console.log(`[SALAD DEBUG] Creating new total aggregation for salad, initial portion size: ${mainDishTotalField}g`);
               totalAggregation['salad'] = {
                 locationOrders: {},
                 totalPortions: 0,
@@ -424,7 +408,6 @@ export default function ProductionSheetsPage() {
                 dishPortionSizes: new Set([mainDishTotalField])
               };
             } else {
-              console.log(`[SALAD DEBUG] Adding to existing salad aggregation. Current portion sizes:`, Array.from(totalAggregation['salad'].dishPortionSizes), `Adding: ${mainDishTotalField}g`);
 
               totalAggregation['salad'].dishPortionSizes.add(mainDishTotalField);
 
@@ -478,7 +461,6 @@ export default function ProductionSheetsPage() {
           // Track total warm veggie aggregation
           const mainDishTotalField = (mainDish as any).warm_veggie_total_portion_g;
 
-          console.log(`[WARM VEGGIE DEBUG] Processing warm veggie component from ${mainDish.name} (${mealType}):`, {
             dishId: mainDish.id,
             componentName: comp.component_dish.name,
             percentage: comp.percentage,
@@ -488,7 +470,6 @@ export default function ProductionSheetsPage() {
 
           if (mainDishTotalField) {
             if (!totalAggregation['warm_veggie']) {
-              console.log(`[WARM VEGGIE DEBUG] Creating new total aggregation for warm_veggie, initial portion size: ${mainDishTotalField}g`);
               totalAggregation['warm_veggie'] = {
                 locationOrders: {},
                 totalPortions: 0,
@@ -498,7 +479,6 @@ export default function ProductionSheetsPage() {
                 dishPortionSizes: new Set([mainDishTotalField])
               };
             } else {
-              console.log(`[WARM VEGGIE DEBUG] Adding to existing warm_veggie aggregation. Current portion sizes:`, Array.from(totalAggregation['warm_veggie'].dishPortionSizes), `Adding: ${mainDishTotalField}g`);
 
               totalAggregation['warm_veggie'].dishPortionSizes.add(mainDishTotalField);
 
@@ -568,11 +548,8 @@ export default function ProductionSheetsPage() {
       });
     });
 
-    console.log('Total production rows built:', rows.length);
-    console.log('Sample row:', rows[0]);
 
     // Log final total aggregation values
-    console.log('[SALAD DEBUG] Final total aggregation:', Object.keys(totalAggregation).map(key => ({
       type: key,
       totalPortions: totalAggregation[key].totalPortions,
       mainDishTotalPortionG: totalAggregation[key].mainDishTotalPortionG,
@@ -617,7 +594,6 @@ export default function ProductionSheetsPage() {
       .eq('delivery_date', dateStr)
       .eq('meal_type', 'salad_bar');
 
-    console.log('Fetched salad bar order items:', orderItems?.length);
 
     // Aggregate portions by location
     const locationPortions: Record<string, number> = {};
@@ -707,7 +683,6 @@ export default function ProductionSheetsPage() {
     const dateStr = format(date, 'yyyy-MM-dd');
     const weekStart = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
-    console.log('[RECIPES] Fetching recipes for date:', dateStr);
 
     // Get the weekly menu first
     const { data: weeklyMenu, error: weekError } = await supabase
@@ -739,7 +714,6 @@ export default function ProductionSheetsPage() {
     }
 
     if (!menuItems || menuItems.length === 0) {
-      console.log('[RECIPES] No menu items found for this date');
       setRecipesData([]);
       return;
     }
@@ -754,7 +728,6 @@ export default function ProductionSheetsPage() {
       console.error('[RECIPES] Error fetching order items:', ordersError);
     }
 
-    console.log('[RECIPES] Order items:', orderItems);
 
     // Calculate total portions per meal_type
     const portionsByMealType: Record<string, number> = {};
@@ -765,7 +738,6 @@ export default function ProductionSheetsPage() {
       portionsByMealType[item.meal_type] += item.portions || 0;
     });
 
-    console.log('[RECIPES] Portions by meal type:', portionsByMealType);
 
     // Map dish IDs to their meal types and portions
     const dishPortions: Record<string, { dishId: string; dishName: string; totalPortions: number; category: string }> = {};
@@ -784,11 +756,9 @@ export default function ProductionSheetsPage() {
       }
     });
 
-    console.log('[RECIPES] Dish portions from order items:', dishPortions);
 
     // Get unique dish IDs
     const dishIds = [...new Set(menuItems.map(item => item.dish_id))];
-    console.log('[RECIPES] Found dish IDs:', dishIds);
 
     // Fetch recipes for these dishes
     const { data: recipes, error: recipesError } = await supabase
@@ -802,7 +772,6 @@ export default function ProductionSheetsPage() {
       return;
     }
 
-    console.log('[RECIPES] Fetched recipes:', recipes?.length, recipes);
 
     // Get dish details including portion sizes
     const { data: dishesWithPortionSizes } = await supabase
@@ -819,10 +788,6 @@ export default function ProductionSheetsPage() {
       const dishInfo = dishPortions[recipe.dish_id];
       const dishDetails = dishDetailsMap.get(recipe.dish_id);
 
-      console.log('[RECIPES] Scaling recipe:', recipe.name);
-      console.log('[RECIPES]   dish_id:', recipe.dish_id);
-      console.log('[RECIPES]   dishInfo:', dishInfo);
-      console.log('[RECIPES]   dishDetails:', dishDetails);
 
       let requiredQuantity = recipe.base_quantity; // Default to recipe base quantity
       let requiredUnit = recipe.base_unit || 'kg';
@@ -832,7 +797,6 @@ export default function ProductionSheetsPage() {
 
       // If we have order info, calculate required quantity
       if (dishInfo && dishDetails) {
-        console.log('[RECIPES]   Calculating from orders...');
         totalPortions = dishInfo.totalPortions;
         dishName = dishInfo.dishName;
         dishCategory = dishInfo.category;
@@ -859,10 +823,8 @@ export default function ProductionSheetsPage() {
           }
         }
       } else {
-        console.log('[RECIPES]   No order info found, using recipe defaults');
       }
 
-      console.log('[RECIPES]   Final: totalPortions=' + totalPortions + ', requiredQuantity=' + requiredQuantity + ', requiredUnit=' + requiredUnit);
 
       return {
         ...recipe,
@@ -887,13 +849,11 @@ export default function ProductionSheetsPage() {
       return (categoryOrder[a.dishCategory] || 99) - (categoryOrder[b.dishCategory] || 99);
     });
 
-    console.log('[RECIPES] Scaled recipes:', sortedRecipes);
     setRecipesData(sortedRecipes);
   };
 
   const fetchCateringData = async (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    console.log('[CATERING] Fetching catering orders for date:', dateStr);
 
     const { data: orders, error } = await supabase
       .from('catering_orders')
@@ -915,12 +875,10 @@ export default function ProductionSheetsPage() {
       return;
     }
 
-    console.log('[CATERING] Fetched catering orders:', orders?.length);
     setCateringData(orders || []);
   };
 
   const generateMEPData = () => {
-    console.log('MEP: Generating from production rows:', productionRows.length);
 
     const mepRows: any[] = [];
 
@@ -939,7 +897,6 @@ export default function ProductionSheetsPage() {
 
       // Skip items with no portions
       if (row.totalPortions === 0) {
-        console.log('MEP: Skipping item with 0 portions:', row.dish.name);
         return;
       }
 
@@ -949,7 +906,6 @@ export default function ProductionSheetsPage() {
 
       // Skip if quantity is 0 or invalid
       if (quantity === '0' || quantity === '-' || !quantity) {
-        console.log('MEP: Skipping item with invalid quantity:', row.dish.name, totalWeight);
         return;
       }
 
@@ -1026,7 +982,6 @@ export default function ProductionSheetsPage() {
       });
     }
 
-    console.log('MEP: Generated rows:', mepRows.length);
 
     setMepData(mepRows);
   };
@@ -1136,7 +1091,6 @@ export default function ProductionSheetsPage() {
     );
   }
 
-  console.log('[RENDER] productionRows state:', productionRows.length, 'rows');
 
   // Show date selector if no date is selected
   if (!selectedDate) {
