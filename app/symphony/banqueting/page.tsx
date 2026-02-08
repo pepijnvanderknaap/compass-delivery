@@ -12,7 +12,7 @@ import { getLocationNavItems } from '@/lib/locationConfig';
 export default function SymphonyBanquetingPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'orders' | 'invoicing'>('catalog');
+  const [activeTab, setActiveTab] = useState<'catalog' | 'orders' | 'quotes' | 'invoicing'>('catalog');
   const router = useRouter();
   const supabase = createClient();
 
@@ -74,6 +74,8 @@ export default function SymphonyBanquetingPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <AdminQuickNav />
+
       <UniversalHeader
         title=""
         backPath=""
@@ -81,15 +83,7 @@ export default function SymphonyBanquetingPage() {
         locationName="Symphony Offices"
         navItems={navItems}
         actions={
-          <>
-            <span className="text-apple-subheadline text-[#6E6E73]">{profile.full_name}</span>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 text-apple-subheadline font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-lg transition-colors"
-            >
-              Sign Out
-            </button>
-          </>
+          <span className="text-apple-subheadline text-[#6E6E73]">{profile.full_name}</span>
         }
       />
 
@@ -104,31 +98,41 @@ export default function SymphonyBanquetingPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-6 mb-8 border-b border-[#E8E8ED]">
+        <div className="flex items-center gap-6 mb-8">
           <button
             onClick={() => setActiveTab('catalog')}
-            className={`pb-3 text-[15px] font-semibold transition-all border-b-2 ${
+            className={`pb-3 text-[15px] font-semibold transition-all ${
               activeTab === 'catalog'
-                ? 'text-[#0071E3] border-[#0071E3]'
-                : 'text-[#86868B] hover:text-[#1D1D1F] border-transparent'
+                ? 'text-[#0071E3]'
+                : 'text-[#86868B] hover:text-[#1D1D1F]'
             }`}
           >
             Menu Catalog
           </button>
           <button
             onClick={() => setActiveTab('orders')}
-            className={`pb-3 text-[15px] font-semibold transition-all border-b-2 ${
+            className={`pb-3 text-[15px] font-semibold transition-all ${
               activeTab === 'orders'
-                ? 'text-[#0071E3] border-[#0071E3]'
-                : 'text-[#86868B] hover:text-[#1D1D1F] border-transparent'
+                ? 'text-[#0071E3]'
+                : 'text-[#86868B] hover:text-[#1D1D1F]'
             }`}
           >
             Orders
           </button>
           <button
+            onClick={() => setActiveTab('quotes')}
+            className={`pb-3 text-[15px] font-semibold transition-all ${
+              activeTab === 'quotes'
+                ? 'text-[#0071E3]'
+                : 'text-[#86868B] hover:text-[#1D1D1F]'
+            }`}
+          >
+            Quotes
+          </button>
+          <button
             onClick={() => setActiveTab('invoicing')}
             disabled
-            className="pb-3 text-[15px] font-semibold text-[#86868B] opacity-50 cursor-not-allowed border-b-2 border-transparent"
+            className="pb-3 text-[15px] font-semibold text-[#86868B] opacity-50 cursor-not-allowed"
           >
             Overview & Invoicing
             <span className="ml-2 text-[11px] font-normal">(Coming Soon)</span>
@@ -152,6 +156,15 @@ export default function SymphonyBanquetingPage() {
               src="/symphony/banqueting/orders"
               className="w-full h-[calc(100vh-300px)] border border-[#E8E8ED] rounded-lg"
               title="Banqueting Orders"
+            />
+          </div>
+
+          {/* Quotes Tab */}
+          <div className={activeTab !== 'quotes' ? 'hidden' : ''}>
+            <iframe
+              src="/symphony/banqueting/quotes"
+              className="w-full h-[calc(100vh-300px)] border border-[#E8E8ED] rounded-lg"
+              title="Banqueting Quotes"
             />
           </div>
 

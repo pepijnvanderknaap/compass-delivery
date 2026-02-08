@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import UniversalHeader from '@/components/UniversalHeader';
-import AdminQuickNav from '@/components/AdminQuickNav';
 
 interface BanquetingItem {
   id: string;
@@ -251,42 +249,33 @@ export default function SymphonyBanquetingCatalogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminQuickNav />
-      <UniversalHeader
-        title="Banqueting Catalog"
-        backPath="/symphony/banqueting"
-        locationLogo="/locations/symphony-offices.png"
-        locationName="Symphony Offices"
-      />
-
-      <main className="max-w-7xl mx-auto px-8 py-24">
-        {/* Category Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-gray-200">
-          {(Object.keys(categoryLabels) as Category[]).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-6 py-3 font-medium transition-colors border-b-2 ${
-                selectedCategory === cat
-                  ? 'border-teal-600 text-teal-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {categoryLabels[cat]}
-            </button>
-          ))}
+    <div className="min-h-screen bg-white">
+      <main className="max-w-7xl mx-auto px-8 py-8">
+        {/* Category Filter */}
+        <div className="mb-8">
+          <label className="block text-[13px] font-medium text-[#86868B] mb-3">Category</label>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value as Category)}
+            className="px-4 py-2.5 border border-[#D2D2D7] rounded-sm text-[15px] text-[#1D1D1F] bg-white focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all"
+          >
+            {(Object.keys(categoryLabels) as Category[]).map((cat) => (
+              <option key={cat} value={cat}>
+                {categoryLabels[cat]}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Add New Button */}
         <div className="mb-6 flex items-center justify-between">
           <button
             onClick={openAddModal}
-            className="px-6 py-3 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors"
+            className="px-6 py-2.5 bg-[#0071E3] text-white text-[15px] font-semibold rounded-sm hover:bg-[#0077ED] transition-colors"
           >
             + Add New Item
           </button>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-[13px] text-[#86868B]">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
             </svg>
@@ -297,38 +286,38 @@ export default function SymphonyBanquetingCatalogPage() {
         {/* Items Table */}
         {loading ? (
           <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
-            <p className="mt-4 text-gray-500">Loading items...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0071E3] mx-auto"></div>
+            <p className="mt-4 text-[15px] text-[#86868B]">Loading items...</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="bg-white rounded-sm border border-[#E8E8ED] shadow-sm overflow-x-auto">
+            <table className="min-w-full divide-y divide-[#E8E8ED]">
+              <thead className="bg-[#FAFAFA]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[13px] font-semibold text-[#86868B] uppercase tracking-wide">
                     Name
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[13px] font-semibold text-[#86868B] uppercase tracking-wide">
                     Description
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[13px] font-semibold text-[#86868B] uppercase tracking-wide">
                     Price
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[13px] font-semibold text-[#86868B] uppercase tracking-wide">
                     Unit
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[13px] font-semibold text-[#86868B] uppercase tracking-wide">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                  <th className="px-6 py-4 text-right text-[13px] font-semibold text-[#86868B] uppercase tracking-wide w-32">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-[#E8E8ED]">
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                    <td colSpan={6} className="px-6 py-12 text-center text-[15px] text-[#86868B]">
                       No items in this category yet
                     </td>
                   </tr>
@@ -340,55 +329,55 @@ export default function SymphonyBanquetingCatalogPage() {
                       onDragStart={() => handleDragStart(item)}
                       onDragOver={handleDragOver}
                       onDrop={() => handleDrop(item)}
-                      className={`cursor-move ${!item.is_active ? 'bg-gray-50 opacity-60' : ''} ${draggedItem?.id === item.id ? 'opacity-50' : ''} hover:bg-gray-100 transition-colors`}
+                      className={`cursor-move ${!item.is_active ? 'bg-[#FAFAFA] opacity-60' : ''} ${draggedItem?.id === item.id ? 'opacity-50' : ''} hover:bg-[#F5F5F7] transition-colors`}
                     >
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 text-[#86868B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                           </svg>
-                          <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                          <span className="text-[15px] font-medium text-[#1D1D1F]">{item.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-600 max-w-xs truncate">
+                      <td className="px-6 py-4">
+                        <div className="text-[15px] text-[#6E6E73] max-w-xs truncate">
                           {item.description || '-'}
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-[15px] text-[#1D1D1F]">
                           {item.requires_quote ? (
-                            <span className="text-amber-600 font-medium">Quote</span>
+                            <span className="text-[#FF9500] font-medium">Quote</span>
                           ) : (
                             `€${item.price.toFixed(2)}`
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">{item.unit}</div>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-[15px] text-[#6E6E73]">{item.unit}</div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => toggleActive(item)}
-                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          className={`px-3 py-1 inline-flex text-[12px] leading-5 font-semibold rounded-full ${
                             item.is_active
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                              ? 'bg-green-50 text-[#34C759] hover:bg-green-100'
+                              : 'bg-[#F5F5F7] text-[#86868B] hover:bg-[#E8E8ED]'
                           }`}
                         >
                           {item.is_active ? 'Active' : 'Inactive'}
                         </button>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-[15px] font-medium">
                         <button
                           onClick={() => openEditModal(item)}
-                          className="text-teal-600 hover:text-teal-900 mr-3"
+                          className="text-[#0071E3] hover:text-[#0077ED] mr-4"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-[#FF3B30] hover:text-[#FF453A]"
                         >
                           Delete
                         </button>
@@ -404,47 +393,47 @@ export default function SymphonyBanquetingCatalogPage() {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#E8E8ED] max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <h2 className="text-[28px] font-semibold text-[#1D1D1F] mb-8">
                 {editingItem ? 'Edit Item' : 'Add New Item'}
               </h2>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[13px] font-medium text-[#86868B] mb-2">
                     Name *
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[13px] font-medium text-[#86868B] mb-2">
                     Description
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[13px] font-medium text-[#86868B] mb-2">
                     Category *
                   </label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as Category })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                   >
                     {(Object.keys(categoryLabels) as Category[]).map((cat) => (
                       <option key={cat} value={cat}>
@@ -456,7 +445,7 @@ export default function SymphonyBanquetingCatalogPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-[13px] font-medium text-[#86868B] mb-2">
                       Price (€) *
                     </label>
                     <input
@@ -464,13 +453,13 @@ export default function SymphonyBanquetingCatalogPage() {
                       step="0.01"
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all disabled:bg-[#F5F5F7] disabled:text-[#86868B]"
                       disabled={formData.requires_quote}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-[13px] font-medium text-[#86868B] mb-2">
                       Unit *
                     </label>
                     <input
@@ -478,20 +467,20 @@ export default function SymphonyBanquetingCatalogPage() {
                       value={formData.unit}
                       onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                       placeholder="e.g., per person, per tray"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[13px] font-medium text-[#86868B] mb-2">
                     Image URL (optional)
                   </label>
                   <input
                     type="text"
                     value={formData.image_url}
                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-[#D2D2D7] rounded-sm text-[15px] focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                   />
                 </div>
 
@@ -501,9 +490,9 @@ export default function SymphonyBanquetingCatalogPage() {
                       type="checkbox"
                       checked={formData.requires_quote}
                       onChange={(e) => setFormData({ ...formData, requires_quote: e.target.checked, price: e.target.checked ? 0 : formData.price })}
-                      className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                      className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                     />
-                    <span className="text-sm font-medium text-gray-700">Requires Quote</span>
+                    <span className="text-[15px] font-medium text-[#1D1D1F]">Requires Quote</span>
                   </label>
 
                   <label className="flex items-center gap-2">
@@ -511,9 +500,9 @@ export default function SymphonyBanquetingCatalogPage() {
                       type="checkbox"
                       checked={formData.is_active}
                       onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                      className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                      className="w-5 h-5 text-[#0071E3] border-[#D2D2D7] rounded focus:ring-[#0071E3]/20"
                     />
-                    <span className="text-sm font-medium text-gray-700">Active</span>
+                    <span className="text-[15px] font-medium text-[#1D1D1F]">Active</span>
                   </label>
                 </div>
               </div>
@@ -521,14 +510,14 @@ export default function SymphonyBanquetingCatalogPage() {
               <div className="flex justify-end gap-3 mt-8">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-sm hover:bg-[#F5F5F7] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={!formData.name || !formData.unit}
-                  className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {editingItem ? 'Update Item' : 'Create Item'}
                 </button>
