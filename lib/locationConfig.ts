@@ -44,13 +44,6 @@ export const LOCATIONS: Record<string, LocationMetadata> = {
     logo: '/locations/snowflake-logo-v2.png',
     abbreviation: 'Snow',
   },
-  'snapchat': {
-    slug: 'snapchat',
-    displayName: 'SnapChat',
-    logo: '/locations/snapchat-logo.jpg',
-    subtitle: 'Building 119',
-    abbreviation: 'Snap119',
-  },
   'snapchat-119': {
     slug: 'snapchat-119',
     displayName: 'SnapChat 119',
@@ -169,7 +162,6 @@ export const LOCATION_PARAM_MAPPING: Record<string, string> = {
   'symphony': 'Symphony',
   'atlassian': 'Atlassian',
   'snowflake': 'Snowflake',
-  'snapchat': 'SnapChat 119',
   'snapchat-119': 'SnapChat 119',
   'snapchat-165': 'SnapChat 165',
   'jaa': 'JAA Training',
