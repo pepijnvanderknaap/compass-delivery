@@ -9,7 +9,7 @@ interface BanquetingItem {
   id: string;
   name: string;
   description: string | null;
-  category: 'breakfast' | 'coffee_tea_snacks' | 'lunch_dinner' | 'borrel';
+  category: 'breakfast' | 'coffee_tea_snacks' | 'lunch_dinner' | 'borrel' | 'custom';
   price: number;
   unit: string;
   requires_quote: boolean;
