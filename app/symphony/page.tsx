@@ -27,11 +27,24 @@ export default function SymphonyPublicPage() {
   useEffect(() => {
     const fetchWeeklyMenu = async () => {
       try {
+        // Look up Symphony location ID from database
+        const { data: location } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('name', 'Symphony')
+          .single();
+
+        if (!location) {
+          console.error('Symphony location not found in database');
+          setLoading(false);
+          return;
+        }
+
         // Fetch sandwich of the day from symphony settings
         const { data: settings } = await supabase
           .from('location_settings')
           .select('sandwich_of_day')
-          .eq('location_id', 'daec46b5-ef88-4b62-aef1-b8d0114800ee') // Symphony location ID
+          .eq('location_id', location.id)
           .single();
 
         // Get current week start (Monday)

@@ -133,6 +133,17 @@ export default function SymphonyCateringPage() {
     setSubmitting(true);
 
     try {
+      // Look up Symphony location ID from database
+      const { data: location, error: locationError } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('name', 'Symphony')
+        .single();
+
+      if (locationError || !location) {
+        throw new Error('Symphony location not found in database');
+      }
+
       // Generate order number
       const orderNumber = `BAN-${Date.now()}`;
 
@@ -144,7 +155,7 @@ export default function SymphonyCateringPage() {
         .from('banqueting_orders')
         .insert({
           order_number: orderNumber,
-          location_id: 'daec46b5-ef88-4b62-aef1-b8d0114800ee', // Symphony location ID
+          location_id: location.id,
           company_name: orderForm.company_name,
           contact_name: orderForm.contact_name,
           contact_email: orderForm.contact_email,
