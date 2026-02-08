@@ -260,6 +260,7 @@ export interface LocationSettings {
   // Dish Settings
   soup_portion_size_ml?: number | null;
   salad_bar_portion_size_g?: number | null;
+  protein_salad_bar_portion_g?: number | null;
 
   // Salad Bar Composition (percentages 0-1, must sum to 1.00)
   salad_leaves_percentage?: number | null;
