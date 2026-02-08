@@ -12,6 +12,7 @@ import { getLocationNavItems } from '@/lib/locationConfig';
 export default function SymphonyBanquetingPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'catalog' | 'orders' | 'invoicing'>('catalog');
   const router = useRouter();
   const supabase = createClient();
 
@@ -71,44 +72,6 @@ export default function SymphonyBanquetingPage() {
   // Generate navigation items for Symphony with Banqueting as active
   const navItems = getLocationNavItems('symphony', 'Banqueting');
 
-  const sections = [
-    {
-      title: 'Menu Catalog',
-      href: '/symphony/banqueting/catalog',
-      description: 'Manage banqueting items, pricing, and categories',
-      icon: (
-        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" fill="currentColor"/>
-          <path d="M14 17H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" fill="currentColor"/>
-        </svg>
-      ),
-      available: true
-    },
-    {
-      title: 'Orders',
-      href: '/symphony/banqueting/orders',
-      description: 'View and manage incoming banqueting orders',
-      icon: (
-        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-      available: true
-    },
-    {
-      title: 'Overview & Invoicing',
-      href: '#',
-      description: 'Coming soon - View statistics and generate invoices',
-      icon: (
-        <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-      available: false
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-white">
       <AdminQuickNav />
@@ -132,8 +95,8 @@ export default function SymphonyBanquetingPage() {
         }
       />
 
-      <main className="max-w-6xl mx-auto px-8 py-24">
-        <div className="mb-8">
+      <main className="max-w-7xl mx-auto px-8 lg:px-12 pt-24 pb-8">
+        <div className="mb-6">
           <h2 className="text-[28px] font-semibold text-[#1D1D1F] mb-2">
             Banqueting Services
           </h2>
@@ -142,37 +105,64 @@ export default function SymphonyBanquetingPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sections.map((section) => (
-            section.available ? (
-              <Link
-                key={section.href}
-                href={section.href}
-                className="group relative overflow-hidden bg-white border border-[#E8E8ED] rounded-xl p-8 hover:border-[#0071E3] hover:shadow-lg transition-all duration-300"
-              >
-                <div className="text-[#0071E3] mb-6 group-hover:scale-110 transition-transform duration-300">
-                  {section.icon}
-                </div>
-                <h3 className="text-[17px] font-semibold text-[#1D1D1F] mb-2">
-                  {section.title}
-                </h3>
-                <p className="text-[15px] text-[#6E6E73]">{section.description}</p>
-              </Link>
-            ) : (
-              <div
-                key={section.title}
-                className="relative overflow-hidden bg-white border border-[#E8E8ED] rounded-xl p-8 opacity-50 cursor-not-allowed"
-              >
-                <div className="text-[#86868B] mb-6">
-                  {section.icon}
-                </div>
-                <h3 className="text-[17px] font-semibold text-[#1D1D1F] mb-2">
-                  {section.title}
-                </h3>
-                <p className="text-[15px] text-[#6E6E73]">{section.description}</p>
-              </div>
-            )
-          ))}
+        {/* Tabs */}
+        <div className="flex items-center gap-6 mb-8 border-b border-[#E8E8ED]">
+          <button
+            onClick={() => setActiveTab('catalog')}
+            className={`pb-3 text-[15px] font-semibold transition-all border-b-2 ${
+              activeTab === 'catalog'
+                ? 'text-[#0071E3] border-[#0071E3]'
+                : 'text-[#86868B] hover:text-[#1D1D1F] border-transparent'
+            }`}
+          >
+            Menu Catalog
+          </button>
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`pb-3 text-[15px] font-semibold transition-all border-b-2 ${
+              activeTab === 'orders'
+                ? 'text-[#0071E3] border-[#0071E3]'
+                : 'text-[#86868B] hover:text-[#1D1D1F] border-transparent'
+            }`}
+          >
+            Orders
+          </button>
+          <button
+            onClick={() => setActiveTab('invoicing')}
+            disabled
+            className="pb-3 text-[15px] font-semibold text-[#86868B] opacity-50 cursor-not-allowed border-b-2 border-transparent"
+          >
+            Overview & Invoicing
+            <span className="ml-2 text-[11px] font-normal">(Coming Soon)</span>
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="space-y-6">
+          {/* Catalog Tab */}
+          <div className={activeTab !== 'catalog' ? 'hidden' : ''}>
+            <iframe
+              src="/symphony/banqueting/catalog"
+              className="w-full h-[calc(100vh-300px)] border border-[#E8E8ED] rounded-lg"
+              title="Banqueting Catalog"
+            />
+          </div>
+
+          {/* Orders Tab */}
+          <div className={activeTab !== 'orders' ? 'hidden' : ''}>
+            <iframe
+              src="/symphony/banqueting/orders"
+              className="w-full h-[calc(100vh-300px)] border border-[#E8E8ED] rounded-lg"
+              title="Banqueting Orders"
+            />
+          </div>
+
+          {/* Invoicing Tab */}
+          <div className={activeTab !== 'invoicing' ? 'hidden' : ''}>
+            <div className="bg-[#F5F5F7] border border-[#E8E8ED] rounded-lg p-12 text-center">
+              <p className="text-[17px] text-[#6E6E73]">Overview & Invoicing coming soon</p>
+            </div>
+          </div>
         </div>
       </main>
     </div>
