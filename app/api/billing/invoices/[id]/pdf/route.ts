@@ -4,9 +4,9 @@ import { NextResponse } from 'next/server';
 // GET download invoice PDF
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const invoiceId = params.id;
+  const { id: invoiceId } = await params;
 
   const supabase = await createClient();
 
