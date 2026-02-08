@@ -132,7 +132,7 @@ export function getLocationNavItems(slug: string, activePage: string = 'Menu Ove
     'Catering': `/${slug}/catering`,
     'Settings': `/${slug}/settings`,
     'Cost & Billing': `/${slug}/cost-billing`,
-    'Banqueting': `/admin/banqueting`, // Special case for Symphony
+    'Banqueting': `/symphony/banqueting`, // Symphony-specific
   };
 
   // Use custom nav items if specified, otherwise use standard items
