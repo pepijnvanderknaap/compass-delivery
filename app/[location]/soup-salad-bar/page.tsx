@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import SoupSaladBarPageContent from '@/app/location-management/soup-salad-bar/SoupSaladBarPageContent';
 import { getAllLocationSlugs } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LocationSoupSaladBarPage({
   params,
 }: {

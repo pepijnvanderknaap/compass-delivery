@@ -1,6 +1,8 @@
 import { redirect, notFound } from 'next/navigation';
 import { getAllLocationSlugs } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LocationDashboardPage({
   params,
 }: {

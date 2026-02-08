@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import WeekOverview from '@/components/WeekOverview';
 import { getLocationBySlug, getAllLocationSlugs, getLocationNavItems } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LocationWeekOverviewPage({
   params,
 }: {

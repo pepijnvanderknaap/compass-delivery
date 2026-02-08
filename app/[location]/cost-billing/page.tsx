@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import CostBillingPageContent from '@/app/location-management/cost-billing/CostBillingPageContent';
 import { getAllLocationSlugs } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LocationCostBillingPage({
   params,
 }: {

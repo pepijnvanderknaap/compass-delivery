@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import OrdersPageContent from '@/app/orders/OrdersPageContent';
 import { getAllLocationSlugs } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LocationOrdersPage({
   params,
 }: {

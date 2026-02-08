@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import SettingsPageContent from '@/app/location-management/settings/SettingsPageContent';
 import { getAllLocationSlugs } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LocationSettingsPage({
   params,
 }: {
