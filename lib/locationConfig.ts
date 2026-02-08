@@ -5,12 +5,20 @@
  * Use this as the single source of truth for location data across the application.
  */
 
+export interface NavItem {
+  label: string;
+  href: string;
+  active: boolean;
+}
+
 export interface LocationMetadata {
   slug: string;
   displayName: string;
   logo: string;
   subtitle?: string;
   abbreviation: string;
+  /** Optional custom navigation items. If not provided, uses standard nav items */
+  customNav?: string[];
 }
 
 /**
@@ -19,9 +27,10 @@ export interface LocationMetadata {
 export const LOCATIONS: Record<string, LocationMetadata> = {
   'symphony': {
     slug: 'symphony',
-    displayName: 'Symphony',
-    logo: '/locations/symphony-logo.png',
+    displayName: 'Symphony Offices',
+    logo: '/locations/symphony-offices.png',
     abbreviation: 'Sym',
+    customNav: ['Menu Overview', 'Orders', 'Soup & Salad Bar', 'Banqueting', 'Settings'],
   },
   'atlassian': {
     slug: 'atlassian',
@@ -37,7 +46,7 @@ export const LOCATIONS: Record<string, LocationMetadata> = {
   },
   'snapchat': {
     slug: 'snapchat',
-    displayName: 'SnapChat 119',
+    displayName: 'SnapChat',
     logo: '/locations/snapchat-logo.jpg',
     subtitle: 'Building 119',
     abbreviation: 'Snap119',
@@ -112,6 +121,42 @@ export function isSnapchatLocation(slug: string): boolean {
  */
 export function getAllLocationSlugs(): string[] {
   return Object.keys(LOCATIONS);
+}
+
+/**
+ * Generate navigation items for a location's week overview page
+ * Handles location-specific nav items (like Symphony's Banqueting)
+ */
+export function getLocationNavItems(slug: string, activePage: string = 'Menu Overview'): NavItem[] {
+  const location = LOCATIONS[slug];
+  if (!location) return [];
+
+  // Map of nav item labels to their hrefs
+  const navMap: Record<string, string> = {
+    'Menu Overview': `/${slug}/week-overview`,
+    'Orders': `/${slug}/orders`,
+    'Soup & Salad Bar': `/${slug}/soup-salad-bar`,
+    'Catering': `/${slug}/catering`,
+    'Settings': `/${slug}/settings`,
+    'Cost & Billing': `/${slug}/cost-billing`,
+    'Banqueting': `/admin/banqueting`, // Special case for Symphony
+  };
+
+  // Use custom nav items if specified, otherwise use standard items
+  const navLabels = location.customNav || [
+    'Menu Overview',
+    'Orders',
+    'Soup & Salad Bar',
+    'Catering',
+    'Settings',
+    'Cost & Billing',
+  ];
+
+  return navLabels.map((label) => ({
+    label,
+    href: navMap[label] || `/${slug}/${label.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}`,
+    active: label === activePage,
+  }));
 }
 
 /**
