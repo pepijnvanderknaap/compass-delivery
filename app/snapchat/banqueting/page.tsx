@@ -7,7 +7,7 @@ export default function SnapChatBanquetingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/admin/banqueting?location=snapchat');
+    router.replace('/symphony/banqueting?location=snapchat');
   }, [router]);
 
   return (

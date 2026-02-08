@@ -1368,7 +1368,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
               { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
               { label: 'Orders', href: `/${navLocationSlug}/orders`, active: false },
               { label: 'Soup & Salad Bar', href: `/${navLocationSlug}/soup-salad-bar`, active: false },
-              { label: navLocationSlug === 'symphony' ? 'Banqueting' : 'Catering', href: navLocationSlug === 'symphony' ? `/admin/banqueting` : `/${navLocationSlug}/catering`, active: false },
+              { label: navLocationSlug === 'symphony' ? 'Banqueting' : 'Catering', href: navLocationSlug === 'symphony' ? `/symphony/banqueting` : `/${navLocationSlug}/catering`, active: false },
               { label: 'Settings', href: `/${navLocationSlug}/settings`, active: false },
               { label: 'Cost & Billing', href: `/${navLocationSlug}/cost-billing`, active: true },
             ] : undefined}
@@ -1413,7 +1413,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
               </div>
               <button
                 type="submit"
-                className="w-full px-4 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-lg transition-colors"
+                className="w-full px-4 py-3 text-[15px] font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-sm transition-colors"
               >
                 Unlock
               </button>
@@ -1439,7 +1439,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
             { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
             { label: 'Orders', href: `/${navLocationSlug}/orders`, active: false },
             { label: 'Soup & Salad Bar', href: `/${navLocationSlug}/soup-salad-bar`, active: false },
-            { label: 'Banqueting', href: `/admin/banqueting`, active: false },
+            { label: 'Banqueting', href: `/symphony/banqueting`, active: false },
             { label: 'Settings', href: `/${navLocationSlug}/settings`, active: false },
             { label: 'Cost & Billing', href: `/${navLocationSlug}/cost-billing`, active: true },
           ] : undefined}

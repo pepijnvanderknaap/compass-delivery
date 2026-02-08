@@ -292,7 +292,7 @@ export default function SoupSaladBarPageContent({ forcedLocation }: SoupSaladBar
           { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
           { label: 'Orders', href: `/${navLocationSlug}/orders`, active: false },
           { label: 'Soup & Salad Bar', href: `/${navLocationSlug}/soup-salad-bar`, active: true },
-          { label: navLocationSlug === 'symphony' ? 'Banqueting' : 'Catering', href: navLocationSlug === 'symphony' ? `/admin/banqueting` : `/${navLocationSlug}/catering`, active: false },
+          { label: navLocationSlug === 'symphony' ? 'Banqueting' : 'Catering', href: navLocationSlug === 'symphony' ? `/symphony/banqueting` : `/${navLocationSlug}/catering`, active: false },
           { label: 'Settings', href: `/${navLocationSlug}/settings`, active: false },
           ...(navLocationSlug !== 'symphony' ? [{ label: 'Cost & Billing', href: `/${navLocationSlug}/cost-billing`, active: false }] : []),
         ] : undefined}

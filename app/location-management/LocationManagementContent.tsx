@@ -111,7 +111,7 @@ export default function LocationManagementContent() {
     },
     {
       title: 'Banqueting',
-      href: '/admin/banqueting',
+      href: '/symphony/banqueting',
       description: 'Manage catering catalog, orders and quotes',
       available: true,
       icon: (

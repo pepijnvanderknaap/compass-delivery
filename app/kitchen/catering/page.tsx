@@ -413,7 +413,7 @@ export default function KitchenCateringPage() {
                     <button
                       onClick={handleMarkReady}
                       disabled={orderItems.length === 0}
-                      className="w-full px-6 py-3 text-[15px] font-semibold text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="w-full px-6 py-3 text-[15px] font-semibold text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-sm disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       Mark Ready for Production
                     </button>

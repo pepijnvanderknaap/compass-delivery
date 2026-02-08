@@ -92,7 +92,7 @@ export default function AdminQuickNav() {
     },
     {
       label: 'DK',
-      fullName: 'Dark Kitchen',
+      fullName: 'Kitchen',
       href: '/kitchen/dashboard',
       activeColor: 'bg-[#4A7DB5] text-white',
       inactiveColor: 'bg-[#4A7DB5]/10 text-[#4A7DB5] hover:bg-[#4A7DB5]/20',

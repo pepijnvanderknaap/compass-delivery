@@ -329,7 +329,7 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
           { label: 'Menu Overview', href: `/${locationParam}/week-overview`, active: false },
           { label: 'Orders', href: `/${locationParam}/orders`, active: false },
           { label: 'Soup & Salad Bar', href: `/${locationParam}/soup-salad-bar`, active: false },
-          { label: locationParam === 'symphony' ? 'Banqueting' : 'Catering', href: locationParam === 'symphony' ? `/admin/banqueting` : `/${locationParam}/catering`, active: false },
+          { label: locationParam === 'symphony' ? 'Banqueting' : 'Catering', href: locationParam === 'symphony' ? `/symphony/banqueting` : `/${locationParam}/catering`, active: false },
           { label: 'Settings', href: `/${locationParam}/settings`, active: true },
           ...(locationParam !== 'symphony' ? [{ label: 'Cost & Billing', href: `/${locationParam}/cost-billing`, active: false }] : []),
         ] : undefined}

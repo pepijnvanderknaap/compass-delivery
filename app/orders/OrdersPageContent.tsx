@@ -957,7 +957,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
           { label: 'Menu Overview', href: `/${navLocationSlug}/week-overview`, active: false },
           { label: 'Orders', href: `/${navLocationSlug}/orders`, active: true },
           { label: 'Soup & Salad Bar', href: `/${navLocationSlug}/soup-salad-bar`, active: false },
-          { label: navLocationSlug === 'symphony' ? 'Banqueting' : 'Catering', href: navLocationSlug === 'symphony' ? `/admin/banqueting` : `/${navLocationSlug}/catering`, active: false },
+          { label: navLocationSlug === 'symphony' ? 'Banqueting' : 'Catering', href: navLocationSlug === 'symphony' ? `/symphony/banqueting` : `/${navLocationSlug}/catering`, active: false },
           { label: 'Settings', href: `/${navLocationSlug}/settings`, active: false },
           ...(navLocationSlug !== 'symphony' ? [{ label: 'Cost & Billing', href: `/${navLocationSlug}/cost-billing`, active: false }] : []),
         ] : undefined}
