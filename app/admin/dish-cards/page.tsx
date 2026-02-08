@@ -6,6 +6,8 @@ import type { Dish } from '@/lib/types';
 import UniversalHeader from '@/components/UniversalHeader';
 import DishCardView from './DishCardView';
 
+export const dynamic = 'force-dynamic';
+
 export default function DishCardsPage() {
   const supabase = createClient();
   const [dishes, setDishes] = useState<Dish[]>([]);

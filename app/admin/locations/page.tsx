@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { Location, UserProfile } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminLocationsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);

@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import { format, addDays, subDays } from 'date-fns';
 import type { OrderItem, UserProfile } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 interface DailyOrderItem extends OrderItem {
   dishes: { name: string; description: string | null };
   orders: {

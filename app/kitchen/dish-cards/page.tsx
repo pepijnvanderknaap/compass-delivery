@@ -8,6 +8,8 @@ import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import DishCardView from './DishCardView';
 
+export const dynamic = 'force-dynamic';
+
 export default function DishCardsPage() {
   const supabase = createClient();
   const [dishes, setDishes] = useState<Dish[]>([]);

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format, addDays } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 export default function FixOrdersPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
