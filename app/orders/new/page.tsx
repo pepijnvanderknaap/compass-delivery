@@ -7,6 +7,8 @@ import { startOfWeek, addDays, format, addWeeks } from 'date-fns';
 import Image from 'next/image';
 import type { UserProfile } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 interface WeeklyOrderData {
   soup: number[];
   hot_dish_fish: number[];

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 interface BanquetingItem {
   id: string;
   name: string;

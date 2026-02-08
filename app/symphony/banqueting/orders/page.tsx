@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { format } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 interface BanquetingOrder {
   id: string;
   company_name: string;

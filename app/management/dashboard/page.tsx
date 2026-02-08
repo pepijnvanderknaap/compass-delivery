@@ -8,6 +8,8 @@ import type { UserProfile } from '@/lib/types';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import UniversalHeader from '@/components/UniversalHeader';
 
+export const dynamic = 'force-dynamic';
+
 export default function RegionalManagementPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);

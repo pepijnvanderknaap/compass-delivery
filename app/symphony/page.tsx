@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 
+export const dynamic = 'force-dynamic';
+
 interface DayMenu {
   day: string;
   dayNumber: number;

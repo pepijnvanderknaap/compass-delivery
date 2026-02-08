@@ -9,6 +9,8 @@ import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import { getLocationNavItems } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default function SymphonyBanquetingPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);

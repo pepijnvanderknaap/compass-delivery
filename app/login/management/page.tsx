@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default function RegionalManagementLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

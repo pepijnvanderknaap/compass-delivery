@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { format } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 interface BanquetingQuote {
   id: string;
   po_number: string | null;

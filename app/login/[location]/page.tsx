@@ -8,6 +8,8 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { getLocationBySlug } from '@/lib/locationConfig';
 
+export const dynamic = 'force-dynamic';
+
 export default function LocationLoginPage() {
   const params = useParams();
   const location = params.location as string;

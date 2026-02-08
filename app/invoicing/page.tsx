@@ -7,6 +7,8 @@ import { format, startOfWeek, endOfWeek } from 'date-fns';
 import * as XLSX from 'xlsx';
 import type { Order, OrderItem, UserProfile } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 interface OrderWithItems extends Order {
   locations: { name: string };
   order_items: Array<OrderItem & { dishes: { name: string; base_price: number } }>;
