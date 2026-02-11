@@ -643,11 +643,11 @@ export default function AdminMenusPage() {
       <AdminQuickNav />
 
       <UniversalHeader
-        title={profile?.location?.name === 'Regional Management' ? 'Regional Management' : ''}
-        backPath={profile?.location?.name === 'Regional Management' ? '/home' : ''}
-        locationLogo={profile?.location?.name === 'Regional Management' ? '' : ''}
-        locationName={profile?.location?.name === 'Regional Management' ? '' : 'Kitchen'}
-        navItems={profile?.location?.name === 'Regional Management' ? getManagementNavItems('Menu Overview') : [
+        title={profile?.locations?.name === 'Regional Management' ? 'Regional Management' : ''}
+        backPath={profile?.locations?.name === 'Regional Management' ? '/home' : ''}
+        locationLogo={profile?.locations?.name === 'Regional Management' ? '' : ''}
+        locationName={profile?.locations?.name === 'Regional Management' ? '' : 'Kitchen'}
+        navItems={profile?.locations?.name === 'Regional Management' ? getManagementNavItems('Menu Overview') : [
           { label: 'Week Overview', href: '/kitchen/week-overview', active: false },
           {
             label: 'Dishes',
