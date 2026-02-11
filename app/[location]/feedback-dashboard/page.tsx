@@ -263,6 +263,8 @@ export default function LocationFeedbackDashboard() {
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <UniversalHeader
+        title="Feedback Dashboard"
+        backPath={`/${location}`}
         locationName={locationData.displayName}
         locationLogo={locationData.logo}
         navItems={navItems}
