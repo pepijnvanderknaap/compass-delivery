@@ -119,7 +119,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
 
   // Helper function to check if user can edit past weeks
   const canEditPastWeeks = () => {
-    return profile?.role === 'admin' || profile?.role === 'regional_manager';
+    return profile?.role === 'admin' || profile?.role === 'manager';
   };
 
   // Generate 4 weeks starting from selected Monday
