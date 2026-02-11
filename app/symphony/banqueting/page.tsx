@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export default function SymphonyBanquetingPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'orders' | 'quotes' | 'invoicing'>('catalog');
+  const [activeTab, setActiveTab] = useState<'catalog' | 'orders' | 'quotes' | 'companies' | 'invoicing'>('catalog');
   const router = useRouter();
   const supabase = createClient();
 
@@ -132,6 +132,16 @@ export default function SymphonyBanquetingPage() {
             Quotes
           </button>
           <button
+            onClick={() => setActiveTab('companies')}
+            className={`pb-3 text-[15px] font-semibold transition-all ${
+              activeTab === 'companies'
+                ? 'text-[#0071E3]'
+                : 'text-[#86868B] hover:text-[#1D1D1F]'
+            }`}
+          >
+            Company Settings
+          </button>
+          <button
             onClick={() => setActiveTab('invoicing')}
             disabled
             className="pb-3 text-[15px] font-semibold text-[#86868B] opacity-50 cursor-not-allowed"
@@ -167,6 +177,15 @@ export default function SymphonyBanquetingPage() {
               src="/symphony/banqueting/quotes"
               className="w-full h-[calc(100vh-300px)] border border-[#E8E8ED] rounded-lg"
               title="Banqueting Quotes"
+            />
+          </div>
+
+          {/* Companies Tab */}
+          <div className={activeTab !== 'companies' ? 'hidden' : ''}>
+            <iframe
+              src="/symphony/banqueting/companies"
+              className="w-full h-[calc(100vh-300px)] border border-[#E8E8ED] rounded-lg"
+              title="Company Settings"
             />
           </div>
 

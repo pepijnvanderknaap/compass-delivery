@@ -128,6 +128,8 @@ export default function DishCardsPage() {
           { label: 'Menu Planner', href: '/kitchen/menus', active: false },
           { label: 'Recipes', href: '/kitchen/recipes', active: false },
           { label: 'Production', href: '/kitchen/production', active: false },
+          { label: 'Feedback', href: '/kitchen/feedback-dashboard', active: false },
+          { label: 'Settings', href: '/kitchen/settings', active: false },
         ]}      />
 
       <main className="max-w-7xl mx-auto px-8 lg:px-12 pt-24 pb-10">

@@ -400,6 +400,8 @@ export default function DarkKitchenRecipesPage() {
           { label: 'Menu Planner', href: '/kitchen/menus', active: false },
           { label: 'Recipes', href: '/kitchen/recipes', active: true },
           { label: 'Production', href: '/kitchen/production', active: false },
+          { label: 'Feedback', href: '/kitchen/feedback-dashboard', active: false },
+          { label: 'Settings', href: '/kitchen/settings', active: false },
         ]}      />
 
       <main className="max-w-7xl mx-auto px-8 py-8">

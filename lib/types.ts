@@ -256,6 +256,11 @@ export interface LocationSettings {
   regional_manager_name?: string | null;
   regional_manager_email?: string | null;
   regional_manager_mobile?: string | null;
+  kitchen_manager_2_name?: string | null;
+  kitchen_manager_2_email?: string | null;
+  kitchen_manager_2_mobile?: string | null;
+  kitchen_manager_2_gross_monthly_salary?: number | null;
+  kitchen_manager_2_contractual_hours?: number | null;
 
   // Dish Settings
   soup_portion_size_ml?: number | null;
@@ -383,4 +388,81 @@ export interface Invoice {
 
   // Notes
   notes?: string | null;
+}
+
+// Customer Feedback Types
+export interface CustomerFeedback {
+  id: string;
+  location_id: string;
+  submission_date: string;
+  submission_ip: string;
+
+  soup_rating: number | null;
+  hot_meat_rating: number | null;
+  hot_veg_rating: number | null;
+  salad_bar_rating: number | null;
+  sandwich_rating: number | null;
+
+  price_quality_rating: number;
+  portion_size_rating: number;
+  service_speed_rating: number;
+  cleanliness_rating: number;
+
+  created_at: string;
+}
+
+export interface FeedbackSubmission {
+  location_id: string;
+  soup_rating?: number;
+  hot_meat_rating?: number;
+  hot_veg_rating?: number;
+  salad_bar_rating?: number;
+  sandwich_rating?: number;
+  price_quality_rating: number;
+  portion_size_rating: number;
+  service_speed_rating: number;
+  cleanliness_rating: number;
+}
+
+export interface DishAvailability {
+  soup: boolean;
+  hotMeat: boolean;
+  hotVeg: boolean;
+  saladBar: boolean;
+  sandwich: boolean;
+}
+
+export interface FeedbackStats {
+  overallScore: number;
+  responseCount: number;
+  dishAverages: {
+    soup: number | null;
+    hotMeat: number | null;
+    hotVeg: number | null;
+    saladBar: number | null;
+    sandwich: number | null;
+  };
+  operationalAverages: {
+    priceQuality: number;
+    portionSize: number;
+    serviceSpeed: number;
+    cleanliness: number;
+  };
+}
+
+export interface DangerZone {
+  location: string;
+  category: string;
+  score: number;
+}
+
+export interface KitchenCostPrices {
+  id: string;
+  month_year: string; // Date string in 'YYYY-MM-DD' format (first day of month)
+  soup_cost_price: number | null;
+  salad_bar_cost_price: number | null;
+  hot_dish_meat_cost_price: number | null;
+  hot_dish_veg_cost_price: number | null;
+  created_at: string;
+  updated_at: string;
 }

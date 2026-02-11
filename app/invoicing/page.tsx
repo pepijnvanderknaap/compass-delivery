@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import * as XLSX from 'xlsx';
+import UniversalHeader from '@/components/UniversalHeader';
+import AdminQuickNav from '@/components/AdminQuickNav';
+import { getManagementNavItems } from '@/lib/locationConfig';
 import type { Order, OrderItem, UserProfile } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +22,7 @@ export default function InvoicingPage() {
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [loading, setLoading] = useState(true);
+  const [accountingSoftware, setAccountingSoftware] = useState<string>('');
   const router = useRouter();
   const supabase = createClient();
 
@@ -119,34 +123,32 @@ export default function InvoicingPage() {
 
     ws['!cols'] = Object.keys(maxWidth).map(key => ({ wch: maxWidth[key] + 2 }));
 
-    XLSX.writeFile(wb, `orders-${format(selectedWeek, 'yyyy-MM-dd')}.xlsx`);
+    // Create filename with accounting software suffix if selected
+    const softwareSuffix = accountingSoftware ? `-${accountingSoftware.toLowerCase().replace(/\s+/g, '-')}` : '';
+    XLSX.writeFile(wb, `orders-${format(selectedWeek, 'yyyy-MM-dd')}${softwareSuffix}.xlsx`);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7E22CE]"></div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-bold text-gray-900">Invoicing</h1>
-            <button
-              onClick={() => router.push('/management/dashboard')}
-              className="text-blue-700 hover:text-blue-900"
-            >
-              Back
-            </button>
-          </div>
-        </div>
-      </nav>
+  const navItems = getManagementNavItems('Invoicing');
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  return (
+    <div className="min-h-screen bg-[#FAFAFA]">
+      <UniversalHeader
+        title="Regional Management"
+        backPath=""
+        navItems={navItems}
+      />
+
+      <main className="max-w-7xl mx-auto px-6 py-6">
+        <AdminQuickNav />
+
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -169,14 +171,48 @@ export default function InvoicingPage() {
           </div>
         </div>
 
-        <div className="mb-6">
-          <button
-            onClick={exportToExcel}
-            disabled={orders.length === 0}
-            className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Export to Excel
-          </button>
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Options</h3>
+          <div className="flex items-end gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Accounting Software (Optional)
+              </label>
+              <select
+                value={accountingSoftware}
+                onChange={(e) => setAccountingSoftware(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                <option value="">Select software...</option>
+                <optgroup label="Dutch Accounting Software">
+                  <option value="Exact">Exact</option>
+                  <option value="SnelStart">SnelStart</option>
+                  <option value="AFAS Software">AFAS Software</option>
+                  <option value="Moneybird">Moneybird</option>
+                  <option value="Visma-eAccounting">Visma-eAccounting</option>
+                  <option value="Kleisteen">Kleisteen</option>
+                  <option value="InformerOnline">InformerOnline</option>
+                </optgroup>
+                <optgroup label="International Software">
+                  <option value="Xero">Xero</option>
+                  <option value="QuickBooks">QuickBooks</option>
+                  <option value="Zoho Books">Zoho Books</option>
+                </optgroup>
+              </select>
+            </div>
+            <button
+              onClick={exportToExcel}
+              disabled={orders.length === 0}
+              className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              Export to Excel
+            </button>
+          </div>
+          {accountingSoftware && (
+            <p className="mt-3 text-sm text-gray-600">
+              Export will be formatted for {accountingSoftware}
+            </p>
+          )}
         </div>
 
         {orders.length === 0 ? (

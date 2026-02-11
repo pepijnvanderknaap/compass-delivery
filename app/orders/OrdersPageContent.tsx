@@ -112,9 +112,24 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
   const [viewingMenuWeek, setViewingMenuWeek] = useState<string | null>(null);
   const [weeklyMenus, setWeeklyMenus] = useState<Record<string, WeeklyMenu | null>>({});
   const [loadingMenu, setLoadingMenu] = useState<Record<string, boolean>>({});
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const router = useRouter();
   const supabase = createClient();
   const searchParams = useSearchParams();
+
+  // Helper function to check if user can edit past weeks
+  const canEditPastWeeks = () => {
+    return profile?.role === 'admin' || profile?.role === 'regional_manager';
+  };
+
+  // Generate 4 weeks starting from selected Monday
+  const weeks = Array.from({ length: 4 }, (_, i) => addWeeks(selectedWeekStart, i));
+
+  // Determine which week is current (this week)
+  const now = new Date();
+  const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+  const currentWeekStart = startOfWeek(localDate, { weekStartsOn: 1 });
+  const isCurrentWeek = (weekStart: Date) => format(weekStart, 'yyyy-MM-dd') === format(currentWeekStart, 'yyyy-MM-dd');
 
   // Location branding data
   const locationBranding: Record<string, { logo: string; name: string; subtitle?: string }> = {
@@ -381,6 +396,25 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
     };
   }, [autoSaveTimeout]);
 
+  // Ensure orders exist for the selected 4 weeks when navigation changes
+  useEffect(() => {
+    const ensureOrdersForSelectedWeeks = async () => {
+      if (!selectedLocationId) return;
+
+      // Create week dates for the 4 weeks we're viewing
+      const weekDates = weeks.map(week => format(week, 'yyyy-MM-dd'));
+
+      const result = await ensureFourWeeksAhead(selectedLocationId, weekDates);
+
+      if (result.success && result.created && result.created > 0) {
+        // Refresh orders to show the newly created weeks
+        await fetchOrders(selectedLocationId);
+      }
+    };
+
+    ensureOrdersForSelectedWeeks();
+  }, [selectedWeekStart, selectedLocationId]);
+
   // Handle Snapchat building changes
   useEffect(() => {
     const handleBuildingChange = async () => {
@@ -458,8 +492,16 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
       }, 100);
     }
 
-    // Then, enter edit mode
-    handleEdit(orderId, order);
+    // Check if this is a past week
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const orderWeekStart = startOfWeek(new Date(weekStartDate), { weekStartsOn: 1 });
+    const isPastWeek = orderWeekStart < currentWeekStart;
+
+    // Only enter edit mode if user has permission to edit past weeks, or it's not a past week
+    if (!isPastWeek || canEditPastWeeks()) {
+      handleEdit(orderId, order);
+    }
+    // If it's a past week and user can't edit, just view the menu (already opened above)
   };
 
   const handleCopyFromLastWeek = async (orderId: string, order: OrderWithItems) => {
@@ -1006,21 +1048,84 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
           </div>
         ) : (
           <div className="space-y-8">
+            {/* Week Navigation */}
+            {!viewingMenuWeek && (
+              <div className="mb-8">
+                <div className="bg-white border border-[#E8E8ED] rounded-sm shadow-sm p-4">
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => setSelectedWeekStart(addWeeks(selectedWeekStart, -1))}
+                      className="px-4 py-2 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-sm hover:bg-[#F5F5F7] transition-colors"
+                      title="Previous week"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    <input
+                      id="week-picker"
+                      type="date"
+                      value={format(selectedWeekStart, 'yyyy-MM-dd')}
+                      onChange={(e) => {
+                        const selected = new Date(e.target.value);
+                        const monday = startOfWeek(selected, { weekStartsOn: 1 });
+                        setSelectedWeekStart(monday);
+                      }}
+                      className="px-4 py-2 border border-[#D2D2D7] rounded-sm text-[15px] text-[#1D1D1F] focus:border-[#0078D4] focus:ring-2 focus:ring-[#0078D4]/20 outline-none transition-all"
+                    />
+
+                    <button
+                      onClick={() => setSelectedWeekStart(addWeeks(selectedWeekStart, 1))}
+                      className="px-4 py-2 text-[15px] font-medium text-[#1D1D1F] border border-[#D2D2D7] rounded-sm hover:bg-[#F5F5F7] transition-colors"
+                      title="Next week"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Back to Current Week Button */}
+                  {format(selectedWeekStart, 'yyyy-MM-dd') !== format(currentWeekStart, 'yyyy-MM-dd') && (
+                    <div className="mt-3 pt-3 border-t border-[#E8E8ED]">
+                      <button
+                        onClick={() => setSelectedWeekStart(currentWeekStart)}
+                        className="w-full px-4 py-2 text-[13px] font-medium text-[#0078D4] hover:bg-[#F5F5F7] rounded-sm transition-colors"
+                      >
+                        Back to Current Week
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Read-only warning for past weeks */}
+                  {selectedWeekStart < currentWeekStart && !canEditPastWeeks() && (
+                    <div className="mt-3 pt-3 border-t border-[#E8E8ED]">
+                      <div className="bg-red-50 border border-red-200 rounded-sm p-3 text-center">
+                        <div className="text-sm text-red-800 font-medium">
+                          🔒 Viewing past weeks in <strong>read-only mode</strong>
+                        </div>
+                        <div className="text-xs text-red-600 mt-1">
+                          Past weeks cannot be edited by Location Managers (invoices may have been sent)
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {orders
               .filter(order => {
                 if (viewingMenuWeek) {
                   return order.week_start_date === viewingMenuWeek;
                 }
 
-                // Show only current week + 3 future weeks (4 weeks total)
-                const now = new Date();
-                const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
-                const currentWeek = startOfWeek(localDate, { weekStartsOn: 1 });
-                const threeWeeksAhead = addWeeks(currentWeek, 3);
-                const orderWeek = new Date(order.week_start_date);
-
-                return orderWeek >= currentWeek && orderWeek <= threeWeeksAhead;
+                // Show only the 4 weeks in the current view
+                const orderWeek = order.week_start_date;
+                return weeks.some(week => format(week, 'yyyy-MM-dd') === orderWeek);
               })
+              .sort((a, b) => a.week_start_date.localeCompare(b.week_start_date))
               .map((order) => {
               const isEditing = editingOrder === order.id;
               const groupedItems: Record<string, Record<string, number>> = {};
@@ -1063,9 +1168,13 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
               const currentPortions = isEditing ? editedPortions[order.id] : groupedItems;
               const hasOffMenuItems = Object.keys(offMenuItems).length > 0;
 
-              const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-              const orderWeekStart = startOfWeek(new Date(order.week_start_date), { weekStartsOn: 1 });
-              const isCurrentWeek = format(orderWeekStart, 'yyyy-MM-dd') === format(currentWeekStart, 'yyyy-MM-dd');
+              const orderWeekStart = new Date(order.week_start_date);
+              const isCurrent = isCurrentWeek(orderWeekStart);
+
+              // Check if this week is in the past
+              const isPastWeek = orderWeekStart < currentWeekStart;
+              // Check if user can edit this past week
+              const canEditThisWeek = !isPastWeek || canEditPastWeeks();
 
               return (
                 <div key={order.id}>
@@ -1096,6 +1205,11 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                         </>
                       ) : (
                         <>
+                          {isPastWeek && !canEditPastWeeks() && (
+                            <span className="px-3 py-1.5 text-apple-footnote font-medium text-red-600 bg-red-50 border border-red-200 rounded-sm">
+                              🔒 Read-only (past week)
+                            </span>
+                          )}
                           {(() => {
                             // Check if there's a previous week to copy from
                             const currentWeekDate = new Date(order.week_start_date);
@@ -1103,7 +1217,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                             const previousWeekOrder = orders.find(o => o.week_start_date === previousWeekDate);
                             const hasPreviousWeek = previousWeekOrder && previousWeekOrder.order_items.length > 0;
 
-                            return hasPreviousWeek && (
+                            return hasPreviousWeek && canEditThisWeek && (
                               <button
                                 onClick={() => handleCopyFromLastWeek(order.id, order)}
                                 title="Copy last week's orders"
@@ -1113,7 +1227,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                               </button>
                             );
                           })()}
-                          {order.order_items.length > 0 && (
+                          {order.order_items.length > 0 && canEditThisWeek && (
                             <button
                               onClick={() => handleClearWeek(order.id, formatWeekRange(order.week_start_date))}
                               className="px-3 py-1.5 text-apple-subheadline font-medium text-red-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
@@ -1125,7 +1239,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                             onClick={() => handleViewAndEdit(order.id, order, order.week_start_date)}
                             className="px-3 py-1.5 text-apple-subheadline font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-sm transition-colors"
                           >
-                            View & Edit
+                            {canEditThisWeek ? 'View & Edit' : 'View Only'}
                           </button>
                         </>
                       )}
@@ -1142,7 +1256,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                           <p className="text-[15px] text-[#86868B]">No menu found for this week.</p>
                         </div>
                       ) : (
-                        <div className={`bg-white border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm ${!isCurrentWeek ? 'opacity-60' : ''}`}>
+                        <div className={`bg-white border border-[#D2D2D7] rounded-sm overflow-hidden shadow-sm ${!isCurrent ? 'opacity-60' : ''}`}>
                           <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                             <colgroup>
                               <col className="w-48" />
@@ -1332,7 +1446,7 @@ export default function OrdersPageContent({ forcedLocation }: OrdersPageContentP
                     </div>
                   )}
 
-                  <div className={`border border-[#D2D2D7] rounded-sm overflow-hidden ${isCurrentWeek ? 'shadow-md' : 'shadow-sm opacity-60'}`}>
+                  <div className={`border border-[#D2D2D7] rounded-sm overflow-hidden ${isCurrent ? 'shadow-md' : 'shadow-sm opacity-60'}`}>
                     <table className="w-full border-separate" style={{borderSpacing: '0 0'}}>
                       <colgroup>
                         <col className="w-48" />

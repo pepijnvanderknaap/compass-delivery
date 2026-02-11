@@ -1,59 +1,66 @@
+#!/usr/bin/env node
+
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
+
+// Load environment variables
 require('dotenv').config({ path: '.env.local' });
 
-async function runMigration() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('Missing Supabase credentials in .env.local');
-    process.exit(1);
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase credentials');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
   }
+});
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-  // Read the migration file
-  const migrationPath = path.join(__dirname, '../supabase/migrations/20260124_add_dish_card_fields.sql');
-  const sql = fs.readFileSync(migrationPath, 'utf8');
-
-  console.log('Running migration...');
-  console.log(sql);
-
+async function runMigration() {
   try {
-    const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
+    const migrationPath = path.join(__dirname, '../supabase/migrations/20260209_add_kitchen_manager_2_fields.sql');
+    const sql = fs.readFileSync(migrationPath, 'utf8');
 
-    if (error) {
-      // Try direct execution via REST API
-      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`
-        },
-        body: JSON.stringify({ query: sql })
-      });
+    console.log('Running migration: 20260209_add_kitchen_manager_2_fields.sql');
+    console.log('Executing SQL...');
 
-      if (!response.ok) {
-        throw new Error(`Migration failed: ${error?.message || 'Unknown error'}`);
-      }
+    // Execute the SQL directly
+    const { data, error } = await supabase
+      .from('location_settings')
+      .select('id')
+      .limit(1);
+
+    // Actually, we need to use a different approach - let's use the SQL editor API
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      body: JSON.stringify({ query: sql })
+    });
+
+    if (!response.ok) {
+      console.error('Migration failed:', await response.text());
+      console.log('\nPlease run this SQL manually in the Supabase SQL Editor:');
+      console.log(sql);
+      process.exit(1);
     }
 
-    console.log('✅ Migration completed successfully!');
-    console.log('\nThe following columns have been added to the dishes table:');
-    console.log('  - portion_display');
-    console.log('  - calories_display');
-    console.log('  - origin_display');
-    console.log('  - cooking_method');
-    console.log('  - prep_time');
-    console.log('  - chef_note');
+    console.log('Migration completed successfully!');
   } catch (err) {
-    console.error('❌ Migration failed:', err.message);
-    console.log('\nPlease run this SQL manually in your Supabase dashboard:');
-    console.log('\n' + sql);
-    process.exit(1);
+    console.error('Error running migration:', err.message);
+    console.log('\nPlease run this SQL manually in the Supabase SQL Editor:');
+    const migrationPath = path.join(__dirname, '../supabase/migrations/20260209_add_kitchen_manager_2_fields.sql');
+    const sql = fs.readFileSync(migrationPath, 'utf8');
+    console.log(sql);
   }
 }
 

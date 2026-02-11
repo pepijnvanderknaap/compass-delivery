@@ -485,53 +485,8 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
             </h2>
 
             <div className="space-y-2.5">
-              {/* Location Manager */}
-              <div>
-                <h3 className="text-[13px] font-medium text-[#1D1D1F] mb-2">Location Manager</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={settings?.site_manager_name || ''}
-                      onChange={(e) => handleSettingsUpdate('site_manager_name', e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
-                      placeholder="Manager name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      value={settings?.site_manager_mobile || ''}
-                      onChange={(e) => handleSettingsUpdate('site_manager_mobile', e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
-                      placeholder="+1 (555) 000-0000"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={settings?.site_manager_email || ''}
-                      onChange={(e) => handleSettingsUpdate('site_manager_email', e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
-                      placeholder="email@example.com"
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Regional Manager */}
-              <div className="pt-2 border-t border-[#E8E8ED]">
+              <div>
                 <h3 className="text-[13px] font-medium text-[#1D1D1F] mb-2">Regional Manager</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
@@ -568,6 +523,51 @@ export default function SettingsPageContent({ forcedLocation }: SettingsPageCont
                       type="email"
                       value={settings?.regional_manager_email || ''}
                       onChange={(e) => handleSettingsUpdate('regional_manager_email', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Manager */}
+              <div className="pt-2 border-t border-[#E8E8ED]">
+                <h3 className="text-[13px] font-medium text-[#1D1D1F] mb-2">Location Manager</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={settings?.site_manager_name || ''}
+                      onChange={(e) => handleSettingsUpdate('site_manager_name', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="Manager name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={settings?.site_manager_mobile || ''}
+                      onChange={(e) => handleSettingsUpdate('site_manager_mobile', e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
+                      placeholder="+1 (555) 000-0000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868B] mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={settings?.site_manager_email || ''}
+                      onChange={(e) => handleSettingsUpdate('site_manager_email', e.target.value)}
                       className="w-full px-2.5 py-1.5 text-[14px] text-[#1D1D1F] bg-white border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]/20"
                       placeholder="email@example.com"
                     />

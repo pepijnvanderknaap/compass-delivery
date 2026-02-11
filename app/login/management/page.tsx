@@ -42,7 +42,7 @@ export default function RegionalManagementLoginPage() {
 
         // Verify user has access to Regional Management (admin only)
         if (profile && profile.role === 'admin') {
-          router.push('/management/dashboard');
+          router.push('/management/week-overview');
           router.refresh();
         } else {
           setError('You do not have access to the Regional Management area');

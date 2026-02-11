@@ -411,6 +411,8 @@ export default function AdminDishesPage() {
           { label: 'Menu Planner', href: '/kitchen/menus', active: false },
           { label: 'Recipes', href: '/kitchen/recipes', active: false },
           { label: 'Production', href: '/kitchen/production', active: false },
+          { label: 'Feedback', href: '/kitchen/feedback-dashboard', active: false },
+          { label: 'Settings', href: '/kitchen/settings', active: false },
         ]}
       />
 

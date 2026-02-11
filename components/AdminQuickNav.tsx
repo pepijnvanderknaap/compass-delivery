@@ -100,7 +100,7 @@ export default function AdminQuickNav() {
     {
       label: 'RM',
       fullName: 'Regional Management',
-      href: '/management/dashboard',
+      href: '/management/week-overview',
       activeColor: 'bg-[#7E22CE] text-white',
       inactiveColor: 'bg-[#7E22CE]/10 text-[#7E22CE] hover:bg-[#7E22CE]/20',
     },

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { Dish, UserProfile } from '@/lib/types';
-import { LOCATION_PARAM_MAPPING } from '@/lib/locationConfig';
+import { LOCATION_PARAM_MAPPING, getManagementNavItems } from '@/lib/locationConfig';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
 import { format, startOfWeek, addDays, addWeeks, subWeeks } from 'date-fns';
@@ -59,6 +59,7 @@ interface WeeklyMenu {
 export default function LocationManagementWeekOverviewContent() {
   const supabase = createClient();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const locationParam = searchParams.get('location');
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
     startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -66,6 +67,9 @@ export default function LocationManagementWeekOverviewContent() {
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Check if being used from Regional Management
+  const isManagementRoute = pathname?.startsWith('/management');
 
   // Map URL location params to database location names
 
@@ -292,11 +296,12 @@ export default function LocationManagementWeekOverviewContent() {
       {/* Header - Hidden when printing */}
       <div className="no-print">
         <UniversalHeader
-          title="Week Overview"
-          backPath="/location-management"
-          locationLogo={locationBranding?.logo}
-          locationName={locationBranding?.name}
-          locationSubtitle={locationBranding?.subtitle}
+          title={isManagementRoute ? 'Regional Management' : 'Week Overview'}
+          backPath={isManagementRoute ? '' : '/location-management'}
+          locationLogo={isManagementRoute ? '' : locationBranding?.logo}
+          locationName={isManagementRoute ? '' : locationBranding?.name}
+          locationSubtitle={isManagementRoute ? '' : locationBranding?.subtitle}
+          navItems={isManagementRoute ? getManagementNavItems('Menu Overview') : undefined}
         />
       </div>
 
@@ -572,11 +577,6 @@ export default function LocationManagementWeekOverviewContent() {
           </div>
         )}
 
-        {/* Footer */}
-        <div className="mt-8 text-center text-[13px] text-[#86868B] print:mt-12">
-          <p>For allergen information and dietary requirements, please consult with our kitchen staff.</p>
-          <p className="mt-1">Menu subject to availability and may change without notice.</p>
-        </div>
       </main>
 
       {/* Print-specific styles */}

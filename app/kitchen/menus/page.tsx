@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { format, startOfWeek, addDays, addWeeks, getWeek } from 'date-fns';
 import type { Dish, UserProfile, DishWithComponents } from '@/lib/types';
@@ -10,6 +10,7 @@ import DishDetailModal from '../../admin/menu-planner/components/DishDetailModal
 import MainDishForm from '../dishes/MainDishForm';
 import UniversalHeader from '@/components/UniversalHeader';
 import AdminQuickNav from '@/components/AdminQuickNav';
+import { getManagementNavItems } from '@/lib/locationConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,7 +68,7 @@ export default function AdminMenusPage() {
 
         const { data: profileData } = await supabase
           .from('user_profiles')
-          .select('*')
+          .select('*, locations(name, id)')
           .eq('id', user.id)
           .single();
 
@@ -642,11 +643,11 @@ export default function AdminMenusPage() {
       <AdminQuickNav />
 
       <UniversalHeader
-        title=""
-        backPath=""
-        locationLogo=""
-        locationName="Kitchen"
-        navItems={[
+        title={profile?.location?.name === 'Regional Management' ? 'Regional Management' : ''}
+        backPath={profile?.location?.name === 'Regional Management' ? '/home' : ''}
+        locationLogo={profile?.location?.name === 'Regional Management' ? '' : ''}
+        locationName={profile?.location?.name === 'Regional Management' ? '' : 'Kitchen'}
+        navItems={profile?.location?.name === 'Regional Management' ? getManagementNavItems('Menu Overview') : [
           { label: 'Week Overview', href: '/kitchen/week-overview', active: false },
           {
             label: 'Dishes',
@@ -661,6 +662,8 @@ export default function AdminMenusPage() {
           { label: 'Menu Planner', href: '/kitchen/menus', active: true },
           { label: 'Recipes', href: '/kitchen/recipes', active: false },
           { label: 'Production', href: '/kitchen/production', active: false },
+          { label: 'Feedback', href: '/kitchen/feedback-dashboard', active: false },
+          { label: 'Settings', href: '/kitchen/settings', active: false },
         ]}      />
 
       <main className="max-w-7xl mx-auto py-24">

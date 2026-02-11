@@ -47,133 +47,25 @@ export default function SymphonyPublicPage() {
       setCompany(JSON.parse(companyData));
     }
 
-    const fetchWeeklyMenu = async () => {
-      try {
-        // Look up Symphony location ID from database
-        const { data: location } = await supabase
-          .from('locations')
-          .select('id')
-          .eq('name', 'Symphony')
-          .single();
+    // Create placeholder menu
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const days: DayMenu[] = [];
 
-        if (!location) {
-          console.error('Symphony location not found in database');
-          setLoading(false);
-          return;
-        }
+    for (let dayNum = 1; dayNum <= 5; dayNum++) {
+      days.push({
+        day: dayNames[dayNum - 1],
+        dayNumber: dayNum,
+        soup: 'To be announced',
+        hot_dishes: []
+      });
+    }
 
-        // Fetch sandwich of the day from symphony settings
-        const { data: settings } = await supabase
-          .from('location_settings')
-          .select('sandwich_of_day')
-          .eq('location_id', location.id)
-          .single();
-
-        // Get current week start (Monday)
-        const today = new Date();
-        const weekStart = new Date(today);
-        const diff = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1);
-        weekStart.setDate(diff);
-        const weekStartStr = weekStart.toISOString().split('T')[0];
-
-        // Fetch weekly menu from kitchen
-        const { data: weeklyMenuData } = await supabase
-          .from('weekly_menus')
-          .select('*')
-          .eq('week_start_date', weekStartStr)
-          .maybeSingle();
-
-        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        const days: DayMenu[] = [];
-
-        if (weeklyMenuData) {
-          // Fetch all menu items for the week
-          const { data: menuItems } = await supabase
-            .from('menu_items')
-            .select('*')
-            .eq('menu_id', weeklyMenuData.id)
-            .in('day_of_week', [1, 2, 3, 4, 5]);
-
-          if (menuItems && menuItems.length > 0) {
-            // Fetch all dish details
-            const dishIds = menuItems.map(item => item.dish_id);
-            const { data: dishes } = await supabase
-              .from('dishes')
-              .select('*')
-              .in('id', dishIds);
-
-            // Organize by day
-            for (let dayNum = 1; dayNum <= 5; dayNum++) {
-              const dayMenuItems = menuItems.filter(item => item.day_of_week === dayNum);
-
-              let soupOfDay = 'To be announced';
-              const hotDishes: Array<{ name: string; description?: string }> = [];
-
-              if (dayMenuItems.length > 0 && dishes) {
-                // Find soup
-                const soupItem = dayMenuItems.find(item => item.meal_type === 'soup');
-                if (soupItem) {
-                  const soupDish = dishes.find(d => d.id === soupItem.dish_id);
-                  if (soupDish) {
-                    soupOfDay = soupDish.name;
-                  }
-                }
-
-                // Get hot dishes (meat and veg)
-                const hotItems = dayMenuItems.filter(item =>
-                  item.meal_type === 'hot_meat' || item.meal_type === 'hot_veg'
-                );
-
-                hotItems.forEach(item => {
-                  const dish = dishes.find(d => d.id === item.dish_id);
-                  if (dish) {
-                    hotDishes.push({
-                      name: dish.name,
-                      description: dish.description || ''
-                    });
-                  }
-                });
-              }
-
-              days.push({
-                day: dayNames[dayNum - 1],
-                dayNumber: dayNum,
-                soup: soupOfDay,
-                hot_dishes: hotDishes
-              });
-            }
-          }
-        }
-
-        // If no data, create empty days
-        if (days.length === 0) {
-          for (let dayNum = 1; dayNum <= 5; dayNum++) {
-            days.push({
-              day: dayNames[dayNum - 1],
-              dayNumber: dayNum,
-              soup: 'To be announced',
-              hot_dishes: []
-            });
-          }
-        }
-
-        setWeeklyMenu({
-          sandwich: settings?.sandwich_of_day || 'Sandwich of the day (to be announced)',
-          days
-        });
-      } catch (err) {
-        console.error('Error fetching menu:', err);
-        setWeeklyMenu({
-          sandwich: 'Menu loading...',
-          days: []
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWeeklyMenu();
-  }, [supabase]);
+    setWeeklyMenu({
+      sandwich: 'Sandwich of the day (to be announced)',
+      days
+    });
+    setLoading(false);
+  }, []);
 
   const getDayName = () => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -206,7 +98,7 @@ export default function SymphonyPublicPage() {
 
   const handleOrderBanqueting = () => {
     if (company) {
-      router.push('/symphony/banqueting-orders');
+      router.push('/symphony/banqueting-orders-new');
     } else {
       setShowLoginModal(true);
     }
@@ -235,7 +127,7 @@ export default function SymphonyPublicPage() {
       sessionStorage.setItem('symphony_company', JSON.stringify(data));
       setCompany(data);
       setShowLoginModal(false);
-      router.push('/symphony/banqueting-orders');
+      router.push('/symphony/banqueting-orders-new');
     } catch (err) {
       console.error('Login error:', err);
       setLoginError('An error occurred. Please try again.');

@@ -608,12 +608,20 @@ export default function BanquetingWebshopPage() {
               height={60}
               className="object-contain"
             />
-            <button
-              onClick={() => setShowCart(!showCart)}
-              className="relative px-6 py-2.5 bg-[#0071E3] text-white text-[15px] font-semibold rounded-sm hover:bg-[#0077ED] transition-colors"
-            >
-              Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push('/symphony/company-settings')}
+                className="px-6 py-2.5 border border-[#D2D2D7] text-[#1D1D1F] text-[15px] font-semibold rounded-sm hover:bg-[#F5F5F7] transition-colors"
+              >
+                Settings
+              </button>
+              <button
+                onClick={() => setShowCart(!showCart)}
+                className="relative px-6 py-2.5 bg-[#0071E3] text-white text-[15px] font-semibold rounded-sm hover:bg-[#0077ED] transition-colors"
+              >
+                Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+              </button>
+            </div>
           </div>
         </div>
       </nav>

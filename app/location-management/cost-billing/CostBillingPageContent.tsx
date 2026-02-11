@@ -119,6 +119,10 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
   const [liveInvoiceData, setLiveInvoiceData] = useState({
     breakfast_count: 0,
     breakfast_price: 4.93,
+    sandwich_protein_count: 0,
+    sandwich_protein_price: 3.10,
+    sandwich_vegan_count: 0,
+    sandwich_vegan_price: 3.10,
     pantry_cost: 0,
     fruit_count: 0,
     fruit_price: 0,
@@ -989,6 +993,8 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
       // Calculate totals
       const foodSubtotal =
         (liveInvoiceData.breakfast_count * liveInvoiceData.breakfast_price) +
+        (liveInvoiceData.sandwich_protein_count * liveInvoiceData.sandwich_protein_price) +
+        (liveInvoiceData.sandwich_vegan_count * liveInvoiceData.sandwich_vegan_price) +
         currentMonthTotals.soup.revenue +
         currentMonthTotals.salad_bar.revenue +
         currentMonthTotals.hot_dish_meat.revenue +
@@ -1044,6 +1050,10 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
           invoice_number: invoiceNumber,
           breakfast_count: liveInvoiceData.breakfast_count,
           breakfast_price: liveInvoiceData.breakfast_price,
+          sandwich_protein_count: liveInvoiceData.sandwich_protein_count,
+          sandwich_protein_price: liveInvoiceData.sandwich_protein_price,
+          sandwich_vegan_count: liveInvoiceData.sandwich_vegan_count,
+          sandwich_vegan_price: liveInvoiceData.sandwich_vegan_price,
           pantry_cost: liveInvoiceData.pantry_cost,
           fruit_count: liveInvoiceData.fruit_count,
           fruit_price: liveInvoiceData.fruit_price,
@@ -1163,6 +1173,10 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
         setLiveInvoiceData({
           breakfast_count: invoice.breakfast_count || 0,
           breakfast_price: invoice.breakfast_price || 4.93,
+          sandwich_protein_count: invoice.sandwich_protein_count || 0,
+          sandwich_protein_price: invoice.sandwich_protein_price || 3.10,
+          sandwich_vegan_count: invoice.sandwich_vegan_count || 0,
+          sandwich_vegan_price: invoice.sandwich_vegan_price || 3.10,
           pantry_cost: invoice.pantry_cost || 0,
           fruit_count: invoice.fruit_count || 0,
           fruit_price: invoice.fruit_price || 0,
@@ -1587,6 +1601,44 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                       </td>
                     </tr>
 
+                    {/* 1b. Sandwiches Protein - EDITABLE */}
+                    <tr className="hover:bg-[#F5F5F7] transition-colors">
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          value={liveInvoiceData.sandwich_protein_count}
+                          onChange={(e) => setLiveInvoiceData({ ...liveInvoiceData, sandwich_protein_count: parseInt(e.target.value) || 0 })}
+                          className="w-16 px-2 py-1 text-[13px] border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-[13px] text-[#1D1D1F]">Sandwiches Protein</td>
+                      <td className="px-4 py-3 text-[13px] text-[#1D1D1F] text-right">
+                        €{liveInvoiceData.sandwich_protein_price.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-[13px] font-semibold text-[#1D1D1F] text-right">
+                        €{(liveInvoiceData.sandwich_protein_count * liveInvoiceData.sandwich_protein_price).toFixed(2)}
+                      </td>
+                    </tr>
+
+                    {/* 1c. Sandwiches Veg(an) - EDITABLE */}
+                    <tr className="hover:bg-[#F5F5F7] transition-colors">
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          value={liveInvoiceData.sandwich_vegan_count}
+                          onChange={(e) => setLiveInvoiceData({ ...liveInvoiceData, sandwich_vegan_count: parseInt(e.target.value) || 0 })}
+                          className="w-16 px-2 py-1 text-[13px] border border-[#D2D2D7] rounded-sm focus:outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-[13px] text-[#1D1D1F]">Sandwiches Veg(an)</td>
+                      <td className="px-4 py-3 text-[13px] text-[#1D1D1F] text-right">
+                        €{liveInvoiceData.sandwich_vegan_price.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-[13px] font-semibold text-[#1D1D1F] text-right">
+                        €{(liveInvoiceData.sandwich_vegan_count * liveInvoiceData.sandwich_vegan_price).toFixed(2)}
+                      </td>
+                    </tr>
+
                     {/* 2. Soup - AUTO from system */}
                     <tr className="hover:bg-[#F5F5F7] transition-colors transition-colors">
                       <td className="px-4 py-3 text-[13px] text-[#1D1D1F]">{currentMonthTotals.soup.portions}</td>
@@ -1773,6 +1825,8 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                         €{(() => {
                           const foodCost =
                             (liveInvoiceData.breakfast_count * liveInvoiceData.breakfast_price) +
+                            (liveInvoiceData.sandwich_protein_count * liveInvoiceData.sandwich_protein_price) +
+                            (liveInvoiceData.sandwich_vegan_count * liveInvoiceData.sandwich_vegan_price) +
                             currentMonthTotals.soup.revenue +
                             currentMonthTotals.salad_bar.revenue +
                             currentMonthTotals.hot_dish_meat.revenue +
@@ -1793,6 +1847,8 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                         €{(() => {
                           const foodCost =
                             (liveInvoiceData.breakfast_count * liveInvoiceData.breakfast_price) +
+                            (liveInvoiceData.sandwich_protein_count * liveInvoiceData.sandwich_protein_price) +
+                            (liveInvoiceData.sandwich_vegan_count * liveInvoiceData.sandwich_vegan_price) +
                             currentMonthTotals.soup.revenue +
                             currentMonthTotals.salad_bar.revenue +
                             currentMonthTotals.hot_dish_meat.revenue +
@@ -1828,6 +1884,8 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                         €{(() => {
                           const foodCost =
                             (liveInvoiceData.breakfast_count * liveInvoiceData.breakfast_price) +
+                            (liveInvoiceData.sandwich_protein_count * liveInvoiceData.sandwich_protein_price) +
+                            (liveInvoiceData.sandwich_vegan_count * liveInvoiceData.sandwich_vegan_price) +
                             currentMonthTotals.soup.revenue +
                             currentMonthTotals.salad_bar.revenue +
                             currentMonthTotals.hot_dish_meat.revenue +
@@ -1873,6 +1931,8 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                         €{(() => {
                           const foodCost =
                             (liveInvoiceData.breakfast_count * liveInvoiceData.breakfast_price) +
+                            (liveInvoiceData.sandwich_protein_count * liveInvoiceData.sandwich_protein_price) +
+                            (liveInvoiceData.sandwich_vegan_count * liveInvoiceData.sandwich_vegan_price) +
                             currentMonthTotals.soup.revenue +
                             currentMonthTotals.salad_bar.revenue +
                             currentMonthTotals.hot_dish_meat.revenue +
@@ -2003,9 +2063,9 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                       <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Name</th>
                       <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Contract Hrs</th>
                       <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Gross Monthly</th>
-                      <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Werkgeverslasten</th>
-                      <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Pensioen</th>
-                      <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Vakantiegeld</th>
+                      <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Empl. Cost.</th>
+                      <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Pension</th>
+                      <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Hol.Pay</th>
                       <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Other</th>
                       <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Total Cost</th>
                       <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#86868B] uppercase tracking-wider border-b border-[#D2D2D7]">Cost/Day</th>
@@ -2138,7 +2198,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                       <h4 className="text-[13px] font-semibold text-[#1D1D1F] mb-3">Employer Cost Percentages</h4>
                       <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
-                          <label className="text-[13px] text-[#86868B]">Werkgeverslasten %</label>
+                          <label className="text-[13px] text-[#86868B]">Empl. Cost. %</label>
                           <input
                             type="number"
                             step="0.01"
@@ -2148,7 +2208,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                           />
                         </div>
                         <div className="flex items-center justify-between">
-                          <label className="text-[13px] text-[#86868B]">Pensioen %</label>
+                          <label className="text-[13px] text-[#86868B]">Pension %</label>
                           <input
                             type="number"
                             step="0.01"
@@ -2158,7 +2218,7 @@ export default function CostBillingPageContent({ forcedLocation }: CostBillingPa
                           />
                         </div>
                         <div className="flex items-center justify-between">
-                          <label className="text-[13px] text-[#86868B]">Vakantiegeld %</label>
+                          <label className="text-[13px] text-[#86868B]">Hol.Pay %</label>
                           <input
                             type="number"
                             step="0.01"

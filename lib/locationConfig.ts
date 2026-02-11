@@ -30,7 +30,7 @@ export const LOCATIONS: Record<string, LocationMetadata> = {
     displayName: 'Symphony Offices',
     logo: '/locations/symphony-offices.png',
     abbreviation: 'Sym',
-    customNav: ['Menu Overview', 'Orders', 'Soup & Salad Bar', 'Banqueting', 'Settings'],
+    customNav: ['Menu Overview', 'Orders', 'Soup & Salad Bar', 'Banqueting', 'Give Feedback', 'Feedback Dashboard', 'Settings'],
   },
   'atlassian': {
     slug: 'atlassian',
@@ -130,6 +130,8 @@ export function getLocationNavItems(slug: string, activePage: string = 'Menu Ove
     'Orders': `/${slug}/orders`,
     'Soup & Salad Bar': `/${slug}/soup-salad-bar`,
     'Catering': `/${slug}/catering`,
+    'Give Feedback': `/${slug}/feedback`,
+    'Feedback Dashboard': `/${slug}/feedback-dashboard`,
     'Settings': `/${slug}/settings`,
     'Cost & Billing': `/${slug}/cost-billing`,
     'Banqueting': `/symphony/banqueting`, // Symphony-specific
@@ -141,6 +143,8 @@ export function getLocationNavItems(slug: string, activePage: string = 'Menu Ove
     'Orders',
     'Soup & Salad Bar',
     'Catering',
+    'Give Feedback',
+    'Feedback Dashboard',
     'Settings',
     'Cost & Billing',
   ];
@@ -149,6 +153,23 @@ export function getLocationNavItems(slug: string, activePage: string = 'Menu Ove
     label,
     href: navMap[label] || `/${slug}/${label.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}`,
     active: label === activePage,
+  }));
+}
+
+/**
+ * Generate navigation items for Regional Management section
+ */
+export function getManagementNavItems(activePage: string = 'Menu Overview'): NavItem[] {
+  const navItems = [
+    { label: 'Menu Overview', href: '/management/week-overview', active: false },
+    { label: 'Accounts', href: '/management/accounts', active: false },
+    { label: 'Feedback Analytics', href: '/management/feedback-dashboard', active: false },
+    { label: 'Statistics', href: '#', active: false }, // Coming soon
+  ];
+
+  return navItems.map(item => ({
+    ...item,
+    active: item.label === activePage,
   }));
 }
 
