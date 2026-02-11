@@ -207,6 +207,8 @@ export default function BanquetingOrdersPage() {
   };
 
   const submitOrder = async (orderType: 'order' | 'quote', poNumber: string | null) => {
+    if (!company) return;
+
     setSubmitting(true);
 
     try {
